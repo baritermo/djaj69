@@ -33,14 +33,30 @@ async function ensureTables() {
 
 export async function GET(request: Request) {
   try {
-    await ensureTables();
-    let officialList = await db.select().from(officialPrices);
-    if (officialList.length === 0) {
-      await seedDatabase();
+    let officialList: any[] = [];
+    try {
       officialList = await db.select().from(officialPrices);
+      if (officialList.length === 0) {
+        await seedDatabase();
+        officialList = await db.select().from(officialPrices);
+      }
+    } catch (e: any) {
+      console.warn('officialPrices query failed, self-healing table...', e.message);
+      await ensureTables();
+      await seedDatabase();
+      try {
+        officialList = await db.select().from(officialPrices);
+      } catch (err) {
+        officialList = [];
+      }
     }
 
-    const historicalPrices = await db.select().from(poultryPrices).orderBy(desc(poultryPrices.id)).limit(300);
+    let historicalPrices: any[] = [];
+    try {
+      historicalPrices = await db.select().from(poultryPrices).orderBy(desc(poultryPrices.id)).limit(300);
+    } catch (err) {
+      historicalPrices = [];
+    }
 
     return NextResponse.json({
       status: 'success',
