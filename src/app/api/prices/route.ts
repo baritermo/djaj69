@@ -19,12 +19,35 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit') || '500');
 
-    const checkWilayas = await db.select().from(wilayas).limit(1);
-    if (checkWilayas.length === 0) {
-      await seedDatabase();
+    let allWilayas: any[] = [];
+    try {
+      allWilayas = await db.select().from(wilayas);
+      if (allWilayas.length === 0) {
+        await seedDatabase();
+        allWilayas = await db.select().from(wilayas);
+      }
+    } catch (e: any) {
+      console.warn('Wilayas table mismatch, self-healing...', e.message);
+      try {
+        await pool.query(`
+          DROP TABLE IF EXISTS "wilayas" CASCADE;
+          CREATE TABLE IF NOT EXISTS "wilayas" (
+            "id" serial PRIMARY KEY NOT NULL,
+            "code" text NOT NULL UNIQUE,
+            "name_ar" text NOT NULL,
+            "name_fr" text NOT NULL,
+            "region" text NOT NULL,
+            "active_farms_count" integer DEFAULT 0,
+            "slaughterhouses_count" integer DEFAULT 0
+          );
+        `);
+        await seedDatabase();
+        allWilayas = await db.select().from(wilayas);
+      } catch (err) {
+        console.error('Self-healing failed:', err);
+        allWilayas = [];
+      }
     }
-
-    const allWilayas = await db.select().from(wilayas);
 
     let conditions = [];
     if (wilayaCode && wilayaCode !== 'all') {
