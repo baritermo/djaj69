@@ -90,7 +90,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
+        <form noValidate onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
           <div>
             <label htmlFor="price_wilaya_code" className="block text-slate-700 mb-1">اختر الولاية لتحديث أسعارها</label>
             <select
