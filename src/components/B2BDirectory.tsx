@@ -83,13 +83,22 @@ export default function B2BDirectory({
             تواصل مباشر وحصري مع المزارع، المذابح، باعة الأعلاف والفلوس (الصوص)، والبيطرة في ولايتك لضمان أفضل سعر وأعلى جودة.
           </p>
         </div>
-        <button
-          onClick={onOpenCompanyModal}
-          className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition shrink-0 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          إضافة نشاط / شركة B2B
-        </button>
+        {currentUser?.role !== 'worker' && (
+          <button
+            onClick={() => {
+              if (!isSubscribed) {
+                if (onOpenSubscribeModal) onOpenSubscribeModal();
+                else alert('🔒 يرجى الاشتراك أولاً في البورصة لتتمكن من إضافة نشاطك في دليل B2B.');
+              } else {
+                onOpenCompanyModal();
+              }
+            }}
+            className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            إضافة نشاط / شركة B2B
+          </button>
+        )}
       </div>
 
       {/* Filter and Search */}

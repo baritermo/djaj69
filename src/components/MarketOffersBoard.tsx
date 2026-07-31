@@ -13,10 +13,30 @@ interface MarketOffersBoardProps {
 }
 
 export default function MarketOffersBoard({ offersList, onOpenOfferModal, currentUser, onOpenSubscribeModal }: MarketOffersBoardProps) {
+  const isSubscribed = currentUser?.role === 'admin' || currentUser?.subscriptionStatus === 'active';
   const farmers = offersList.filter((o) => o.offerType === 'farmer');
   const slaughterhouses = offersList.filter((o) => o.offerType === 'slaughterhouse');
   const brokers = offersList.filter((o) => o.offerType === 'broker');
   const buyers = [...slaughterhouses, ...brokers];
+
+  const handlePublishOffer = (type: 'farmer' | 'slaughterhouse' | 'broker') => {
+    if (!isSubscribed) {
+      if (onOpenSubscribeModal) {
+        onOpenSubscribeModal();
+      } else {
+        alert('🔒 يرجى الاشتراك أولاً في البورصة لتتمكن من نشر وإضافة العروض.');
+      }
+      return;
+    }
+
+    const role = currentUser?.role;
+    if (role === 'worker') {
+      alert('⚠️ حسابك بصفتك (عامل دواجن) مخصص للتسجيل في قسم العمال والبحث عن توظيف.\nقسم سوق العروض المباشرة مخصص للفلاحين والمذابح والوسطاء التجار.');
+      return;
+    }
+
+    onOpenOfferModal(type);
+  };
 
   return (
     <section className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden mb-6">
@@ -35,17 +55,25 @@ export default function MarketOffersBoard({ offersList, onOpenOfferModal, curren
               كل قسم مستقل ولا يختلط مع الآخر.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 shrink-0">
-            <button onClick={() => onOpenOfferModal('farmer')} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-black text-white shadow-lg transition">
-              <Plus className="w-4 h-4" /> نشر عرض فلاح (بيع)
-            </button>
-            <button onClick={() => onOpenOfferModal('slaughterhouse')} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs font-black text-white shadow-lg transition">
-              <Plus className="w-4 h-4" /> نشر عرض مذبح (شراء)
-            </button>
-            <button onClick={() => onOpenOfferModal('broker')} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-xs font-black text-emerald-950 shadow-lg transition">
-              <Plus className="w-4 h-4" /> نشر عرض كورتي (شراء)
-            </button>
-          </div>
+          {currentUser?.role !== 'worker' && (
+            <div className="flex flex-wrap gap-2 shrink-0">
+              {(currentUser?.role === 'farmer' || currentUser?.role === 'admin' || !currentUser) && (
+                <button onClick={() => handlePublishOffer('farmer')} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-black text-white shadow-lg transition cursor-pointer">
+                  <Plus className="w-4 h-4" /> نشر عرض فلاح (بيع)
+                </button>
+              )}
+              {(currentUser?.role === 'slaughterhouse' || currentUser?.role === 'admin' || !currentUser) && (
+                <button onClick={() => handlePublishOffer('slaughterhouse')} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs font-black text-white shadow-lg transition cursor-pointer">
+                  <Plus className="w-4 h-4" /> نشر عرض مذبح (شراء)
+                </button>
+              )}
+              {(currentUser?.role === 'broker' || currentUser?.role === 'admin' || !currentUser) && (
+                <button onClick={() => handlePublishOffer('broker')} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-xs font-black text-emerald-950 shadow-lg transition cursor-pointer">
+                  <Plus className="w-4 h-4" /> نشر عرض كورتي (شراء)
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

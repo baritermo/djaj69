@@ -120,20 +120,39 @@ export default function JobsAndWorkersBoard({
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
-          <button
-            onClick={onOpenJobModal}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            نشر عرض توظيف جديد
-          </button>
-          <button
-            onClick={onOpenWorkerModal}
-            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 border border-emerald-500 shadow-lg transition cursor-pointer"
-          >
-            <UserCheck className="w-4 h-4 text-amber-400" />
-            تسجيل باحث عن عمل
-          </button>
+          {currentUser?.role !== 'worker' && (
+            <button
+              onClick={() => {
+                if (!isSubscribed) {
+                  if (onOpenSubscribeModal) onOpenSubscribeModal();
+                  else alert('🔒 يرجى الاشتراك أولاً في البورصة لتتمكن من نشر عروض التوظيف.');
+                  return;
+                }
+                onOpenJobModal();
+              }}
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              نشر عرض توظيف جديد
+            </button>
+          )}
+
+          {(currentUser?.role === 'worker' || currentUser?.role === 'admin' || !currentUser) && (
+            <button
+              onClick={() => {
+                if (!isSubscribed) {
+                  if (onOpenSubscribeModal) onOpenSubscribeModal();
+                  else alert('🔒 يرجى الاشتراك أولاً في البورصة لتتمكن من تسجيل حسابك كباحث عن عمل.');
+                  return;
+                }
+                onOpenWorkerModal();
+              }}
+              className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 border border-emerald-500 shadow-lg transition cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4 text-amber-400" />
+              تسجيل باحث عن عمل
+            </button>
+          )}
         </div>
       </div>
 
