@@ -207,25 +207,30 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
                               <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 mb-3">{b.buyingDetails}</p>
                             )}
 
-                            {isSubscribed && (
-                              <div className="flex items-center gap-2">
-                                <a href={`tel:${b.phone}`} className={`flex-1 flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400 text-emerald-950'}`}>
-                                  <Phone className="w-3.5 h-3.5" /> اتصال: {b.phone}
-                                </a>
-                                <button
-                                  onClick={async () => {
-                                    if (confirm('هل أنت تأكد من حذف هذا العرض نهائياً؟')) {
-                                      await fetch(`/api/offers?id=${b.id}`, { method: 'DELETE' });
-                                      window.location.reload();
-                                    }
-                                  }}
-                                  className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
-                                  title="حذف العرض"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
+                            {(() => {
+                              const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && b.phone && (b.phone === currentUser.phone || b.phone.includes(currentUser.phone)));
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <a href={`tel:${b.phone}`} className={`flex-1 flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400 text-emerald-950'}`}>
+                                    <Phone className="w-3.5 h-3.5" /> اتصال: {b.phone}
+                                  </a>
+                                  {canDelete && (
+                                    <button
+                                      onClick={async () => {
+                                        if (confirm('هل أنت تأكد من حذف هذا العرض نهائياً؟')) {
+                                          await fetch(`/api/offers?id=${b.id}`, { method: 'DELETE' });
+                                          window.location.reload();
+                                        }
+                                      }}
+                                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
+                                      title="حذف العرض"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>

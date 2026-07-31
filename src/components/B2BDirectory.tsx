@@ -12,6 +12,7 @@ import {
   Truck,
   Feather,
   Lock,
+  Trash2,
 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
@@ -245,14 +246,33 @@ export default function B2BDirectory({
                   <Phone className="w-3.5 h-3.5 text-amber-300" />
                   {comp.phone}
                 </a>
-                {comp.email && (
-                  <a
-                    href={`mailto:${comp.email}`}
-                    className="text-xs font-bold text-slate-600 hover:text-emerald-700 underline"
-                  >
-                    البريد الإلكتروني
-                  </a>
-                )}
+                <div className="flex items-center gap-2">
+                  {comp.email && (
+                    <a
+                      href={`mailto:${comp.email}`}
+                      className="text-xs font-bold text-slate-600 hover:text-emerald-700 underline"
+                    >
+                      البريد الإلكتروني
+                    </a>
+                  )}
+                  {(() => {
+                    const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && comp.phone && (comp.phone === currentUser.phone || comp.phone.includes(currentUser.phone)));
+                    return canDelete ? (
+                      <button
+                        onClick={async () => {
+                          if (confirm('هل أنت تأكد من حذف هذا النشاط نهائياً من الدليل؟')) {
+                            await fetch(`/api/companies?id=${comp.id}`, { method: 'DELETE' });
+                            window.location.reload();
+                          }
+                        }}
+                        className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
+                        title="حذف النشاط"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    ) : null;
+                  })()}
+                </div>
               </div>
             </div>
 

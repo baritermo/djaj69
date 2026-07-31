@@ -165,25 +165,30 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
                               <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">{farmer.details}</p>
                             )}
 
-                            {isSubscribed && (
-                              <div className="mt-3 flex items-center gap-2">
-                                <a href={`tel:${farmer.phone}`} className="flex-1 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition shadow-xs">
-                                  <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
-                                </a>
-                                <button
-                                  onClick={async () => {
-                                    if (confirm('هل أنت تأكد من حذف عرض هذا الفلاح نهائياً؟')) {
-                                      await fetch(`/api/offers?id=${farmer.id}`, { method: 'DELETE' });
-                                      window.location.reload();
-                                    }
-                                  }}
-                                  className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
-                                  title="حذف العرض"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
+                            {(() => {
+                              const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && farmer.phone && (farmer.phone === currentUser.phone || farmer.phone.includes(currentUser.phone)));
+                              return (
+                                <div className="mt-3 flex items-center gap-2">
+                                  <a href={`tel:${farmer.phone}`} className="flex-1 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition shadow-xs">
+                                    <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
+                                  </a>
+                                  {canDelete && (
+                                    <button
+                                      onClick={async () => {
+                                        if (confirm('هل أنت تأكد من حذف عرض هذا الفلاح نهائياً؟')) {
+                                          await fetch(`/api/offers?id=${farmer.id}`, { method: 'DELETE' });
+                                          window.location.reload();
+                                        }
+                                      }}
+                                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
+                                      title="حذف العرض"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>

@@ -282,16 +282,19 @@ export default function JobsAndWorkersBoard({
                       اتصال بالتشغيل: {job.contactPhone}
                     </a>
                   </div>
-                  {isSubscribed && (
-                    <button
-                      onClick={() => handleDeleteJob(job.id)}
-                      className="inline-flex items-center gap-1 p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition text-xs font-bold border border-rose-200 cursor-pointer"
-                      title="حذف هذا العرض"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>حذف</span>
-                    </button>
-                  )}
+                  {(() => {
+                    const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && job.contactPhone && (job.contactPhone === currentUser.phone || job.contactPhone.includes(currentUser.phone)));
+                    return canDelete ? (
+                      <button
+                        onClick={() => handleDeleteJob(job.id)}
+                        className="inline-flex items-center gap-1 p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition text-xs font-bold border border-rose-200 cursor-pointer"
+                        title="حذف هذا العرض"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>حذف</span>
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -381,16 +384,19 @@ export default function JobsAndWorkersBoard({
                     <Phone className="w-3.5 h-3.5 text-amber-300" />
                     اتصال بالعامل: {worker.phone}
                   </a>
-                  {isSubscribed && (
-                    <button
-                      onClick={() => handleDeleteWorker(worker.id)}
-                      className="inline-flex items-center gap-1 p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition text-xs font-bold border border-rose-200 cursor-pointer"
-                      title="حذف حساب العامل"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>حذف</span>
-                    </button>
-                  )}
+                  {(() => {
+                    const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && worker.phone && (worker.phone === currentUser.phone || worker.phone.includes(currentUser.phone)));
+                    return canDelete ? (
+                      <button
+                        onClick={() => handleDeleteWorker(worker.id)}
+                        className="inline-flex items-center gap-1 p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition text-xs font-bold border border-rose-200 cursor-pointer"
+                        title="حذف حساب العامل"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>حذف</span>
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
