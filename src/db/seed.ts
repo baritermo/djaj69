@@ -7,18 +7,28 @@ export async function seedDatabase() {
   try {
     const existingWilayas = await db.select().from(wilayas).limit(1);
     if (existingWilayas.length === 0) {
-      for (const w of ALGERIA_WILAYAS) {
-        await db.insert(wilayas).values({ code: w.code, nameAr: w.nameAr, nameFr: w.nameFr, region: w.region, activeFarmsCount: Math.floor(Math.random() * 80) + 15, slaughterhousesCount: Math.floor(Math.random() * 12) + 2 });
-      }
+      const wilayaList = ALGERIA_WILAYAS.map((w) => ({
+        code: w.code,
+        nameAr: w.nameAr,
+        nameFr: w.nameFr,
+        region: w.region,
+        activeFarmsCount: Math.floor(Math.random() * 80) + 15,
+        slaughterhousesCount: Math.floor(Math.random() * 12) + 2,
+      }));
+      await db.insert(wilayas).values(wilayaList);
     }
     const existingPrices = await db.select().from(poultryPrices).limit(1);
     if (existingPrices.length === 0) {
       const today = new Date().toISOString().split('T')[0];
+      const priceList = [];
       for (const w of ALGERIA_WILAYAS) {
-        await db.insert(poultryPrices).values({ wilayaCode: w.code, date: today, category: 'خشنة', farmerPrice: w.khashna_farmer, slaughterPrice: w.khashna_slaughter, intermediaryPrice: w.khashna_intermediary, trend: w.trend, trendChangePercent: w.trendPercent, notesAr: `أسعار الخشن في ولاية ${w.nameAr}`, reportedBy: 'بورصة الدواجن', status: 'official' });
-        await db.insert(poultryPrices).values({ wilayaCode: w.code, date: today, category: 'متوسطة', farmerPrice: w.motawassita_farmer, slaughterPrice: w.motawassita_slaughter, intermediaryPrice: w.motawassita_intermediary, trend: w.trend, trendChangePercent: w.trendPercent, notesAr: `أسعار المتوسط في ولاية ${w.nameAr}`, reportedBy: 'بورصة الدواجن', status: 'official' });
-        await db.insert(poultryPrices).values({ wilayaCode: w.code, date: today, category: 'رقيقة', farmerPrice: w.raqiqa_farmer, slaughterPrice: w.raqiqa_slaughter, intermediaryPrice: w.raqiqa_intermediary, trend: w.trend, trendChangePercent: w.trendPercent, notesAr: `أسعار الرقيق في ولاية ${w.nameAr}`, reportedBy: 'بورصة الدواجن', status: 'official' });
+        priceList.push(
+          { wilayaCode: w.code, date: today, category: 'خشنة', farmerPrice: w.khashna_farmer, slaughterPrice: w.khashna_slaughter, intermediaryPrice: w.khashna_intermediary, trend: w.trend, trendChangePercent: w.trendPercent, notesAr: `أسعار الخشن في ولاية ${w.nameAr}`, reportedBy: 'بورصة الدواجن', status: 'official' },
+          { wilayaCode: w.code, date: today, category: 'متوسطة', farmerPrice: w.motawassita_farmer, slaughterPrice: w.motawassita_slaughter, intermediaryPrice: w.motawassita_intermediary, trend: w.trend, trendChangePercent: w.trendPercent, notesAr: `أسعار المتوسط في ولاية ${w.nameAr}`, reportedBy: 'بورصة الدواجن', status: 'official' },
+          { wilayaCode: w.code, date: today, category: 'رقيقة', farmerPrice: w.raqiqa_farmer, slaughterPrice: w.raqiqa_slaughter, intermediaryPrice: w.raqiqa_intermediary, trend: w.trend, trendChangePercent: w.trendPercent, notesAr: `أسعار الرقيق في ولاية ${w.nameAr}`, reportedBy: 'بورصة الدواجن', status: 'official' }
+        );
       }
+      await db.insert(poultryPrices).values(priceList);
     }
     const existingReports = await db.select().from(priceReports).limit(1);
     if (existingReports.length === 0) {
