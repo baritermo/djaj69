@@ -17,7 +17,14 @@ export const pool =
   new Pool({
     connectionString: databaseUrl,
     ssl: { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
   });
+
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle database client', err);
+});
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.__arenaNextJsPostgresqlPool = pool;
