@@ -135,102 +135,116 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
                 {items.map((b) => {
                   const isCardClosed = closedCards[b.id];
                   return (
-                    <div key={b.id} className={`rounded-xl border p-4 bg-white hover:shadow-lg transition ${isSlaughterhouse ? 'border-indigo-200 hover:border-indigo-400' : 'border-amber-200 hover:border-amber-400'}`}>
-                      {/* Card Header with Open/Close Button */}
-                      <div className="flex items-center gap-3">
-                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow shrink-0 ${isSlaughterhouse ? 'bg-indigo-600' : 'bg-amber-500'}`}>
-                          {icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-black text-sm text-slate-900 truncate">{b.name}</h4>
-                            {b.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                    <div key={b.id} className={`relative rounded-xl border p-4 bg-white hover:shadow-lg transition overflow-hidden ${isSlaughterhouse ? 'border-indigo-200 hover:border-indigo-400' : 'border-amber-200 hover:border-amber-400'}`}>
+                      {/* Card Body (Blurred when not subscribed) */}
+                      <div className={!isSubscribed ? 'filter blur-sm select-none pointer-events-none opacity-50' : ''}>
+                        {/* Card Header with Open/Close Button */}
+                        <div className="flex items-center gap-3">
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow shrink-0 ${isSlaughterhouse ? 'bg-indigo-600' : 'bg-amber-500'}`}>
+                            {icon}
                           </div>
-                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                            <MapPin className="w-3 h-3" /> {b.commune}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-black text-sm text-slate-900 truncate">{b.name}</h4>
+                              {b.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                            </div>
+                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
+                              <MapPin className="w-3 h-3" /> {b.commune}
+                            </div>
                           </div>
+
+                          {/* Open/Close Toggle Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCard(b.id);
+                            }}
+                            className={`p-1.5 rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-bold ${
+                              isSlaughterhouse ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950' : 'bg-amber-100 hover:bg-amber-200 text-amber-950'
+                            }`}
+                            title={isCardClosed ? "فتح العرض" : "غلق العرض"}
+                          >
+                            {isCardClosed ? (
+                              <>
+                                <span>فتح</span>
+                                <ChevronDown className="w-4 h-4" />
+                              </>
+                            ) : (
+                              <>
+                                <span>غلق</span>
+                                <ChevronUp className="w-4 h-4" />
+                              </>
+                            )}
+                          </button>
                         </div>
 
-                        {/* Open/Close Toggle Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleCard(b.id);
-                          }}
-                          className={`p-1.5 rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-bold ${
-                            isSlaughterhouse ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950' : 'bg-amber-100 hover:bg-amber-200 text-amber-950'
-                          }`}
-                          title={isCardClosed ? "فتح العرض" : "غلق العرض"}
-                        >
-                          {isCardClosed ? (
-                            <>
-                              <span>فتح</span>
-                              <ChevronDown className="w-4 h-4" />
-                            </>
-                          ) : (
-                            <>
-                              <span>غلق</span>
-                              <ChevronUp className="w-4 h-4" />
-                            </>
-                          )}
-                        </button>
+                        {/* Card Details Body (Shown when Open) */}
+                        {!isCardClosed && (
+                          <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
+                            {/* Buying Prices Table */}
+                            <div className={`relative rounded-xl border overflow-hidden mb-3 ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
+                              <table className="w-full text-center text-xs border-collapse transition">
+                                <thead>
+                                  <tr className={`${isSlaughterhouse ? 'bg-indigo-50' : 'bg-amber-50'}`}>
+                                    <th className="py-2 px-3 font-black text-slate-700">الفئة</th>
+                                    <th className={`py-2 px-3 font-black ${isSlaughterhouse ? 'text-indigo-800' : 'text-amber-800'}`}>سعر الشراء (د.ج/كغ)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200">
+                                  <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">خشنة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyKhashna ?? '—'}</td></tr>
+                                  <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">متوسطة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyMotawassita ?? '—'}</td></tr>
+                                  <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">رقيقة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyRaqiqa ?? '—'}</td></tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <div className="space-y-1 text-[11px] text-slate-700 mb-3">
+                              {b.maxPurchaseKg && <p>الكمية القصوى: <strong className="text-slate-900">{b.maxPurchaseKg}</strong></p>}
+                              {b.deliveryArea && <p>نطاق التوزيع: <strong className="text-slate-900">{b.deliveryArea}</strong></p>}
+                            </div>
+
+                            {b.buyingDetails && (
+                              <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 mb-3">{b.buyingDetails}</p>
+                            )}
+
+                            {isSubscribed && (
+                              <div className="flex items-center gap-2">
+                                <a href={`tel:${b.phone}`} className={`flex-1 flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400 text-emerald-950'}`}>
+                                  <Phone className="w-3.5 h-3.5" /> اتصال: {b.phone}
+                                </a>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm('هل أنت تأكد من حذف هذا العرض نهائياً؟')) {
+                                      await fetch(`/api/offers?id=${b.id}`, { method: 'DELETE' });
+                                      window.location.reload();
+                                    }
+                                  }}
+                                  className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
+                                  title="حذف العرض"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Card Details Body (Shown when Open) */}
-                      {!isCardClosed && (
-                        <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
-                          {/* Buying Prices Table */}
-                          <div className={`relative rounded-xl border overflow-hidden mb-3 ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
-                            <table className={`w-full text-center text-xs border-collapse transition ${!isSubscribed ? 'blur-xs select-none pointer-events-none' : ''}`}>
-                              <thead>
-                                <tr className={`${isSlaughterhouse ? 'bg-indigo-50' : 'bg-amber-50'}`}>
-                                  <th className="py-2 px-3 font-black text-slate-700">الفئة</th>
-                                  <th className={`py-2 px-3 font-black ${isSlaughterhouse ? 'text-indigo-800' : 'text-amber-800'}`}>سعر الشراء (د.ج/كغ)</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-200">
-                                <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">خشنة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyKhashna ?? '—'}</td></tr>
-                                <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">متوسطة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyMotawassita ?? '—'}</td></tr>
-                                <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">رقيقة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyRaqiqa ?? '—'}</td></tr>
-                              </tbody>
-                            </table>
+                      {/* Subscription Lock Overlay when Not Subscribed */}
+                      {!isSubscribed && (
+                        <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center gap-2 z-30">
+                          <div className="w-8 h-8 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-black shadow-lg animate-bounce">
+                            <Lock className="w-4 h-4" />
                           </div>
-
-                          <div className="space-y-1 text-[11px] text-slate-700 mb-3">
-                            {b.maxPurchaseKg && <p>الكمية القصوى: <strong className="text-slate-900">{b.maxPurchaseKg}</strong></p>}
-                            {b.deliveryArea && <p>نطاق التوزيع: <strong className="text-slate-900">{b.deliveryArea}</strong></p>}
-                          </div>
-
-                          {b.buyingDetails && (
-                            <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 mb-3">{b.buyingDetails}</p>
-                          )}
-
-                          {isSubscribed ? (
-                            <div className="flex items-center gap-2">
-                              <a href={`tel:${b.phone}`} className={`flex-1 flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400 text-emerald-950'}`}>
-                                <Phone className="w-3.5 h-3.5" /> اتصال: {b.phone}
-                              </a>
-                              <button
-                                onClick={async () => {
-                                  if (confirm('هل أنت تأكد من حذف هذا العرض نهائياً؟')) {
-                                    await fetch(`/api/offers?id=${b.id}`, { method: 'DELETE' });
-                                    window.location.reload();
-                                  }
-                                }}
-                                className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
-                                title="حذف العرض"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={onOpenSubscribeModal}
-                              className="w-full flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-black py-2 rounded-xl transition shadow-xs cursor-pointer"
-                            >
-                              <Lock className="w-3.5 h-3.5 text-emerald-950" /> 🔒 عرض أرقام الهواتف والأسعار
-                            </button>
-                          )}
+                          <span className="text-xs font-black text-amber-300 drop-shadow">
+                            🔒 يرجى الاشتراك لرؤية العروض والاتصال
+                          </span>
+                          <button
+                            onClick={onOpenSubscribeModal}
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-lg transition cursor-pointer transform hover:scale-105"
+                          >
+                            اشترك الآن
+                          </button>
                         </div>
                       )}
                     </div>

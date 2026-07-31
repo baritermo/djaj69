@@ -241,6 +241,11 @@ export default function HomePage() {
           <JobsAndWorkersBoard
             jobsList={jobsList}
             workersList={workersList}
+            currentUser={currentUser}
+            onOpenSubscribeModal={() => {
+              if (!currentUser) setIsRegisterModalOpen(true);
+              else setIsSubscribeModalOpen(true);
+            }}
             onOpenJobModal={() => {
               if (!currentUser) setIsRegisterModalOpen(true);
               else setIsJobModalOpen(true);
@@ -257,6 +262,11 @@ export default function HomePage() {
         {activeTab === 'directory' && (
           <B2BDirectory
             companiesList={companiesList}
+            currentUser={currentUser}
+            onOpenSubscribeModal={() => {
+              if (!currentUser) setIsRegisterModalOpen(true);
+              else setIsSubscribeModalOpen(true);
+            }}
             onOpenCompanyModal={() => {
               if (!currentUser) setIsRegisterModalOpen(true);
               else setIsCompanyModalOpen(true);
