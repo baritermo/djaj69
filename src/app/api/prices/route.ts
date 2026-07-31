@@ -78,9 +78,9 @@ export async function POST(request: Request) {
     await ensureTables();
     const body = await request.json();
 
-    const sanitizeInt = (val: any, fallback = 0) => {
-      const num = Number(val);
-      return isNaN(num) ? fallback : Math.round(num);
+    const parsePrice = (val: any) => {
+      if (val === null || val === undefined || val === '' || isNaN(Number(val))) return null;
+      return Math.round(Number(val));
     };
 
     if (Array.isArray(body)) {
@@ -92,17 +92,17 @@ export async function POST(request: Request) {
       const motawassitaItem = body.find((b: any) => b.category === 'متوسطة') || {};
       const raqiqaItem = body.find((b: any) => b.category === 'رقيقة') || {};
 
-      const khashnaFarmer = sanitizeInt(khashnaItem.farmerPrice, 320);
-      const khashnaSlaughter = sanitizeInt(khashnaItem.slaughterPrice, 310);
-      const khashnaIntermediary = sanitizeInt(khashnaItem.intermediaryPrice, 330);
+      const khashnaFarmer = parsePrice(khashnaItem.farmerPrice);
+      const khashnaSlaughter = parsePrice(khashnaItem.slaughterPrice);
+      const khashnaIntermediary = parsePrice(khashnaItem.intermediaryPrice);
 
-      const motawassitaFarmer = sanitizeInt(motawassitaItem.farmerPrice, 300);
-      const motawassitaSlaughter = sanitizeInt(motawassitaItem.slaughterPrice, 290);
-      const motawassitaIntermediary = sanitizeInt(motawassitaItem.intermediaryPrice, 310);
+      const motawassitaFarmer = parsePrice(motawassitaItem.farmerPrice);
+      const motawassitaSlaughter = parsePrice(motawassitaItem.slaughterPrice);
+      const motawassitaIntermediary = parsePrice(motawassitaItem.intermediaryPrice);
 
-      const raqiqaFarmer = sanitizeInt(raqiqaItem.farmerPrice, 280);
-      const raqiqaSlaughter = sanitizeInt(raqiqaItem.slaughterPrice, 270);
-      const raqiqaIntermediary = sanitizeInt(raqiqaItem.intermediaryPrice, 290);
+      const raqiqaFarmer = parsePrice(raqiqaItem.farmerPrice);
+      const raqiqaSlaughter = parsePrice(raqiqaItem.slaughterPrice);
+      const raqiqaIntermediary = parsePrice(raqiqaItem.intermediaryPrice);
 
       // Fast direct UPDATE query on the 58 fixed wilayas table
       await db

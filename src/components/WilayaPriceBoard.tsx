@@ -64,64 +64,63 @@ export default function WilayaPriceBoard({
     return map;
   }, [pricesList]);
 
+  // Helper for rendering price or "غير محدد"
+  const formatDisplayPrice = (val: any) => {
+    if (val === null || val === undefined || val === '' || isNaN(val) || Number(val) === 0) {
+      return <span className="text-slate-400 font-bold text-xs">غير محدد</span>;
+    }
+    return <>{val} <span className="text-[10px] font-normal opacity-75">د.ج</span></>;
+  };
+
   // Build wilaya data with prices from DB or fallback
   const wilayaDataWithPrices = useMemo(() => {
     return ALGERIA_WILAYAS.map((wilaya) => {
       const dbOfficial = officialMap[wilaya.code];
 
-      if (dbOfficial && dbOfficial.khashnaFarmer !== undefined) {
-        const khashna = {
+      let khashna = {
+        farmer: dbOfficial?.khashnaFarmer ?? wilaya.khashna_farmer,
+        slaughter: dbOfficial?.khashnaSlaughter ?? wilaya.khashna_slaughter,
+        intermediary: dbOfficial?.khashnaIntermediary ?? wilaya.khashna_intermediary,
+      };
+      let motawassita = {
+        farmer: dbOfficial?.motawassitaFarmer ?? wilaya.motawassita_farmer,
+        slaughter: dbOfficial?.motawassitaSlaughter ?? wilaya.motawassita_slaughter,
+        intermediary: dbOfficial?.motawassitaIntermediary ?? wilaya.motawassita_intermediary,
+      };
+      let raqiqa = {
+        farmer: dbOfficial?.raqiqaFarmer ?? wilaya.raqiqa_farmer,
+        slaughter: dbOfficial?.raqiqaSlaughter ?? wilaya.raqiqa_slaughter,
+        intermediary: dbOfficial?.raqiqaIntermediary ?? wilaya.raqiqa_intermediary,
+      };
+
+      if (dbOfficial) {
+        khashna = {
           farmer: dbOfficial.khashnaFarmer,
           slaughter: dbOfficial.khashnaSlaughter,
           intermediary: dbOfficial.khashnaIntermediary,
         };
-        const motawassita = {
+        motawassita = {
           farmer: dbOfficial.motawassitaFarmer,
           slaughter: dbOfficial.motawassitaSlaughter,
           intermediary: dbOfficial.motawassitaIntermediary,
         };
-        const raqiqa = {
+        raqiqa = {
           farmer: dbOfficial.raqiqaFarmer,
           slaughter: dbOfficial.raqiqaSlaughter,
           intermediary: dbOfficial.raqiqaIntermediary,
         };
-
-        const trend = dbOfficial.trend || wilaya.trend;
-        const trendPercent = dbOfficial.trendPercent || wilaya.trendPercent;
-
-        return {
-          ...wilaya,
-          khashna,
-          motawassita,
-          raqiqa,
-          trend,
-          trendPercent,
-          avgPrice: Math.round((khashna.farmer + motawassita.farmer + raqiqa.farmer) / 3),
-        };
       }
 
-      const dbKhashna = pricesList.find((p) => String(p.wilayaCode).padStart(2, '0') === wilaya.code && p.category === 'خشنة');
-      const dbMotawassita = pricesList.find((p) => String(p.wilayaCode).padStart(2, '0') === wilaya.code && p.category === 'متوسطة');
-      const dbRaqiqa = pricesList.find((p) => String(p.wilayaCode).padStart(2, '0') === wilaya.code && p.category === 'رقيقة');
+      const trend = dbOfficial?.trend || wilaya.trend;
+      const trendPercent = dbOfficial?.trendPercent || wilaya.trendPercent;
 
-      const khashna = {
-        farmer: dbKhashna?.farmerPrice ?? wilaya.khashna_farmer,
-        slaughter: dbKhashna?.slaughterPrice ?? wilaya.khashna_slaughter,
-        intermediary: dbKhashna?.intermediaryPrice ?? wilaya.khashna_intermediary,
-      };
-      const motawassita = {
-        farmer: dbMotawassita?.farmerPrice ?? wilaya.motawassita_farmer,
-        slaughter: dbMotawassita?.slaughterPrice ?? wilaya.motawassita_slaughter,
-        intermediary: dbMotawassita?.intermediaryPrice ?? wilaya.motawassita_intermediary,
-      };
-      const raqiqa = {
-        farmer: dbRaqiqa?.farmerPrice ?? wilaya.raqiqa_farmer,
-        slaughter: dbRaqiqa?.slaughterPrice ?? wilaya.raqiqa_slaughter,
-        intermediary: dbRaqiqa?.intermediaryPrice ?? wilaya.raqiqa_intermediary,
-      };
+      const validFarmerPrices = [khashna.farmer, motawassita.farmer, raqiqa.farmer]
+        .map(Number)
+        .filter((v) => !isNaN(v) && v > 0);
 
-      const trend = dbKhashna?.trend ?? wilaya.trend;
-      const trendPercent = dbKhashna?.trendChangePercent ?? wilaya.trendPercent;
+      const avgPrice = validFarmerPrices.length > 0
+        ? Math.round(validFarmerPrices.reduce((a, b) => a + b, 0) / validFarmerPrices.length)
+        : 0;
 
       return {
         ...wilaya,
@@ -130,7 +129,7 @@ export default function WilayaPriceBoard({
         raqiqa,
         trend,
         trendPercent,
-        avgPrice: Math.round((khashna.farmer + motawassita.farmer + raqiqa.farmer) / 3),
+        avgPrice,
       };
     });
   }, [officialMap, pricesList]);
@@ -368,19 +367,19 @@ export default function WilayaPriceBoard({
                     <div>
                       <div className="text-[10px] text-emerald-200 font-bold">🌾 فلاح</div>
                       <div className="text-sm font-black text-amber-300">
-                        {w.khashna.farmer} <span className="text-[10px] font-normal text-emerald-100">د.ج</span>
+                        {formatDisplayPrice(w.khashna.farmer)}
                       </div>
                     </div>
                     <div className="border-r border-emerald-700/60">
                       <div className="text-[10px] text-indigo-200 font-bold">🔪 مذبح</div>
                       <div className="text-sm font-black text-white">
-                        {w.khashna.slaughter} <span className="text-[10px] font-normal text-emerald-100">د.ج</span>
+                        {formatDisplayPrice(w.khashna.slaughter)}
                       </div>
                     </div>
                     <div className="border-r border-emerald-700/60">
                       <div className="text-[10px] text-amber-200 font-bold">🤝 وسيط</div>
                       <div className="text-sm font-black text-amber-300">
-                        {w.khashna.intermediary} <span className="text-[10px] font-normal text-emerald-100">د.ج</span>
+                        {formatDisplayPrice(w.khashna.intermediary)}
                       </div>
                     </div>
                   </div>
@@ -430,13 +429,13 @@ export default function WilayaPriceBoard({
                             خشنة <span className="text-[10px] text-slate-500 font-normal">(&gt;2.3 كغ)</span>
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-emerald-800 text-sm">
-                            {w.khashna.farmer} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.khashna.farmer)}
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-indigo-800 text-sm">
-                            {w.khashna.slaughter} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.khashna.slaughter)}
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-amber-800 text-sm">
-                            {w.khashna.intermediary} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.khashna.intermediary)}
                           </td>
                         </tr>
                         {/* متوسطة */}
@@ -445,13 +444,13 @@ export default function WilayaPriceBoard({
                             متوسطة <span className="text-[10px] text-slate-500 font-normal">(1.6-2.3 كغ)</span>
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-emerald-800 text-sm">
-                            {w.motawassita.farmer} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.motawassita.farmer)}
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-indigo-800 text-sm">
-                            {w.motawassita.slaughter} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.motawassita.slaughter)}
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-amber-800 text-sm">
-                            {w.motawassita.intermediary} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.motawassita.intermediary)}
                           </td>
                         </tr>
                         {/* رقيقة */}
@@ -460,13 +459,13 @@ export default function WilayaPriceBoard({
                             رقيقة <span className="text-[10px] text-slate-500 font-normal">(&lt;1.6 كغ)</span>
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-emerald-800 text-sm">
-                            {w.raqiqa.farmer} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.raqiqa.farmer)}
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-indigo-800 text-sm">
-                            {w.raqiqa.slaughter} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.raqiqa.slaughter)}
                           </td>
                           <td className="py-2.5 px-3 border-r border-slate-200 font-black text-amber-800 text-sm">
-                            {w.raqiqa.intermediary} <span className="text-[10px] font-normal text-slate-500">د.ج</span>
+                            {formatDisplayPrice(w.raqiqa.intermediary)}
                           </td>
                         </tr>
                       </tbody>

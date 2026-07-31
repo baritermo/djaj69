@@ -36,13 +36,15 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
     setError('');
     try {
       const formattedCode = String(wilayaCode).padStart(2, '0');
+      const parseOptNum = (val: string) => (val === '' || val === null || val === undefined ? null : Number(val));
+
       const updates = [
         {
           wilayaCode: formattedCode,
           category: 'خشنة',
-          farmerPrice: Number(khashna_farmer),
-          slaughterPrice: Number(khashna_slaughter),
-          intermediaryPrice: Number(khashna_intermediary),
+          farmerPrice: parseOptNum(khashna_farmer),
+          slaughterPrice: parseOptNum(khashna_slaughter),
+          intermediaryPrice: parseOptNum(khashna_intermediary),
           trend,
           notesAr: notes,
           reportedBy: 'إدارة البورصة',
@@ -50,9 +52,9 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
         {
           wilayaCode: formattedCode,
           category: 'متوسطة',
-          farmerPrice: Number(motawassita_farmer),
-          slaughterPrice: Number(motawassita_slaughter),
-          intermediaryPrice: Number(motawassita_intermediary),
+          farmerPrice: parseOptNum(motawassita_farmer),
+          slaughterPrice: parseOptNum(motawassita_slaughter),
+          intermediaryPrice: parseOptNum(motawassita_intermediary),
           trend,
           notesAr: notes,
           reportedBy: 'إدارة البورصة',
@@ -60,9 +62,9 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
         {
           wilayaCode: formattedCode,
           category: 'رقيقة',
-          farmerPrice: Number(raqiqa_farmer),
-          slaughterPrice: Number(raqiqa_slaughter),
-          intermediaryPrice: Number(raqiqa_intermediary),
+          farmerPrice: parseOptNum(raqiqa_farmer),
+          slaughterPrice: parseOptNum(raqiqa_slaughter),
+          intermediaryPrice: parseOptNum(raqiqa_intermediary),
           trend,
           notesAr: notes,
           reportedBy: 'إدارة البورصة',
@@ -181,7 +183,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="khashna_farmer"
                       name="khashna_farmer"
                       type="number"
-                      required
+                      placeholder="--"
                       value={khashna_farmer}
                       onChange={(e) => setKhashnaFarmer(e.target.value)}
                       className="w-full px-2 py-1.5 border border-emerald-300 rounded-lg text-center font-black text-sm text-emerald-900"
@@ -192,7 +194,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="khashna_slaughter"
                       name="khashna_slaughter"
                       type="number"
-                      required
+                      placeholder="--"
                       value={khashna_slaughter}
                       onChange={(e) => setKhashnaSlaughter(e.target.value)}
                       className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
@@ -203,7 +205,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="khashna_intermediary"
                       name="khashna_intermediary"
                       type="number"
-                      required
+                      placeholder="--"
                       value={khashna_intermediary}
                       onChange={(e) => setKhashnaIntermediary(e.target.value)}
                       className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
@@ -219,7 +221,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="motawassita_farmer"
                       name="motawassita_farmer"
                       type="number"
-                      required
+                      placeholder="--"
                       value={motawassita_farmer}
                       onChange={(e) => setMotawassitaFarmer(e.target.value)}
                       className="w-full px-2 py-1.5 border border-emerald-300 rounded-lg text-center font-black text-sm text-emerald-900"
@@ -230,7 +232,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="motawassita_slaughter"
                       name="motawassita_slaughter"
                       type="number"
-                      required
+                      placeholder="--"
                       value={motawassita_slaughter}
                       onChange={(e) => setMotawassitaSlaughter(e.target.value)}
                       className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
@@ -241,7 +243,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="motawassita_intermediary"
                       name="motawassita_intermediary"
                       type="number"
-                      required
+                      placeholder="--"
                       value={motawassita_intermediary}
                       onChange={(e) => setMotawassitaIntermediary(e.target.value)}
                       className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
@@ -257,12 +259,35 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       id="raqiqa_farmer"
                       name="raqiqa_farmer"
                       type="number"
-                      required
+                      placeholder="--"
                       value={raqiqa_farmer}
                       onChange={(e) => setRaqiqaFarmer(e.target.value)}
                       className="w-full px-2 py-1.5 border border-emerald-300 rounded-lg text-center font-black text-sm text-emerald-900"
                     />
                   </td>
+                  <td className="py-2 px-2 border-r border-slate-200">
+                    <input
+                      id="raqiqa_slaughter"
+                      name="raqiqa_slaughter"
+                      type="number"
+                      placeholder="--"
+                      value={raqiqa_slaughter}
+                      onChange={(e) => setRaqiqaSlaughter(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
+                    />
+                  </td>
+                  <td className="py-2 px-2 border-r border-slate-200">
+                    <input
+                      id="raqiqa_intermediary"
+                      name="raqiqa_intermediary"
+                      type="number"
+                      placeholder="--"
+                      value={raqiqa_intermediary}
+                      onChange={(e) => setRaqiqaIntermediary(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
+                    />
+                  </td>
+                </tr>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
                       id="raqiqa_slaughter"
