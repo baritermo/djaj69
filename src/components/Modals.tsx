@@ -15,15 +15,9 @@ interface ModalProps {
 export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: ModalProps) {
   const [wilayaCode, setWilayaCode] = useState(defaultWilaya || '16');
   const [trend, setTrend] = useState('stable');
-  const [khashna_farmer, setKhashnaFarmer] = useState('');
-  const [khashna_slaughter, setKhashnaSlaughter] = useState('');
-  const [khashna_intermediary, setKhashnaIntermediary] = useState('');
-  const [motawassita_farmer, setMotawassitaFarmer] = useState('');
-  const [motawassita_slaughter, setMotawassitaSlaughter] = useState('');
-  const [motawassita_intermediary, setMotawassitaIntermediary] = useState('');
-  const [raqiqa_farmer, setRaqiqaFarmer] = useState('');
-  const [raqiqa_slaughter, setRaqiqaSlaughter] = useState('');
-  const [raqiqa_intermediary, setRaqiqaIntermediary] = useState('');
+  const [farmerPrice, setFarmerPrice] = useState('');
+  const [slaughterPrice, setSlaughterPrice] = useState('');
+  const [intermediaryPrice, setIntermediaryPrice] = useState('');
   const [notes, setNotes] = useState('التحديث اليومي لبورصة الجزائر');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,43 +32,20 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
       const formattedCode = String(wilayaCode).padStart(2, '0');
       const parseOptNum = (val: string) => (val === '' || val === null || val === undefined ? null : Number(val));
 
-      const updates = [
-        {
-          wilayaCode: formattedCode,
-          category: 'خشنة',
-          farmerPrice: parseOptNum(khashna_farmer),
-          slaughterPrice: parseOptNum(khashna_slaughter),
-          intermediaryPrice: parseOptNum(khashna_intermediary),
-          trend,
-          notesAr: notes,
-          reportedBy: 'إدارة البورصة',
-        },
-        {
-          wilayaCode: formattedCode,
-          category: 'متوسطة',
-          farmerPrice: parseOptNum(motawassita_farmer),
-          slaughterPrice: parseOptNum(motawassita_slaughter),
-          intermediaryPrice: parseOptNum(motawassita_intermediary),
-          trend,
-          notesAr: notes,
-          reportedBy: 'إدارة البورصة',
-        },
-        {
-          wilayaCode: formattedCode,
-          category: 'رقيقة',
-          farmerPrice: parseOptNum(raqiqa_farmer),
-          slaughterPrice: parseOptNum(raqiqa_slaughter),
-          intermediaryPrice: parseOptNum(raqiqa_intermediary),
-          trend,
-          notesAr: notes,
-          reportedBy: 'إدارة البورصة',
-        },
-      ];
+      const payload = {
+        wilayaCode: formattedCode,
+        farmerPrice: parseOptNum(farmerPrice),
+        slaughterPrice: parseOptNum(slaughterPrice),
+        intermediaryPrice: parseOptNum(intermediaryPrice),
+        trend,
+        notesAr: notes,
+        reportedBy: 'إدارة البورصة',
+      };
 
       const res = await fetch('/api/prices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.status === 'success') {
@@ -92,7 +63,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 text-right">
+      <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 text-right">
         <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-amber-400 text-emerald-950 rounded-xl shadow-xs">
@@ -103,7 +74,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                 🏛️ تحديث أسعار البورصة
               </h3>
               <p className="text-xs text-slate-500">
-                أدخل قيم الأسعار للفئات الثلاث لتحديث أسعار الولاية في البورصة فوراً
+                أدخل أسعار الولاية لمستويات التعامل الحية (فلاح / مذبح / وسيط)
               </p>
             </div>
           </div>
@@ -120,176 +91,66 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="price_wilaya_code" className="block text-slate-700 mb-1">اختر الولاية لتحديث أسعارها</label>
-              <select
-                id="price_wilaya_code"
-                name="wilayaCode"
-                value={wilayaCode}
-                onChange={(e) => setWilayaCode(e.target.value)}
-                className="w-full px-3 py-2 border border-emerald-600 font-black text-emerald-950 bg-emerald-50/50 rounded-xl"
-              >
-                {ALGERIA_WILAYAS.map((w) => (
-                  <option key={w.code} value={w.code}>
-                    {w.code} - ولاية {w.nameAr}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="price_trend" className="block text-slate-700 mb-1">مؤشر اتجاه السوق</label>
-              <select
-                id="price_trend"
-                name="trend"
-                value={trend}
-                onChange={(e) => setTrend(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 font-bold"
-              >
-                <option value="stable">⚖️ مستقر</option>
-                <option value="up">📈 ارتفاع الأسعار</option>
-                <option value="down">📉 انخفاض الأسعار</option>
-              </select>
-            </div>
+          <div>
+            <label htmlFor="price_wilaya_code" className="block text-slate-700 mb-1">اختر الولاية لتحديث أسعارها</label>
+            <select
+              id="price_wilaya_code"
+              name="wilayaCode"
+              value={wilayaCode}
+              onChange={(e) => setWilayaCode(e.target.value)}
+              className="w-full px-3.5 py-2.5 border border-emerald-600 font-black text-emerald-950 bg-emerald-50/50 rounded-xl text-sm"
+            >
+              {ALGERIA_WILAYAS.map((w) => (
+                <option key={w.code} value={w.code}>
+                  {w.code} - ولاية {w.nameAr} ({w.region})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* جدول الأسعار: الفئة × (فلاح / مذبح / وسيط) */}
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-            <div className="text-center text-sm font-black text-slate-800 mb-3 flex items-center justify-center gap-2">
-              <span>📊 أدخل أسعار الفئات لمستويات التعامل (د.ج / كغ):</span>
+          {/* 3 حقول مباشرة وأنيقة للأسعار: فلاح / مذبح / وسيط */}
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+            <div className="text-center text-xs font-black text-slate-800 mb-2 flex items-center justify-center gap-2">
+              <span>📊 أدخل أسعار التعامل للولاية (د.ج / كغ):</span>
             </div>
-            <table className="w-full text-center border-collapse">
-              <thead>
-                <tr className="bg-slate-200">
-                  <th className="py-2.5 px-3 font-black text-slate-700 rounded-tr-lg">الفئة</th>
-                  <th className="py-2.5 px-3 font-black text-emerald-800 bg-emerald-100 border-r border-slate-300">
-                    🌾 سعر الفلاح
-                  </th>
-                  <th className="py-2.5 px-3 font-black text-indigo-800 bg-indigo-100 border-r border-slate-300">
-                    🔪 سعر المذبح
-                  </th>
-                  <th className="py-2.5 px-3 font-black text-amber-800 bg-amber-100 border-r border-slate-300 rounded-tl-lg">
-                    🤝 سعر الوسيط (الكورتي)
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                <tr>
-                  <td className="py-2 px-2 font-black text-slate-900 bg-slate-100">
-                    خشنة <span className="text-[10px] text-slate-500 font-normal">(&gt;2.3 كغ)</span>
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="khashna_farmer"
-                      name="khashna_farmer"
-                      type="number"
-                      placeholder="--"
-                      value={khashna_farmer}
-                      onChange={(e) => setKhashnaFarmer(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-emerald-300 rounded-lg text-center font-black text-sm text-emerald-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="khashna_slaughter"
-                      name="khashna_slaughter"
-                      type="number"
-                      placeholder="--"
-                      value={khashna_slaughter}
-                      onChange={(e) => setKhashnaSlaughter(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="khashna_intermediary"
-                      name="khashna_intermediary"
-                      type="number"
-                      placeholder="--"
-                      value={khashna_intermediary}
-                      onChange={(e) => setKhashnaIntermediary(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-2 font-black text-slate-900 bg-slate-100">
-                    متوسطة <span className="text-[10px] text-slate-500 font-normal">(1.6-2.3 كغ)</span>
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="motawassita_farmer"
-                      name="motawassita_farmer"
-                      type="number"
-                      placeholder="--"
-                      value={motawassita_farmer}
-                      onChange={(e) => setMotawassitaFarmer(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-emerald-300 rounded-lg text-center font-black text-sm text-emerald-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="motawassita_slaughter"
-                      name="motawassita_slaughter"
-                      type="number"
-                      placeholder="--"
-                      value={motawassita_slaughter}
-                      onChange={(e) => setMotawassitaSlaughter(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="motawassita_intermediary"
-                      name="motawassita_intermediary"
-                      type="number"
-                      placeholder="--"
-                      value={motawassita_intermediary}
-                      onChange={(e) => setMotawassitaIntermediary(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-2 font-black text-slate-900 bg-slate-100">
-                    رقيقة <span className="text-[10px] text-slate-500 font-normal">(&lt;1.6 كغ)</span>
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="raqiqa_farmer"
-                      name="raqiqa_farmer"
-                      type="number"
-                      placeholder="--"
-                      value={raqiqa_farmer}
-                      onChange={(e) => setRaqiqaFarmer(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-emerald-300 rounded-lg text-center font-black text-sm text-emerald-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="raqiqa_slaughter"
-                      name="raqiqa_slaughter"
-                      type="number"
-                      placeholder="--"
-                      value={raqiqa_slaughter}
-                      onChange={(e) => setRaqiqaSlaughter(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="raqiqa_intermediary"
-                      name="raqiqa_intermediary"
-                      type="number"
-                      placeholder="--"
-                      value={raqiqa_intermediary}
-                      onChange={(e) => setRaqiqaIntermediary(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="farmer_price" className="block text-emerald-900 font-extrabold mb-1">🌾 سعر الفلاح</label>
+                <input
+                  id="farmer_price"
+                  name="farmerPrice"
+                  type="number"
+                  placeholder="مثال: 320"
+                  value={farmerPrice}
+                  onChange={(e) => setFarmerPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-emerald-300 rounded-xl text-center font-black text-sm text-emerald-950 bg-white"
+                />
+              </div>
+              <div>
+                <label htmlFor="slaughter_price" className="block text-indigo-900 font-extrabold mb-1">🔪 سعر المذبح</label>
+                <input
+                  id="slaughter_price"
+                  name="slaughterPrice"
+                  type="number"
+                  placeholder="مثال: 310"
+                  value={slaughterPrice}
+                  onChange={(e) => setSlaughterPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-indigo-300 rounded-xl text-center font-black text-sm text-indigo-950 bg-white"
+                />
+              </div>
+              <div>
+                <label htmlFor="intermediary_price" className="block text-amber-900 font-extrabold mb-1">🤝 سعر الوسيط</label>
+                <input
+                  id="intermediary_price"
+                  name="intermediaryPrice"
+                  type="number"
+                  placeholder="مثال: 330"
+                  value={intermediaryPrice}
+                  onChange={(e) => setIntermediaryPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-amber-300 rounded-xl text-center font-black text-sm text-amber-950 bg-white"
+                />
+              </div>
+            </div>
           </div>
 
           <div>

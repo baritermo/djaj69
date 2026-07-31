@@ -83,63 +83,74 @@ export async function POST(request: Request) {
       return Math.round(Number(val));
     };
 
+    const targetWilayaCode = String((Array.isArray(body) ? body[0]?.wilayaCode : body.wilayaCode) || '16').padStart(2, '0');
+    const trend = (Array.isArray(body) ? body[0]?.trend : body.trend) || 'stable';
+
+    let farmerPrice: number | null = null;
+    let slaughterPrice: number | null = null;
+    let intermediaryPrice: number | null = null;
+
     if (Array.isArray(body)) {
-      const firstItem = body[0] || {};
-      const targetWilayaCode = String(firstItem.wilayaCode || '16').padStart(2, '0');
-      const trend = firstItem.trend || 'stable';
+      const fItem = body.find((b: any) => b.farmerPrice !== null && b.farmerPrice !== undefined);
+      const sItem = body.find((b: any) => b.slaughterPrice !== null && b.slaughterPrice !== undefined);
+      const iItem = body.find((b: any) => b.intermediaryPrice !== null && b.intermediaryPrice !== undefined);
 
-      const khashnaItem = body.find((b: any) => b.category === 'خشنة') || {};
-      const motawassitaItem = body.find((b: any) => b.category === 'متوسطة') || {};
-      const raqiqaItem = body.find((b: any) => b.category === 'رقيقة') || {};
-
-      const khashnaFarmer = parsePrice(khashnaItem.farmerPrice);
-      const khashnaSlaughter = parsePrice(khashnaItem.slaughterPrice);
-      const khashnaIntermediary = parsePrice(khashnaItem.intermediaryPrice);
-
-      const motawassitaFarmer = parsePrice(motawassitaItem.farmerPrice);
-      const motawassitaSlaughter = parsePrice(motawassitaItem.slaughterPrice);
-      const motawassitaIntermediary = parsePrice(motawassitaItem.intermediaryPrice);
-
-      const raqiqaFarmer = parsePrice(raqiqaItem.farmerPrice);
-      const raqiqaSlaughter = parsePrice(raqiqaItem.slaughterPrice);
-      const raqiqaIntermediary = parsePrice(raqiqaItem.intermediaryPrice);
-
-      // Fast direct UPDATE query on the 58 fixed wilayas table
-      await db
-        .update(officialPrices)
-        .set({
-          khashnaFarmer,
-          khashnaSlaughter,
-          khashnaIntermediary,
-          motawassitaFarmer,
-          motawassitaSlaughter,
-          motawassitaIntermediary,
-          raqiqaFarmer,
-          raqiqaSlaughter,
-          raqiqaIntermediary,
-          trend,
-          updatedAt: new Date(),
-        })
-        .where(eq(officialPrices.wilayaCode, targetWilayaCode));
-
-      return NextResponse.json({ status: 'success', wilayaCode: targetWilayaCode });
+      farmerPrice = parsePrice(fItem?.farmerPrice);
+      slaughterPrice = parsePrice(sItem?.slaughterPrice);
+      intermediaryPrice = parsePrice(iItem?.intermediaryPrice);
+    } else {
+      farmerPrice = parsePrice(body.farmerPrice);
+      slaughterPrice = parsePrice(body.slaughterPrice);
+      intermediaryPrice = parsePrice(body.intermediaryPrice);
     }
 
-    const targetWilayaCode = String(body.wilayaCode || '16').padStart(2, '0');
-    const farmerPrice = sanitizeInt(body.farmerPrice, 300);
+    // Query existing row to compute automatic trend comparison
+    const [existingRow] = await db
+      .select()
+      .from(officialPrices)
+      .where(eq(officialPrices.wilayaCode, targetWilayaCode))
+      .limit(1);
+
+    let calculatedTrend = existingRow?.trend || 'stable';
+    let calculatedPercent = existingRow?.trendPercent || '0.0%';
+
+    const oldPrice = existingRow?.motawassitaFarmer ?? existingRow?.khashnaFarmer;
+    const newPrice = farmerPrice !== null ? farmerPrice : (slaughterPrice !== null ? slaughterPrice : intermediaryPrice);
+
+    if (oldPrice && newPrice && oldPrice > 0) {
+      const diff = newPrice - oldPrice;
+      const pct = Math.abs((diff / oldPrice) * 100);
+      if (diff > 0) {
+        calculatedTrend = 'up';
+        calculatedPercent = `+${pct.toFixed(1)}%`;
+      } else if (diff < 0) {
+        calculatedTrend = 'down';
+        calculatedPercent = `-${pct.toFixed(1)}%`;
+      } else {
+        calculatedTrend = 'stable';
+        calculatedPercent = '0.0%';
+      }
+    }
 
     await db
       .update(officialPrices)
       .set({
+        khashnaFarmer: farmerPrice,
+        khashnaSlaughter: slaughterPrice,
+        khashnaIntermediary: intermediaryPrice,
         motawassitaFarmer: farmerPrice,
-        motawassitaSlaughter: body.slaughterPrice !== undefined ? sanitizeInt(body.slaughterPrice, farmerPrice - 10) : farmerPrice - 10,
-        motawassitaIntermediary: body.intermediaryPrice !== undefined ? sanitizeInt(body.intermediaryPrice, farmerPrice + 10) : farmerPrice + 10,
-        trend: body.trend || 'stable',
+        motawassitaSlaughter: slaughterPrice,
+        motawassitaIntermediary: intermediaryPrice,
+        raqiqaFarmer: farmerPrice,
+        raqiqaSlaughter: slaughterPrice,
+        raqiqaIntermediary: intermediaryPrice,
+        trend: calculatedTrend,
+        trendPercent: calculatedPercent,
         updatedAt: new Date(),
       })
       .where(eq(officialPrices.wilayaCode, targetWilayaCode));
 
-    return NextResponse.json({ status: 'success', wilayaCode: targetWilayaCode });
+    return NextResponse.json({ status: 'success', wilayaCode: targetWilayaCode, trend: calculatedTrend, trendPercent: calculatedPercent });
   } catch (error: any) {
     console.error('Error updating official price:', error);
     return NextResponse.json(
