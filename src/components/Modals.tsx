@@ -196,6 +196,7 @@ export function JobPostModal({ isOpen, onClose, onSuccess }: ModalProps) {
   const [housingProvided, setHousingProvided] = useState(true);
   const [requirements, setRequirements] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [showPhone, setShowPhone] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -203,8 +204,9 @@ export function JobPostModal({ isOpen, onClose, onSuccess }: ModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('');
+    const finalPhone = showPhone ? contactPhone : '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
     try {
-      const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titleAr, companyName, companyType, wilayaCode, commune, jobType, salaryRange, housingProvided, requirements, contactPhone }) });
+      const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titleAr, companyName, companyType, wilayaCode, commune, jobType, salaryRange, housingProvided, requirements, contactPhone: finalPhone }) });
       const data = await res.json();
       if (data.status === 'success') { onSuccess(); onClose(); } else setError(data.message || 'خطأ');
     } catch { setError('خطأ في الاتصال'); } finally { setLoading(false); }
@@ -234,7 +236,16 @@ export function JobPostModal({ isOpen, onClose, onSuccess }: ModalProps) {
           </div>
           <div className="flex items-center gap-2"><input type="checkbox" id="housing2" name="housingProvided" checked={housingProvided} onChange={(e) => setHousingProvided(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" /><label htmlFor="housing2" className="text-xs text-emerald-900 font-extrabold">✔ نوفر المبيت والإعاشة</label></div>
           <div><label htmlFor="job_requirements" className="block text-slate-700 mb-1">المهام والشروط</label><textarea id="job_requirements" name="requirements" rows={2} required value={requirements} onChange={(e) => setRequirements(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
-          <div><label htmlFor="job_contact_phone" className="block text-slate-700 mb-1">هاتف التواصل</label><input id="job_contact_phone" name="contactPhone" type="text" required value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div>
+            <label htmlFor="job_contact_phone" className="block text-slate-700 mb-1">هاتف التواصل</label>
+            <input id="job_contact_phone" name="contactPhone" type="text" required={showPhone} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="0550..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+            <div className="flex items-center gap-2 mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+              <input type="checkbox" id="show_phone_job" checked={showPhone} onChange={(e) => setShowPhone(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded cursor-pointer" />
+              <label htmlFor="show_phone_job" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                {showPhone ? '👁️ إظهار رقم الهاتف للعملاء' : '🙈 إخفاء رقم الهاتف (الهاتف مخفي)'}
+              </label>
+            </div>
+          </div>
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200"><button type="button" onClick={onClose} className="px-4 py-2 text-slate-600">إلغاء</button><button type="submit" disabled={loading} className="px-6 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold rounded-xl shadow-lg">{loading ? 'جاري...' : 'نشر عرض العمل'}</button></div>
         </form>
       </div>
@@ -250,6 +261,7 @@ export function WorkerRegisterModal({ isOpen, onClose, onSuccess }: ModalProps) 
   const [experienceYears, setExperienceYears] = useState(3);
   const [willingToRelocate, setWillingToRelocate] = useState(true);
   const [phone, setPhone] = useState('');
+  const [showPhone, setShowPhone] = useState(true);
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -258,8 +270,9 @@ export function WorkerRegisterModal({ isOpen, onClose, onSuccess }: ModalProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('');
+    const finalPhone = showPhone ? phone : '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
     try {
-      const res = await fetch('/api/workers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, specialty, wilayaCode, experienceYears, willingToRelocate, phone, bio }) });
+      const res = await fetch('/api/workers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, specialty, wilayaCode, experienceYears, willingToRelocate, phone: finalPhone, bio }) });
       const data = await res.json();
       if (data.status === 'success') { onSuccess(); onClose(); } else setError(data.message || 'خطأ');
     } catch { setError('خطأ في الاتصال'); } finally { setLoading(false); }
@@ -283,7 +296,16 @@ export function WorkerRegisterModal({ isOpen, onClose, onSuccess }: ModalProps) 
             <div><label htmlFor="worker_experience_years" className="block text-slate-700 mb-1">سنوات الخبرة</label><input id="worker_experience_years" name="experienceYears" type="number" value={experienceYears} onChange={(e) => setExperienceYears(Number(e.target.value))} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           </div>
           <div className="flex items-center gap-2"><input type="checkbox" id="relocate2" name="willingToRelocate" checked={willingToRelocate} onChange={(e) => setWillingToRelocate(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" /><label htmlFor="relocate2" className="text-xs text-emerald-900 font-extrabold">✔ أقبل العمل في ولايات أخرى</label></div>
-          <div><label htmlFor="worker_phone" className="block text-slate-700 mb-1">رقم الهاتف</label><input id="worker_phone" name="phone" type="text" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div>
+            <label htmlFor="worker_phone" className="block text-slate-700 mb-1">رقم الهاتف</label>
+            <input id="worker_phone" name="phone" type="text" required={showPhone} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0550..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+            <div className="flex items-center gap-2 mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+              <input type="checkbox" id="show_phone_worker" checked={showPhone} onChange={(e) => setShowPhone(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded cursor-pointer" />
+              <label htmlFor="show_phone_worker" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                {showPhone ? '👁️ إظهار رقم الهاتف لأصحاب المزارع' : '🙈 إخفاء رقم الهاتف (الهاتف مخفي)'}
+              </label>
+            </div>
+          </div>
           <div><label htmlFor="worker_bio" className="block text-slate-700 mb-1">نبذة عن الخبرات</label><textarea id="worker_bio" name="bio" rows={2} required value={bio} onChange={(e) => setBio(e.target.value)} placeholder="خبرة 5 سنوات في المزارع والتدفئة..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200"><button type="button" onClick={onClose} className="px-4 py-2 text-slate-600">إلغاء</button><button type="submit" disabled={loading} className="px-6 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-lg">{loading ? 'جاري...' : 'تسجيل'}</button></div>
         </form>
@@ -303,6 +325,7 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
   const [wilayaCode, setWilayaCode] = useState('16');
   const [commune, setCommune] = useState('');
   const [phone, setPhone] = useState('');
+  const [showPhone, setShowPhone] = useState(true);
   // Farmer fields
   const [chickenCategories, setChickenCategories] = useState('متوسطة');
   const [weightRange, setWeightRange] = useState('');
@@ -330,8 +353,9 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
     event.preventDefault();
     setLoading(true);
     setError('');
+    const finalPhone = showPhone ? phone : '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
     try {
-      const body: Record<string, any> = { offerType, name, wilayaCode, commune, phone };
+      const body: Record<string, any> = { offerType, name, wilayaCode, commune, phone: finalPhone };
       if (isFarmer) {
         body.chickenCategories = chickenCategories;
         body.weightRange = weightRange;
@@ -374,7 +398,16 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
         <form onSubmit={handleSubmit} className="space-y-3 text-xs font-bold">
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-slate-700 mb-1">الاسم</label><input required value={name} onChange={(e) => setName(e.target.value)} placeholder={isFarmer ? 'اسم المزرعة' : 'اسم المذبح / الشركة'} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
-            <div><label className="block text-slate-700 mb-1">رقم الهاتف</label><input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0550..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+            <div>
+              <label className="block text-slate-700 mb-1">رقم الهاتف</label>
+              <input required={showPhone} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0550..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+              <div className="flex items-center gap-2 mt-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer">
+                <input type="checkbox" id="show_phone_offer" checked={showPhone} onChange={(e) => setShowPhone(e.target.checked)} className="w-3.5 h-3.5 text-emerald-600 rounded cursor-pointer" />
+                <label htmlFor="show_phone_offer" className="text-[11px] font-bold text-slate-800 cursor-pointer select-none">
+                  {showPhone ? '👁️ إظهار رقم الهاتف' : '🙈 إخفاء رقم الهاتف'}
+                </label>
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-slate-700 mb-1">الولاية</label><select value={wilayaCode} onChange={(e) => setWilayaCode(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl">{ALGERIA_WILAYAS.map((w) => <option key={w.code} value={w.code}>{w.code} — {w.nameAr}</option>)}</select></div>
@@ -447,6 +480,7 @@ export function CompanyRegisterModal({ isOpen, onClose, onSuccess }: ModalProps)
   const [wilayaCode, setWilayaCode] = useState('16');
   const [commune, setCommune] = useState('');
   const [phone, setPhone] = useState('');
+  const [showPhone, setShowPhone] = useState(true);
   const [capacity, setCapacity] = useState('');
   const [certifications, setCertifications] = useState('');
   const [loading, setLoading] = useState(false);
@@ -532,6 +566,8 @@ export function CompanyRegisterModal({ isOpen, onClose, onSuccess }: ModalProps)
       finalCapacity = validVets.map((v) => `${v.typeName}: ${v.price || 'عند الاتصال'}`).join(' | ');
     }
 
+    const finalPhone = showPhone ? phone : '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
+
     try {
       const res = await fetch('/api/companies', {
         method: 'POST',
@@ -542,7 +578,7 @@ export function CompanyRegisterModal({ isOpen, onClose, onSuccess }: ModalProps)
           type,
           wilayaCode,
           commune,
-          phone,
+          phone: finalPhone,
           capacity: finalCapacity,
           certifications,
         }),
@@ -648,12 +684,18 @@ export function CompanyRegisterModal({ isOpen, onClose, onSuccess }: ModalProps)
               <label className="block text-slate-700 mb-1">رقم الهاتف للتواصل</label>
               <input
                 type="text"
-                required
+                required={showPhone}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl"
                 placeholder="0550..."
               />
+              <div className="flex items-center gap-2 mt-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer">
+                <input type="checkbox" id="show_phone_company" checked={showPhone} onChange={(e) => setShowPhone(e.target.checked)} className="w-3.5 h-3.5 text-emerald-600 rounded cursor-pointer" />
+                <label htmlFor="show_phone_company" className="text-[11px] font-bold text-slate-800 cursor-pointer select-none">
+                  {showPhone ? '👁️ إظهار رقم الهاتف' : '🙈 إخفاء رقم الهاتف'}
+                </label>
+              </div>
             </div>
           </div>
 
