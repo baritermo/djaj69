@@ -15,15 +15,15 @@ interface ModalProps {
 export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: ModalProps) {
   const [wilayaCode, setWilayaCode] = useState(defaultWilaya || '16');
   const [trend, setTrend] = useState('stable');
-  const [khashna_farmer, setKhashnaFarmer] = useState('325');
-  const [khashna_slaughter, setKhashnaSlaughter] = useState('315');
-  const [khashna_intermediary, setKhashnaIntermediary] = useState('335');
-  const [motawassita_farmer, setMotawassitaFarmer] = useState('310');
-  const [motawassita_slaughter, setMotawassitaSlaughter] = useState('300');
-  const [motawassita_intermediary, setMotawassitaIntermediary] = useState('320');
-  const [raqiqa_farmer, setRaqiqaFarmer] = useState('295');
-  const [raqiqa_slaughter, setRaqiqaSlaughter] = useState('285');
-  const [raqiqa_intermediary, setRaqiqaIntermediary] = useState('305');
+  const [khashna_farmer, setKhashnaFarmer] = useState('');
+  const [khashna_slaughter, setKhashnaSlaughter] = useState('');
+  const [khashna_intermediary, setKhashnaIntermediary] = useState('');
+  const [motawassita_farmer, setMotawassitaFarmer] = useState('');
+  const [motawassita_slaughter, setMotawassitaSlaughter] = useState('');
+  const [motawassita_intermediary, setMotawassitaIntermediary] = useState('');
+  const [raqiqa_farmer, setRaqiqaFarmer] = useState('');
+  const [raqiqa_slaughter, setRaqiqaSlaughter] = useState('');
+  const [raqiqa_intermediary, setRaqiqaIntermediary] = useState('');
   const [notes, setNotes] = useState('التحديث اليومي لبورصة الجزائر');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -282,29 +282,6 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                       name="raqiqa_intermediary"
                       type="number"
                       placeholder="--"
-                      value={raqiqa_intermediary}
-                      onChange={(e) => setRaqiqaIntermediary(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
-                    />
-                  </td>
-                </tr>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="raqiqa_slaughter"
-                      name="raqiqa_slaughter"
-                      type="number"
-                      required
-                      value={raqiqa_slaughter}
-                      onChange={(e) => setRaqiqaSlaughter(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-indigo-300 rounded-lg text-center font-black text-sm text-indigo-900"
-                    />
-                  </td>
-                  <td className="py-2 px-2 border-r border-slate-200">
-                    <input
-                      id="raqiqa_intermediary"
-                      name="raqiqa_intermediary"
-                      type="number"
-                      required
                       value={raqiqa_intermediary}
                       onChange={(e) => setRaqiqaIntermediary(e.target.value)}
                       className="w-full px-2 py-1.5 border border-amber-300 rounded-lg text-center font-black text-sm text-amber-900"
