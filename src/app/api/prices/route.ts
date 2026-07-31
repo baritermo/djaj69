@@ -14,20 +14,29 @@ async function ensureTables() {
         "region" text NOT NULL,
         "trend" text DEFAULT 'stable' NOT NULL,
         "trend_percent" text DEFAULT '0%',
-        "khashna_farmer" integer DEFAULT 300 NOT NULL,
-        "khashna_slaughter" integer DEFAULT 290 NOT NULL,
-        "khashna_intermediary" integer DEFAULT 310 NOT NULL,
-        "motawassita_farmer" integer DEFAULT 290 NOT NULL,
-        "motawassita_slaughter" integer DEFAULT 280 NOT NULL,
-        "motawassita_intermediary" integer DEFAULT 300 NOT NULL,
-        "raqiqa_farmer" integer DEFAULT 280 NOT NULL,
-        "raqiqa_slaughter" integer DEFAULT 270 NOT NULL,
-        "raqiqa_intermediary" integer DEFAULT 290 NOT NULL,
+        "khashna_farmer" integer,
+        "khashna_slaughter" integer,
+        "khashna_intermediary" integer,
+        "motawassita_farmer" integer,
+        "motawassita_slaughter" integer,
+        "motawassita_intermediary" integer,
+        "raqiqa_farmer" integer,
+        "raqiqa_slaughter" integer,
+        "raqiqa_intermediary" integer,
         "updated_at" timestamp DEFAULT now()
       );
+      ALTER TABLE "official_prices" ALTER COLUMN "khashna_farmer" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "khashna_slaughter" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "khashna_intermediary" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_farmer" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_slaughter" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_intermediary" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_farmer" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_slaughter" DROP NOT NULL;
+      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_intermediary" DROP NOT NULL;
     `);
   } catch (e) {
-    // Ignore if table already exists
+    // Ignore if already altered
   }
 }
 
