@@ -52,6 +52,29 @@ export const poultryPrices = pgTable('poultry_prices', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// 2b. Fixed Official Prices Table for 58 Wilayas (Admin Direct UPDATE)
+export const officialPrices = pgTable('official_prices', {
+  wilayaCode: text('wilaya_code').primaryKey(),
+  nameAr: text('name_ar').notNull(),
+  nameFr: text('name_fr').notNull(),
+  region: text('region').notNull(),
+  trend: text('trend').notNull().default('stable'),
+  trendPercent: text('trend_percent').default('0%'),
+  // خشنة
+  khashnaFarmer: integer('khashna_farmer').notNull().default(300),
+  khashnaSlaughter: integer('khashna_slaughter').notNull().default(290),
+  khashnaIntermediary: integer('khashna_intermediary').notNull().default(310),
+  // متوسطة
+  motawassitaFarmer: integer('motawassita_farmer').notNull().default(290),
+  motawassitaSlaughter: integer('motawassita_slaughter').notNull().default(280),
+  motawassitaIntermediary: integer('motawassita_intermediary').notNull().default(300),
+  // رقيقة
+  raqiqaFarmer: integer('raqiqa_farmer').notNull().default(280),
+  raqiqaSlaughter: integer('raqiqa_slaughter').notNull().default(270),
+  raqiqaIntermediary: integer('raqiqa_intermediary').notNull().default(290),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // 3. Community price reports
 export const priceReports = pgTable('price_reports', {
   id: serial('id').primaryKey(),

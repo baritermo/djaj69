@@ -54,16 +54,12 @@ export default function WilayaPriceBoard({
     { id: 'الجنوب', label: 'الجنوب' },
   ];
 
-  // Build a map of DB prices by wilayaCode+category (newest price per category preserved)
-  const dbPriceMap = useMemo(() => {
+  const officialMap = useMemo(() => {
     const map: Record<string, any> = {};
     for (const p of pricesList) {
-      if (!p || !p.wilayaCode || !p.category) continue;
-      const formattedCode = String(p.wilayaCode).padStart(2, '0');
-      const key = `${formattedCode}_${p.category}`;
-      if (!map[key]) {
-        map[key] = p;
-      }
+      if (!p || !p.wilayaCode) continue;
+      const code = String(p.wilayaCode).padStart(2, '0');
+      map[code] = p;
     }
     return map;
   }, [pricesList]);
@@ -71,9 +67,42 @@ export default function WilayaPriceBoard({
   // Build wilaya data with prices from DB or fallback
   const wilayaDataWithPrices = useMemo(() => {
     return ALGERIA_WILAYAS.map((wilaya) => {
-      const dbKhashna = dbPriceMap[`${wilaya.code}_خشنة`];
-      const dbMotawassita = dbPriceMap[`${wilaya.code}_متوسطة`];
-      const dbRaqiqa = dbPriceMap[`${wilaya.code}_رقيقة`];
+      const dbOfficial = officialMap[wilaya.code];
+
+      if (dbOfficial && dbOfficial.khashnaFarmer !== undefined) {
+        const khashna = {
+          farmer: dbOfficial.khashnaFarmer,
+          slaughter: dbOfficial.khashnaSlaughter,
+          intermediary: dbOfficial.khashnaIntermediary,
+        };
+        const motawassita = {
+          farmer: dbOfficial.motawassitaFarmer,
+          slaughter: dbOfficial.motawassitaSlaughter,
+          intermediary: dbOfficial.motawassitaIntermediary,
+        };
+        const raqiqa = {
+          farmer: dbOfficial.raqiqaFarmer,
+          slaughter: dbOfficial.raqiqaSlaughter,
+          intermediary: dbOfficial.raqiqaIntermediary,
+        };
+
+        const trend = dbOfficial.trend || wilaya.trend;
+        const trendPercent = dbOfficial.trendPercent || wilaya.trendPercent;
+
+        return {
+          ...wilaya,
+          khashna,
+          motawassita,
+          raqiqa,
+          trend,
+          trendPercent,
+          avgPrice: Math.round((khashna.farmer + motawassita.farmer + raqiqa.farmer) / 3),
+        };
+      }
+
+      const dbKhashna = pricesList.find((p) => String(p.wilayaCode).padStart(2, '0') === wilaya.code && p.category === 'خشنة');
+      const dbMotawassita = pricesList.find((p) => String(p.wilayaCode).padStart(2, '0') === wilaya.code && p.category === 'متوسطة');
+      const dbRaqiqa = pricesList.find((p) => String(p.wilayaCode).padStart(2, '0') === wilaya.code && p.category === 'رقيقة');
 
       const khashna = {
         farmer: dbKhashna?.farmerPrice ?? wilaya.khashna_farmer,
@@ -104,7 +133,7 @@ export default function WilayaPriceBoard({
         avgPrice: Math.round((khashna.farmer + motawassita.farmer + raqiqa.farmer) / 3),
       };
     });
-  }, [dbPriceMap]);
+  }, [officialMap, pricesList]);
 
   // Filter and sort
   const filteredWilayas = useMemo(() => {

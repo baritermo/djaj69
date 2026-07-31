@@ -1,90 +1,52 @@
 import { NextResponse } from 'next/server';
 import { pool, db } from '@/db/index';
-import { poultryPrices, wilayas } from '@/db/schema';
-import { desc, eq, and } from 'drizzle-orm';
+import { poultryPrices, wilayas, officialPrices } from '@/db/schema';
+import { desc, eq } from 'drizzle-orm';
 import { seedDatabase } from '@/db/seed';
 
-async function resyncSequence() {
+async function ensureTables() {
   try {
-    await pool.query(`SELECT setval(pg_get_serial_sequence('poultry_prices', 'id'), COALESCE(max(id), 1)) FROM poultry_prices;`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "official_prices" (
+        "wilaya_code" text PRIMARY KEY NOT NULL,
+        "name_ar" text NOT NULL,
+        "name_fr" text NOT NULL,
+        "region" text NOT NULL,
+        "trend" text DEFAULT 'stable' NOT NULL,
+        "trend_percent" text DEFAULT '0%',
+        "khashna_farmer" integer DEFAULT 300 NOT NULL,
+        "khashna_slaughter" integer DEFAULT 290 NOT NULL,
+        "khashna_intermediary" integer DEFAULT 310 NOT NULL,
+        "motawassita_farmer" integer DEFAULT 290 NOT NULL,
+        "motawassita_slaughter" integer DEFAULT 280 NOT NULL,
+        "motawassita_intermediary" integer DEFAULT 300 NOT NULL,
+        "raqiqa_farmer" integer DEFAULT 280 NOT NULL,
+        "raqiqa_slaughter" integer DEFAULT 270 NOT NULL,
+        "raqiqa_intermediary" integer DEFAULT 290 NOT NULL,
+        "updated_at" timestamp DEFAULT now()
+      );
+    `);
   } catch (e) {
-    // Ignore if sequence query fails
+    // Ignore if table already exists
   }
 }
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const wilayaCode = searchParams.get('wilayaCode');
-    const category = searchParams.get('category');
-    const limit = parseInt(searchParams.get('limit') || '500');
-
-    let allWilayas: any[] = [];
-    try {
-      allWilayas = await db.select().from(wilayas);
-      if (allWilayas.length === 0) {
-        await seedDatabase();
-        allWilayas = await db.select().from(wilayas);
-      }
-    } catch (e: any) {
-      console.warn('Wilayas table mismatch, self-healing...', e.message);
-      try {
-        await pool.query(`
-          DROP TABLE IF EXISTS "wilayas" CASCADE;
-          CREATE TABLE IF NOT EXISTS "wilayas" (
-            "id" serial PRIMARY KEY NOT NULL,
-            "code" text NOT NULL UNIQUE,
-            "name_ar" text NOT NULL,
-            "name_fr" text NOT NULL,
-            "region" text NOT NULL,
-            "active_farms_count" integer DEFAULT 0,
-            "slaughterhouses_count" integer DEFAULT 0
-          );
-        `);
-        await seedDatabase();
-        allWilayas = await db.select().from(wilayas);
-      } catch (err) {
-        console.error('Self-healing failed:', err);
-        allWilayas = [];
-      }
+    await ensureTables();
+    let officialList = await db.select().from(officialPrices);
+    if (officialList.length === 0) {
+      await seedDatabase();
+      officialList = await db.select().from(officialPrices);
     }
 
-    let conditions = [];
-    if (wilayaCode && wilayaCode !== 'all') {
-      conditions.push(eq(poultryPrices.wilayaCode, wilayaCode));
-    }
-    if (category && category !== 'all') {
-      conditions.push(eq(poultryPrices.category, category));
-    }
-
-    const prices = conditions.length > 0
-      ? await db
-          .select()
-          .from(poultryPrices)
-          .where(and(...conditions))
-          .orderBy(desc(poultryPrices.date), desc(poultryPrices.id))
-          .limit(limit)
-      : await db
-          .select()
-          .from(poultryPrices)
-          .orderBy(desc(poultryPrices.date), desc(poultryPrices.id))
-          .limit(limit);
-
-    const enrichedPrices = prices.map((item) => {
-      const wilaya = allWilayas.find((w) => w.code === item.wilayaCode);
-      return {
-        ...item,
-        wilayaNameAr: wilaya?.nameAr || `ولاية ${item.wilayaCode}`,
-        wilayaNameFr: wilaya?.nameFr || item.wilayaCode,
-        region: wilaya?.region || 'الجزائر',
-      };
-    });
+    const historicalPrices = await db.select().from(poultryPrices).orderBy(desc(poultryPrices.id)).limit(300);
 
     return NextResponse.json({
       status: 'success',
-      count: enrichedPrices.length,
-      wilayas: allWilayas,
-      prices: enrichedPrices,
+      officialPrices: officialList,
+      prices: historicalPrices,
+      count: officialList.length,
     });
   } catch (error: any) {
     console.error('Error fetching prices:', error);
@@ -97,6 +59,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await ensureTables();
     const body = await request.json();
 
     const sanitizeInt = (val: any, fallback = 0) => {
@@ -104,116 +67,67 @@ export async function POST(request: Request) {
       return isNaN(num) ? fallback : Math.round(num);
     };
 
-    // Auto-resync sequence before bulk or single inserts to guarantee valid auto-increment ID
-    await resyncSequence();
-
-    // If body is an array of price updates
     if (Array.isArray(body)) {
-      const insertedList = [];
-      for (const item of body) {
-        const today = item.date || new Date().toISOString().split('T')[0];
-        try {
-          const [inserted] = await db
-            .insert(poultryPrices)
-            .values({
-              wilayaCode: String(item.wilayaCode),
-              date: today,
-              category: item.category || 'متوسطة',
-              farmerPrice: sanitizeInt(item.farmerPrice, 0),
-              slaughterPrice: sanitizeInt(item.slaughterPrice, 0),
-              intermediaryPrice: sanitizeInt(item.intermediaryPrice, 0),
-              trend: item.trend || 'stable',
-              trendChangePercent: String(item.trendChangePercent || '0%'),
-              notesAr: item.notesAr || 'تحديث من إدارة المنصة',
-              reportedBy: item.reportedBy || 'إدارة المنصة (صاحب الموقع)',
-              status: item.status || 'official',
-            })
-            .returning();
-          insertedList.push(inserted);
-        } catch (err: any) {
-          // If duplicate key error occurs, resync sequence and retry once
-          if (err.code === '23505' || String(err.message).includes('unique constraint')) {
-            await resyncSequence();
-            const [retryInserted] = await db
-              .insert(poultryPrices)
-              .values({
-                wilayaCode: String(item.wilayaCode),
-                date: today,
-                category: item.category || 'متوسطة',
-                farmerPrice: sanitizeInt(item.farmerPrice, 0),
-                slaughterPrice: sanitizeInt(item.slaughterPrice, 0),
-                intermediaryPrice: sanitizeInt(item.intermediaryPrice, 0),
-                trend: item.trend || 'stable',
-                trendChangePercent: String(item.trendChangePercent || '0%'),
-                notesAr: item.notesAr || 'تحديث من إدارة المنصة',
-                reportedBy: item.reportedBy || 'إدارة المنصة (صاحب الموقع)',
-                status: item.status || 'official',
-              })
-              .returning();
-            insertedList.push(retryInserted);
-          } else {
-            throw err;
-          }
-        }
-      }
-      return NextResponse.json({ status: 'success', count: insertedList.length, prices: insertedList });
+      const firstItem = body[0] || {};
+      const targetWilayaCode = String(firstItem.wilayaCode || '16').padStart(2, '0');
+      const trend = firstItem.trend || 'stable';
+
+      const khashnaItem = body.find((b: any) => b.category === 'خشنة') || {};
+      const motawassitaItem = body.find((b: any) => b.category === 'متوسطة') || {};
+      const raqiqaItem = body.find((b: any) => b.category === 'رقيقة') || {};
+
+      const khashnaFarmer = sanitizeInt(khashnaItem.farmerPrice, 320);
+      const khashnaSlaughter = sanitizeInt(khashnaItem.slaughterPrice, 310);
+      const khashnaIntermediary = sanitizeInt(khashnaItem.intermediaryPrice, 330);
+
+      const motawassitaFarmer = sanitizeInt(motawassitaItem.farmerPrice, 300);
+      const motawassitaSlaughter = sanitizeInt(motawassitaItem.slaughterPrice, 290);
+      const motawassitaIntermediary = sanitizeInt(motawassitaItem.intermediaryPrice, 310);
+
+      const raqiqaFarmer = sanitizeInt(raqiqaItem.farmerPrice, 280);
+      const raqiqaSlaughter = sanitizeInt(raqiqaItem.slaughterPrice, 270);
+      const raqiqaIntermediary = sanitizeInt(raqiqaItem.intermediaryPrice, 290);
+
+      // Fast direct UPDATE query on the 58 fixed wilayas table
+      await db
+        .update(officialPrices)
+        .set({
+          khashnaFarmer,
+          khashnaSlaughter,
+          khashnaIntermediary,
+          motawassitaFarmer,
+          motawassitaSlaughter,
+          motawassitaIntermediary,
+          raqiqaFarmer,
+          raqiqaSlaughter,
+          raqiqaIntermediary,
+          trend,
+          updatedAt: new Date(),
+        })
+        .where(eq(officialPrices.wilayaCode, targetWilayaCode));
+
+      return NextResponse.json({ status: 'success', wilayaCode: targetWilayaCode });
     }
 
-    const {
-      wilayaCode,
-      date,
-      category = 'متوسطة',
-      farmerPrice,
-      slaughterPrice,
-      intermediaryPrice,
-      trend = 'stable',
-      trendChangePercent = '0%',
-      notesAr,
-      reportedBy = 'إدارة المنصة (صاحب الموقع)',
-      status = 'official',
-    } = body;
+    const targetWilayaCode = String(body.wilayaCode || '16').padStart(2, '0');
+    const farmerPrice = sanitizeInt(body.farmerPrice, 300);
 
-    if (!wilayaCode || farmerPrice === undefined) {
-      return NextResponse.json(
-        { status: 'error', message: 'wilayaCode and farmerPrice are required' },
-        { status: 400 }
-      );
-    }
+    await db
+      .update(officialPrices)
+      .set({
+        motawassitaFarmer: farmerPrice,
+        motawassitaSlaughter: body.slaughterPrice !== undefined ? sanitizeInt(body.slaughterPrice, farmerPrice - 10) : farmerPrice - 10,
+        motawassitaIntermediary: body.intermediaryPrice !== undefined ? sanitizeInt(body.intermediaryPrice, farmerPrice + 10) : farmerPrice + 10,
+        trend: body.trend || 'stable',
+        updatedAt: new Date(),
+      })
+      .where(eq(officialPrices.wilayaCode, targetWilayaCode));
 
-    const today = date || new Date().toISOString().split('T')[0];
-    const parsedFarmerPrice = sanitizeInt(farmerPrice, 0);
-
-    const valuesToInsert = {
-      wilayaCode: String(wilayaCode),
-      date: today,
-      category,
-      farmerPrice: parsedFarmerPrice,
-      slaughterPrice: slaughterPrice !== undefined ? sanitizeInt(slaughterPrice, parsedFarmerPrice - 10) : parsedFarmerPrice - 10,
-      intermediaryPrice: intermediaryPrice !== undefined ? sanitizeInt(intermediaryPrice, parsedFarmerPrice + 10) : parsedFarmerPrice + 10,
-      trend,
-      trendChangePercent: String(trendChangePercent),
-      notesAr: notesAr || `تحديث أسعار الدواجن لولاية ${wilayaCode}`,
-      reportedBy,
-      status,
-    };
-
-    let inserted;
-    try {
-      [inserted] = await db.insert(poultryPrices).values(valuesToInsert).returning();
-    } catch (err: any) {
-      if (err.code === '23505' || String(err.message).includes('unique constraint')) {
-        await resyncSequence();
-        [inserted] = await db.insert(poultryPrices).values(valuesToInsert).returning();
-      } else {
-        throw err;
-      }
-    }
-
-    return NextResponse.json({ status: 'success', price: inserted });
+    return NextResponse.json({ status: 'success', wilayaCode: targetWilayaCode });
   } catch (error: any) {
-    console.error('Error inserting poultry price:', error);
+    console.error('Error updating official price:', error);
     return NextResponse.json(
-      { status: 'error', message: error.message || 'فشل إضافة السعر في قاعدة البيانات' },
+      { status: 'error', message: error.message || 'فشل تحديث أسعار الولاية' },
       { status: 500 }
     );
   }

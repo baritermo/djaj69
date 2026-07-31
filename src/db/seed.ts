@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { db } from './index';
-import { wilayas, poultryPrices, priceReports, marketOffers, b2bCompanies, jobs, workers } from './schema';
+import { wilayas, poultryPrices, priceReports, marketOffers, b2bCompanies, jobs, workers, officialPrices } from './schema';
 import { ALGERIA_WILAYAS } from '../lib/algeria-data';
 
 export async function seedDatabase() {
@@ -16,6 +16,29 @@ export async function seedDatabase() {
         slaughterhousesCount: Math.floor(Math.random() * 12) + 2,
       }));
       await db.insert(wilayas).values(wilayaList);
+    }
+
+    const existingOfficialPrices = await db.select().from(officialPrices).limit(1);
+    if (existingOfficialPrices.length === 0) {
+      const officialList = ALGERIA_WILAYAS.map((w) => ({
+        wilayaCode: w.code,
+        nameAr: w.nameAr,
+        nameFr: w.nameFr,
+        region: w.region,
+        trend: w.trend,
+        trendPercent: w.trendPercent,
+        khashnaFarmer: w.khashna_farmer,
+        khashnaSlaughter: w.khashna_slaughter,
+        khashnaIntermediary: w.khashna_intermediary,
+        motawassitaFarmer: w.motawassita_farmer,
+        motawassitaSlaughter: w.motawassita_slaughter,
+        motawassitaIntermediary: w.motawassita_intermediary,
+        raqiqaFarmer: w.raqiqa_farmer,
+        raqiqaSlaughter: w.raqiqa_slaughter,
+        raqiqaIntermediary: w.raqiqa_intermediary,
+        updatedAt: new Date(),
+      }));
+      await db.insert(officialPrices).values(officialList);
     }
     const existingPrices = await db.select().from(poultryPrices).limit(1);
     if (existingPrices.length === 0) {

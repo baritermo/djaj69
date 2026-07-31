@@ -119,7 +119,7 @@ export default function HomePage() {
         ]);
 
       if (resPrices.status === 'success') {
-        setPricesList(resPrices.prices || []);
+        setPricesList(resPrices.officialPrices || resPrices.prices || []);
       }
       if (resReports.status === 'success') {
         setReportsList(resReports.reports || []);
