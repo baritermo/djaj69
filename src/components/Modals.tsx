@@ -119,8 +119,10 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 mb-1">اختر الولاية لتحديث أسعارها</label>
+              <label htmlFor="price_wilaya_code" className="block text-slate-700 mb-1">اختر الولاية لتحديث أسعارها</label>
               <select
+                id="price_wilaya_code"
+                name="wilayaCode"
                 value={wilayaCode}
                 onChange={(e) => setWilayaCode(e.target.value)}
                 className="w-full px-3 py-2 border border-emerald-600 font-black text-emerald-950 bg-emerald-50/50 rounded-xl"
@@ -133,8 +135,10 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
               </select>
             </div>
             <div>
-              <label className="block text-slate-700 mb-1">مؤشر اتجاه السوق</label>
+              <label htmlFor="price_trend" className="block text-slate-700 mb-1">مؤشر اتجاه السوق</label>
               <select
+                id="price_trend"
+                name="trend"
                 value={trend}
                 onChange={(e) => setTrend(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 font-bold"
@@ -173,6 +177,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="khashna_farmer"
+                      name="khashna_farmer"
                       type="number"
                       required
                       value={khashna_farmer}
@@ -182,6 +188,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="khashna_slaughter"
+                      name="khashna_slaughter"
                       type="number"
                       required
                       value={khashna_slaughter}
@@ -191,6 +199,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="khashna_intermediary"
+                      name="khashna_intermediary"
                       type="number"
                       required
                       value={khashna_intermediary}
@@ -205,6 +215,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="motawassita_farmer"
+                      name="motawassita_farmer"
                       type="number"
                       required
                       value={motawassita_farmer}
@@ -214,6 +226,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="motawassita_slaughter"
+                      name="motawassita_slaughter"
                       type="number"
                       required
                       value={motawassita_slaughter}
@@ -223,6 +237,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="motawassita_intermediary"
+                      name="motawassita_intermediary"
                       type="number"
                       required
                       value={motawassita_intermediary}
@@ -237,6 +253,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="raqiqa_farmer"
+                      name="raqiqa_farmer"
                       type="number"
                       required
                       value={raqiqa_farmer}
@@ -246,6 +264,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="raqiqa_slaughter"
+                      name="raqiqa_slaughter"
                       type="number"
                       required
                       value={raqiqa_slaughter}
@@ -255,6 +275,8 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
                   </td>
                   <td className="py-2 px-2 border-r border-slate-200">
                     <input
+                      id="raqiqa_intermediary"
+                      name="raqiqa_intermediary"
                       type="number"
                       required
                       value={raqiqa_intermediary}
@@ -268,8 +290,10 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
           </div>
 
           <div>
-            <label className="block text-slate-700 mb-1">مصدر التحديث / ملاحظات الإدارة</label>
+            <label htmlFor="price_notes" className="block text-slate-700 mb-1">مصدر التحديث / ملاحظات الإدارة</label>
             <input
+              id="price_notes"
+              name="notes"
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -331,22 +355,22 @@ export function JobPostModal({ isOpen, onClose, onSuccess }: ModalProps) {
         </div>
         {error && <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-3 text-xs font-bold">
-          <div><label className="block text-slate-700 mb-1">عنوان الوظيفة</label><input type="text" required value={titleAr} onChange={(e) => setTitleAr(e.target.value)} placeholder="مطلوب عمال تربية دواجن..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div><label htmlFor="job_title" className="block text-slate-700 mb-1">عنوان الوظيفة</label><input id="job_title" name="titleAr" type="text" required value={titleAr} onChange={(e) => setTitleAr(e.target.value)} placeholder="مطلوب عمال تربية دواجن..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-slate-700 mb-1">اسم المؤسسة</label><input type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
-            <div><label className="block text-slate-700 mb-1">النوع</label><select value={companyType} onChange={(e) => setCompanyType(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl"><option value="farm">مزرعة</option><option value="slaughterhouse">مذبح</option><option value="feed">أعلاف</option><option value="hatchery">مفقس</option><option value="logistics">نقل</option></select></div>
+            <div><label htmlFor="job_company_name" className="block text-slate-700 mb-1">اسم المؤسسة</label><input id="job_company_name" name="companyName" type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+            <div><label htmlFor="job_company_type" className="block text-slate-700 mb-1">النوع</label><select id="job_company_type" name="companyType" value={companyType} onChange={(e) => setCompanyType(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl"><option value="farm">مزرعة</option><option value="slaughterhouse">مذبح</option><option value="feed">أعلاف</option><option value="hatchery">مفقس</option><option value="logistics">نقل</option></select></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-slate-700 mb-1">الولاية</label><select value={wilayaCode} onChange={(e) => setWilayaCode(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl">{ALGERIA_WILAYAS.map((w) => (<option key={w.code} value={w.code}>{w.code} - {w.nameAr}</option>))}</select></div>
-            <div><label className="block text-slate-700 mb-1">البلدية</label><input type="text" value={commune} onChange={(e) => setCommune(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+            <div><label htmlFor="job_wilaya_code" className="block text-slate-700 mb-1">الولاية</label><select id="job_wilaya_code" name="wilayaCode" value={wilayaCode} onChange={(e) => setWilayaCode(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl">{ALGERIA_WILAYAS.map((w) => (<option key={w.code} value={w.code}>{w.code} - {w.nameAr}</option>))}</select></div>
+            <div><label htmlFor="job_commune" className="block text-slate-700 mb-1">البلدية</label><input id="job_commune" name="commune" type="text" value={commune} onChange={(e) => setCommune(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-slate-700 mb-1">النظام</label><select value={jobType} onChange={(e) => setJobType(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl"><option value="full_time">دوام دائم</option><option value="seasonal">موسمي</option><option value="part_time">جزئي</option></select></div>
-            <div><label className="block text-slate-700 mb-1">الراتب</label><input type="text" value={salaryRange} onChange={(e) => setSalaryRange(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+            <div><label htmlFor="job_type" className="block text-slate-700 mb-1">النظام</label><select id="job_type" name="jobType" value={jobType} onChange={(e) => setJobType(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl"><option value="full_time">دوام دائم</option><option value="seasonal">موسمي</option><option value="part_time">جزئي</option></select></div>
+            <div><label htmlFor="job_salary_range" className="block text-slate-700 mb-1">الراتب</label><input id="job_salary_range" name="salaryRange" type="text" value={salaryRange} onChange={(e) => setSalaryRange(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           </div>
-          <div className="flex items-center gap-2"><input type="checkbox" id="housing2" checked={housingProvided} onChange={(e) => setHousingProvided(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" /><label htmlFor="housing2" className="text-xs text-emerald-900 font-extrabold">✔ نوفر المبيت والإعاشة</label></div>
-          <div><label className="block text-slate-700 mb-1">المهام والشروط</label><textarea rows={2} required value={requirements} onChange={(e) => setRequirements(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
-          <div><label className="block text-slate-700 mb-1">هاتف التواصل</label><input type="text" required value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div className="flex items-center gap-2"><input type="checkbox" id="housing2" name="housingProvided" checked={housingProvided} onChange={(e) => setHousingProvided(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" /><label htmlFor="housing2" className="text-xs text-emerald-900 font-extrabold">✔ نوفر المبيت والإعاشة</label></div>
+          <div><label htmlFor="job_requirements" className="block text-slate-700 mb-1">المهام والشروط</label><textarea id="job_requirements" name="requirements" rows={2} required value={requirements} onChange={(e) => setRequirements(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div><label htmlFor="job_contact_phone" className="block text-slate-700 mb-1">هاتف التواصل</label><input id="job_contact_phone" name="contactPhone" type="text" required value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200"><button type="button" onClick={onClose} className="px-4 py-2 text-slate-600">إلغاء</button><button type="submit" disabled={loading} className="px-6 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold rounded-xl shadow-lg">{loading ? 'جاري...' : 'نشر عرض العمل'}</button></div>
         </form>
       </div>
@@ -387,16 +411,16 @@ export function WorkerRegisterModal({ isOpen, onClose, onSuccess }: ModalProps) 
         {error && <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-3 text-xs font-bold">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-slate-700 mb-1">الاسم الكامل</label><input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
-            <div><label className="block text-slate-700 mb-1">التخصص</label><select value={specialty} onChange={(e) => setSpecialty(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl"><option value="poultry_worker">عامل تربية</option><option value="slaughter_worker">عامل ذبح</option><option value="veterinarian">بيطري</option><option value="driver_refrigerated">سائق مبرد</option><option value="farm_supervisor">مشرف مزارع</option></select></div>
+            <div><label htmlFor="worker_full_name" className="block text-slate-700 mb-1">الاسم الكامل</label><input id="worker_full_name" name="fullName" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+            <div><label htmlFor="worker_specialty" className="block text-slate-700 mb-1">التخصص</label><select id="worker_specialty" name="specialty" value={specialty} onChange={(e) => setSpecialty(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl"><option value="poultry_worker">عامل تربية</option><option value="slaughter_worker">عامل ذبح</option><option value="veterinarian">بيطري</option><option value="driver_refrigerated">سائق مبرد</option><option value="farm_supervisor">مشرف مزارع</option></select></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-slate-700 mb-1">الولاية</label><select value={wilayaCode} onChange={(e) => setWilayaCode(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl">{ALGERIA_WILAYAS.map((w) => (<option key={w.code} value={w.code}>{w.code} - {w.nameAr}</option>))}</select></div>
-            <div><label className="block text-slate-700 mb-1">سنوات الخبرة</label><input type="number" value={experienceYears} onChange={(e) => setExperienceYears(Number(e.target.value))} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+            <div><label htmlFor="worker_wilaya_code" className="block text-slate-700 mb-1">الولاية الحالية</label><select id="worker_wilaya_code" name="wilayaCode" value={wilayaCode} onChange={(e) => setWilayaCode(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl">{ALGERIA_WILAYAS.map((w) => (<option key={w.code} value={w.code}>{w.code} - {w.nameAr}</option>))}</select></div>
+            <div><label htmlFor="worker_experience_years" className="block text-slate-700 mb-1">سنوات الخبرة</label><input id="worker_experience_years" name="experienceYears" type="number" value={experienceYears} onChange={(e) => setExperienceYears(Number(e.target.value))} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           </div>
-          <div className="flex items-center gap-2"><input type="checkbox" id="relocate2" checked={willingToRelocate} onChange={(e) => setWillingToRelocate(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" /><label htmlFor="relocate2" className="text-xs text-emerald-900 font-extrabold">✔ أقبل العمل في ولايات أخرى</label></div>
-          <div><label className="block text-slate-700 mb-1">رقم الهاتف</label><input type="text" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
-          <div><label className="block text-slate-700 mb-1">نبذة عن خبراتك</label><textarea rows={3} required value={bio} onChange={(e) => setBio(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div className="flex items-center gap-2"><input type="checkbox" id="relocate2" name="willingToRelocate" checked={willingToRelocate} onChange={(e) => setWillingToRelocate(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" /><label htmlFor="relocate2" className="text-xs text-emerald-900 font-extrabold">✔ أقبل العمل في ولايات أخرى</label></div>
+          <div><label htmlFor="worker_phone" className="block text-slate-700 mb-1">رقم الهاتف</label><input id="worker_phone" name="phone" type="text" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
+          <div><label htmlFor="worker_bio" className="block text-slate-700 mb-1">نبذة عن الخبرات</label><textarea id="worker_bio" name="bio" rows={2} required value={bio} onChange={(e) => setBio(e.target.value)} placeholder="خبرة 5 سنوات في المزارع والتدفئة..." className="w-full px-3 py-2 border border-slate-300 rounded-xl" /></div>
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200"><button type="button" onClick={onClose} className="px-4 py-2 text-slate-600">إلغاء</button><button type="submit" disabled={loading} className="px-6 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-lg">{loading ? 'جاري...' : 'تسجيل'}</button></div>
         </form>
       </div>
