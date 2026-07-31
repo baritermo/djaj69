@@ -54,12 +54,16 @@ export default function WilayaPriceBoard({
     { id: 'الجنوب', label: 'الجنوب' },
   ];
 
-  // Build a map of DB prices by wilayaCode+category
+  // Build a map of DB prices by wilayaCode+category (newest price per category preserved)
   const dbPriceMap = useMemo(() => {
     const map: Record<string, any> = {};
     for (const p of pricesList) {
-      const key = `${p.wilayaCode}_${p.category}`;
-      map[key] = p;
+      if (!p || !p.wilayaCode || !p.category) continue;
+      const formattedCode = String(p.wilayaCode).padStart(2, '0');
+      const key = `${formattedCode}_${p.category}`;
+      if (!map[key]) {
+        map[key] = p;
+      }
     }
     return map;
   }, [pricesList]);

@@ -35,9 +35,10 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
     setLoading(true);
     setError('');
     try {
+      const formattedCode = String(wilayaCode).padStart(2, '0');
       const updates = [
         {
-          wilayaCode,
+          wilayaCode: formattedCode,
           category: 'خشنة',
           farmerPrice: Number(khashna_farmer),
           slaughterPrice: Number(khashna_slaughter),
@@ -47,7 +48,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
           reportedBy: 'إدارة البورصة',
         },
         {
-          wilayaCode,
+          wilayaCode: formattedCode,
           category: 'متوسطة',
           farmerPrice: Number(motawassita_farmer),
           slaughterPrice: Number(motawassita_slaughter),
@@ -57,7 +58,7 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
           reportedBy: 'إدارة البورصة',
         },
         {
-          wilayaCode,
+          wilayaCode: formattedCode,
           category: 'رقيقة',
           farmerPrice: Number(raqiqa_farmer),
           slaughterPrice: Number(raqiqa_slaughter),
