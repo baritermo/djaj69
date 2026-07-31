@@ -115,3 +115,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ status: 'error', message: 'معرف الوظيفة مطلوب' }, { status: 400 });
+    }
+    await db.delete(jobs).where(eq(jobs.id, Number(id)));
+    return NextResponse.json({ status: 'success', id: Number(id) });
+  } catch (error: any) {
+    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+  }
+}

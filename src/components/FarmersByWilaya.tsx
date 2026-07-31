@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, MapPin, Phone, Search, Lock, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, MapPin, Phone, Search, Lock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface FarmerCard {
@@ -164,9 +164,23 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
                           )}
 
                           {isSubscribed ? (
-                            <a href={`tel:${farmer.phone}`} className="mt-3 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition shadow-xs">
-                              <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
-                            </a>
+                            <div className="mt-3 flex items-center gap-2">
+                              <a href={`tel:${farmer.phone}`} className="flex-1 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition shadow-xs">
+                                <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
+                              </a>
+                              <button
+                                onClick={async () => {
+                                  if (confirm('هل أنت تأكد من حذف عرض هذا الفلاح نهائياً؟')) {
+                                    await fetch(`/api/offers?id=${farmer.id}`, { method: 'DELETE' });
+                                    window.location.reload();
+                                  }
+                                }}
+                                className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
+                                title="حذف العرض"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={onOpenSubscribeModal}

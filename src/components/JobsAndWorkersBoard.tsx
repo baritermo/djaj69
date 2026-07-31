@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Building,
   UserCheck,
+  Trash2,
 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
@@ -36,6 +37,32 @@ export default function JobsAndWorkersBoard({
   const [selectedWilaya, setSelectedWilaya] = useState<string>('all');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleDeleteJob = async (id: number) => {
+    if (!window.confirm('هل أنت تأكد من حذف عرض التوظيف هذا نهائياً؟')) return;
+    try {
+      const res = await fetch(`/api/jobs?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.status === 'success') {
+        onRefresh();
+      }
+    } catch {
+      alert('خطأ أثناء حذف العرض');
+    }
+  };
+
+  const handleDeleteWorker = async (id: number) => {
+    if (!window.confirm('هل أنت تأكد من حذف تسجيل العامل هذا نهائياً؟')) return;
+    try {
+      const res = await fetch(`/api/workers?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.status === 'success') {
+        onRefresh();
+      }
+    } catch {
+      alert('خطأ أثناء حذف تسجيل العامل');
+    }
+  };
 
   const specialties = [
     { id: 'all', label: 'كافة التخصصات والمهن' },
@@ -247,9 +274,14 @@ export default function JobsAndWorkersBoard({
                     اتصال بالتشغيل: {job.contactPhone}
                   </a>
                 </div>
-                <span className="text-[11px] text-slate-400">
-                  متاح للتقديم الفوري
-                </span>
+                <button
+                  onClick={() => handleDeleteJob(job.id)}
+                  className="inline-flex items-center gap-1 p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition text-xs font-bold border border-rose-200 cursor-pointer"
+                  title="حذف هذا العرض"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>حذف</span>
+                </button>
               </div>
             </div>
           ))}
@@ -318,9 +350,14 @@ export default function JobsAndWorkersBoard({
                   <Phone className="w-3.5 h-3.5 text-amber-300" />
                   اتصال بالعامل: {worker.phone}
                 </a>
-                <span className="text-[11px] text-slate-400">
-                  سجل في منصة دواجن DZ
-                </span>
+                <button
+                  onClick={() => handleDeleteWorker(worker.id)}
+                  className="inline-flex items-center gap-1 p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition text-xs font-bold border border-rose-200 cursor-pointer"
+                  title="حذف حساب العامل"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>حذف</span>
+                </button>
               </div>
             </div>
           ))}
