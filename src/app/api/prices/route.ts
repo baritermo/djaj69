@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/index';
+import { pool, db } from '@/db/index';
 import { poultryPrices, wilayas } from '@/db/schema';
 import { desc, eq, and } from 'drizzle-orm';
 import { seedDatabase } from '@/db/seed';
+
+async function resyncSequence() {
+  try {
+    await pool.query(`SELECT setval(pg_get_serial_sequence('poultry_prices', 'id'), COALESCE(max(id), 1)) FROM poultry_prices;`);
+  } catch (e) {
+    // Ignore if sequence query fails
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -73,28 +81,57 @@ export async function POST(request: Request) {
       return isNaN(num) ? fallback : Math.round(num);
     };
 
+    // Auto-resync sequence before bulk or single inserts to guarantee valid auto-increment ID
+    await resyncSequence();
+
     // If body is an array of price updates
     if (Array.isArray(body)) {
       const insertedList = [];
       for (const item of body) {
         const today = item.date || new Date().toISOString().split('T')[0];
-        const [inserted] = await db
-          .insert(poultryPrices)
-          .values({
-            wilayaCode: String(item.wilayaCode),
-            date: today,
-            category: item.category || 'متوسطة',
-            farmerPrice: sanitizeInt(item.farmerPrice, 0),
-            slaughterPrice: sanitizeInt(item.slaughterPrice, 0),
-            intermediaryPrice: sanitizeInt(item.intermediaryPrice, 0),
-            trend: item.trend || 'stable',
-            trendChangePercent: String(item.trendChangePercent || '0%'),
-            notesAr: item.notesAr || 'تحديث من إدارة المنصة',
-            reportedBy: item.reportedBy || 'إدارة المنصة (صاحب الموقع)',
-            status: item.status || 'official',
-          })
-          .returning();
-        insertedList.push(inserted);
+        try {
+          const [inserted] = await db
+            .insert(poultryPrices)
+            .values({
+              wilayaCode: String(item.wilayaCode),
+              date: today,
+              category: item.category || 'متوسطة',
+              farmerPrice: sanitizeInt(item.farmerPrice, 0),
+              slaughterPrice: sanitizeInt(item.slaughterPrice, 0),
+              intermediaryPrice: sanitizeInt(item.intermediaryPrice, 0),
+              trend: item.trend || 'stable',
+              trendChangePercent: String(item.trendChangePercent || '0%'),
+              notesAr: item.notesAr || 'تحديث من إدارة المنصة',
+              reportedBy: item.reportedBy || 'إدارة المنصة (صاحب الموقع)',
+              status: item.status || 'official',
+            })
+            .returning();
+          insertedList.push(inserted);
+        } catch (err: any) {
+          // If duplicate key error occurs, resync sequence and retry once
+          if (err.code === '23505' || String(err.message).includes('unique constraint')) {
+            await resyncSequence();
+            const [retryInserted] = await db
+              .insert(poultryPrices)
+              .values({
+                wilayaCode: String(item.wilayaCode),
+                date: today,
+                category: item.category || 'متوسطة',
+                farmerPrice: sanitizeInt(item.farmerPrice, 0),
+                slaughterPrice: sanitizeInt(item.slaughterPrice, 0),
+                intermediaryPrice: sanitizeInt(item.intermediaryPrice, 0),
+                trend: item.trend || 'stable',
+                trendChangePercent: String(item.trendChangePercent || '0%'),
+                notesAr: item.notesAr || 'تحديث من إدارة المنصة',
+                reportedBy: item.reportedBy || 'إدارة المنصة (صاحب الموقع)',
+                status: item.status || 'official',
+              })
+              .returning();
+            insertedList.push(retryInserted);
+          } else {
+            throw err;
+          }
+        }
       }
       return NextResponse.json({ status: 'success', count: insertedList.length, prices: insertedList });
     }
@@ -123,22 +160,31 @@ export async function POST(request: Request) {
     const today = date || new Date().toISOString().split('T')[0];
     const parsedFarmerPrice = sanitizeInt(farmerPrice, 0);
 
-    const [inserted] = await db
-      .insert(poultryPrices)
-      .values({
-        wilayaCode: String(wilayaCode),
-        date: today,
-        category,
-        farmerPrice: parsedFarmerPrice,
-        slaughterPrice: slaughterPrice !== undefined ? sanitizeInt(slaughterPrice, parsedFarmerPrice - 10) : parsedFarmerPrice - 10,
-        intermediaryPrice: intermediaryPrice !== undefined ? sanitizeInt(intermediaryPrice, parsedFarmerPrice + 10) : parsedFarmerPrice + 10,
-        trend,
-        trendChangePercent: String(trendChangePercent),
-        notesAr: notesAr || `تحديث أسعار الدواجن لولاية ${wilayaCode}`,
-        reportedBy,
-        status,
-      })
-      .returning();
+    const valuesToInsert = {
+      wilayaCode: String(wilayaCode),
+      date: today,
+      category,
+      farmerPrice: parsedFarmerPrice,
+      slaughterPrice: slaughterPrice !== undefined ? sanitizeInt(slaughterPrice, parsedFarmerPrice - 10) : parsedFarmerPrice - 10,
+      intermediaryPrice: intermediaryPrice !== undefined ? sanitizeInt(intermediaryPrice, parsedFarmerPrice + 10) : parsedFarmerPrice + 10,
+      trend,
+      trendChangePercent: String(trendChangePercent),
+      notesAr: notesAr || `تحديث أسعار الدواجن لولاية ${wilayaCode}`,
+      reportedBy,
+      status,
+    };
+
+    let inserted;
+    try {
+      [inserted] = await db.insert(poultryPrices).values(valuesToInsert).returning();
+    } catch (err: any) {
+      if (err.code === '23505' || String(err.message).includes('unique constraint')) {
+        await resyncSequence();
+        [inserted] = await db.insert(poultryPrices).values(valuesToInsert).returning();
+      } else {
+        throw err;
+      }
+    }
 
     return NextResponse.json({ status: 'success', price: inserted });
   } catch (error: any) {
