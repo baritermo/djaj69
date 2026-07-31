@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, MapPin, Phone, Search, Lock } from 'lucide-react';
+import { CheckCircle2, MapPin, Phone, Search, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface FarmerCard {
@@ -31,6 +31,16 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
   const isSubscribed = currentUser?.role === 'admin' || currentUser?.subscriptionStatus === 'active';
   const [wilayaCode, setWilayaCode] = useState('all');
   const [query, setQuery] = useState('');
+  const [closedWilayas, setClosedWilayas] = useState<Record<string, boolean>>({});
+  const [closedCards, setClosedCards] = useState<Record<number, boolean>>({});
+
+  const toggleWilaya = (code: string) => {
+    setClosedWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
+  };
+
+  const toggleCard = (id: number) => {
+    setClosedCards((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const grouped = useMemo(() => {
     const filtered = farmers.filter((f) => {
@@ -51,8 +61,8 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
   const displayedWilayas = Array.from(grouped.keys()).sort((a, b) => parseInt(a) - parseInt(b));
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center justify-between">
+    <section className="space-y-5 select-none">
+      <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3" />
           <input
@@ -75,62 +85,103 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
       {displayedWilayas.map((code) => {
         const wilaya = ALGERIA_WILAYAS.find((w) => w.code === code);
         const items = grouped.get(code)!;
+        const isWilayaClosed = closedWilayas[code];
+
         return (
-          <div key={code} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            {/* Wilaya Header Bar */}
-            <div className="bg-emerald-800 text-white px-5 py-3 flex items-center gap-3">
+          <div key={code} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition">
+            {/* Wilaya Header Bar with Open/Close Toggle */}
+            <div
+              onClick={() => toggleWilaya(code)}
+              className="bg-emerald-800 hover:bg-emerald-750 text-white px-5 py-3 flex items-center gap-3 cursor-pointer transition select-none"
+            >
               <span className="text-lg">📍</span>
               <span className="font-black text-base">{wilaya?.nameAr || `ولاية ${code}`}</span>
               <span className="text-emerald-200 text-xs">({wilaya?.nameFr})</span>
-              <span className="mr-auto bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg">{items.length} {items.length === 1 ? 'فلاح' : 'فلاحين'}</span>
+              <span className="mr-auto bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                {items.length} {items.length === 1 ? 'فلاح' : 'فلاحين'}
+                {isWilayaClosed ? <ChevronDown className="w-4 h-4 text-emerald-300" /> : <ChevronUp className="w-4 h-4 text-emerald-300" />}
+              </span>
             </div>
 
-            {/* Farmer Icons Row */}
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {items.map((farmer) => (
-                <div key={farmer.id} className="rounded-xl border border-slate-200 bg-gradient-to-bl from-emerald-50/60 to-white p-4 hover:shadow-lg hover:border-emerald-400 transition cursor-pointer">
-                  {/* Icon Header */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md">
-                      🌾
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-black text-sm text-slate-900 truncate">{farmer.name}</h4>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                        <MapPin className="w-3 h-3 text-emerald-600" /> {farmer.commune}
+            {/* Farmer Cards Container */}
+            {!isWilayaClosed && (
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fadeIn">
+                {items.map((farmer) => {
+                  const isCardClosed = closedCards[farmer.id];
+                  return (
+                    <div key={farmer.id} className="rounded-xl border border-slate-200 bg-gradient-to-bl from-emerald-50/60 to-white p-4 hover:shadow-lg hover:border-emerald-400 transition">
+                      {/* Icon Header with Open/Close Toggle Button */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shrink-0">
+                          🌾
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-black text-sm text-slate-900 truncate">{farmer.name}</h4>
+                            {farmer.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
+                            <MapPin className="w-3 h-3 text-emerald-600" /> {farmer.commune}
+                          </div>
+                        </div>
+                        
+                        {/* Open/Close Toggle Icon Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCard(farmer.id);
+                          }}
+                          className="p-1.5 rounded-lg bg-emerald-100/80 hover:bg-emerald-200 text-emerald-900 transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                          title={isCardClosed ? "فتح العرض" : "غلق العرض"}
+                        >
+                          {isCardClosed ? (
+                            <>
+                              <span>فتح</span>
+                              <ChevronDown className="w-4 h-4" />
+                            </>
+                          ) : (
+                            <>
+                              <span>غلق</span>
+                              <ChevronUp className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
                       </div>
+
+                      {/* Detailed Offer Body (Shown when Open) */}
+                      {!isCardClosed && (
+                        <div className="mt-3 pt-3 border-t border-emerald-100 space-y-2 animate-fadeIn">
+                          <div className="space-y-1.5 text-[11px] text-slate-700">
+                            {farmer.chickenCategories && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الفئة:</span><span className="bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-bold">{farmer.chickenCategories}</span></p>}
+                            {farmer.weightRange && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الوزن:</span><span>{farmer.weightRange}</span></p>}
+                            {farmer.availableQuantity && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الكمية:</span><span>{farmer.availableQuantity}</span></p>}
+                            {farmer.breedType && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">السلالة:</span><span>{farmer.breedType}</span></p>}
+                            {farmer.chickenAge && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">العمر:</span><span>{farmer.chickenAge}</span></p>}
+                          </div>
+
+                          {farmer.details && (
+                            <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">{farmer.details}</p>
+                          )}
+
+                          {isSubscribed ? (
+                            <a href={`tel:${farmer.phone}`} className="mt-3 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition shadow-xs">
+                              <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
+                            </a>
+                          ) : (
+                            <button
+                              onClick={onOpenSubscribeModal}
+                              className="mt-3 w-full flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-black py-2 rounded-xl transition shadow-xs cursor-pointer"
+                            >
+                              <Lock className="w-3.5 h-3.5" /> 🔒 عرض أرقام الهواتف للمشتركين
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {farmer.verified && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-                  </div>
-
-                  {/* Info Grid */}
-                  <div className="space-y-1.5 text-[11px] text-slate-700">
-                    {farmer.chickenCategories && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الفئة:</span><span className="bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-bold">{farmer.chickenCategories}</span></p>}
-                    {farmer.weightRange && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الوزن:</span><span>{farmer.weightRange}</span></p>}
-                    {farmer.availableQuantity && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الكمية:</span><span>{farmer.availableQuantity}</span></p>}
-                    {farmer.breedType && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">السلالة:</span><span>{farmer.breedType}</span></p>}
-                    {farmer.chickenAge && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">العمر:</span><span>{farmer.chickenAge}</span></p>}
-                  </div>
-
-                  {farmer.details && (
-                    <p className="mt-2 text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">{farmer.details}</p>
-                  )}
-
-                  {isSubscribed ? (
-                    <a href={`tel:${farmer.phone}`} className="mt-3 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition">
-                      <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
-                    </a>
-                  ) : (
-                    <button
-                      onClick={onOpenSubscribeModal}
-                      className="mt-3 w-full flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-black py-2 rounded-xl transition shadow-sm cursor-pointer"
-                    >
-                      <Lock className="w-3.5 h-3.5" /> 🔒 عرض أرقام الهواتف للمشتركين
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}

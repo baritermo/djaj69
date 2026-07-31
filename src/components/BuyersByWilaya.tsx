@@ -1,7 +1,5 @@
-'use client';
-
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, MapPin, Phone, Search, Store, Lock } from 'lucide-react';
+import { CheckCircle2, MapPin, Phone, Search, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface BuyerPost {
@@ -32,6 +30,16 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
   const [activeSubTab, setActiveSubTab] = useState<'slaughterhouse' | 'broker'>('slaughterhouse');
   const [wilayaCode, setWilayaCode] = useState('all');
   const [query, setQuery] = useState('');
+  const [closedWilayas, setClosedWilayas] = useState<Record<string, boolean>>({});
+  const [closedCards, setClosedCards] = useState<Record<number, boolean>>({});
+
+  const toggleWilaya = (code: string) => {
+    setClosedWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
+  };
+
+  const toggleCard = (id: number) => {
+    setClosedCards((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const filtered = useMemo(() => {
     return buyers.filter((b) => {
@@ -59,10 +67,9 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
   const isSlaughterhouse = activeSubTab === 'slaughterhouse';
   const label = isSlaughterhouse ? 'المذابح' : 'الكورتي / الوسطاء';
   const icon = isSlaughterhouse ? '🔪' : '🤝';
-  const tabClass = isSlaughterhouse ? 'bg-indigo-800 text-white' : 'bg-amber-600 text-white';
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-5 select-none">
       {/* Slaughterhouse / Broker sub-tabs */}
       <div className="flex items-center gap-2">
         <button onClick={() => setActiveSubTab('slaughterhouse')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'slaughterhouse' ? 'bg-indigo-800 text-white border-indigo-800 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400'}`}>
@@ -77,11 +84,11 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
         <div className="flex items-start gap-3">
           <span className="p-2 bg-white rounded-xl text-lg">{icon}</span>
           <div>
-            <h3 className="font-black text-base text-slate-900">{label} — أسعار الشراء لكل فئة</h3>
+            <h3 className="font-black text-base text-slate-900">{label} — أسعار الشراء لمستويات التعامل</h3>
             <p className="text-xs text-slate-600 mt-1">
               {isSlaughterhouse
-                ? 'المذابح تعلن هنا عن الأسعار التي تشتري بها كل فئة دجاج (خشنة/متوسطة/رقيقة). لا تظهر أي عروض فلاحين أو وسطاء.'
-                : 'الوسطاء (الكورتي) يعلنون هنا عن الأسعار التي يشترون بها. قائمة مستقلة عن المذابح والفلاحين.'}
+                ? 'المذابح تعلن هنا عن الأسعار التي تشتري بها. اضغط على أيقونة فتح/غلق للتحكم في تفاصيل العرض.'
+                : 'الوسطاء (الكورتي) يعلنون هنا عن أسعار الشراء. اضغط على زر فتح/غلق للتحكم كلياً.'}
             </p>
           </div>
         </div>
@@ -105,75 +112,118 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
       {codes.map((code) => {
         const wilaya = ALGERIA_WILAYAS.find((w) => w.code === code);
         const items = grouped.get(code)!;
+        const isWilayaClosed = closedWilayas[code];
+
         return (
-          <div key={code} className={`rounded-2xl border shadow-sm overflow-hidden ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
-            {/* Wilaya Header */}
-            <div className={`px-5 py-3 flex items-center gap-3 text-white ${isSlaughterhouse ? 'bg-indigo-800' : 'bg-amber-600'}`}>
+          <div key={code} className={`rounded-2xl border shadow-sm overflow-hidden transition ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
+            {/* Wilaya Header with Open/Close Toggle */}
+            <div
+              onClick={() => toggleWilaya(code)}
+              className={`px-5 py-3 flex items-center gap-3 text-white cursor-pointer transition select-none ${isSlaughterhouse ? 'bg-indigo-800 hover:bg-indigo-750' : 'bg-amber-600 hover:bg-amber-550'}`}
+            >
               <span className="text-lg">📍</span>
               <span className="font-black text-base">{wilaya?.nameAr || `ولاية ${code}`}</span>
               <span className={`${isSlaughterhouse ? 'text-indigo-200' : 'text-amber-200'} text-xs`}>({wilaya?.nameFr})</span>
-              <span className="mr-auto bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg">{items.length} {isSlaughterhouse ? 'مذبح' : 'كورتي'}</span>
+              <span className="mr-auto bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                {items.length} {isSlaughterhouse ? 'مذبح' : 'كورتي'}
+                {isWilayaClosed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              </span>
             </div>
 
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              {items.map((b) => (
-                <div key={b.id} className={`rounded-xl border p-4 bg-white hover:shadow-lg transition ${isSlaughterhouse ? 'border-indigo-200 hover:border-indigo-400' : 'border-amber-200 hover:border-amber-400'}`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow ${isSlaughterhouse ? 'bg-indigo-600' : 'bg-amber-500'}`}>
-                      {icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-black text-sm text-slate-900 truncate">{b.name}</h4>
-                        {b.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+            {!isWilayaClosed && (
+              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
+                {items.map((b) => {
+                  const isCardClosed = closedCards[b.id];
+                  return (
+                    <div key={b.id} className={`rounded-xl border p-4 bg-white hover:shadow-lg transition ${isSlaughterhouse ? 'border-indigo-200 hover:border-indigo-400' : 'border-amber-200 hover:border-amber-400'}`}>
+                      {/* Card Header with Open/Close Button */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow shrink-0 ${isSlaughterhouse ? 'bg-indigo-600' : 'bg-amber-500'}`}>
+                          {icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-black text-sm text-slate-900 truncate">{b.name}</h4>
+                            {b.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
+                            <MapPin className="w-3 h-3" /> {b.commune}
+                          </div>
+                        </div>
+
+                        {/* Open/Close Toggle Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCard(b.id);
+                          }}
+                          className={`p-1.5 rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-bold ${
+                            isSlaughterhouse ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950' : 'bg-amber-100 hover:bg-amber-200 text-amber-950'
+                          }`}
+                          title={isCardClosed ? "فتح العرض" : "غلق العرض"}
+                        >
+                          {isCardClosed ? (
+                            <>
+                              <span>فتح</span>
+                              <ChevronDown className="w-4 h-4" />
+                            </>
+                          ) : (
+                            <>
+                              <span>غلق</span>
+                              <ChevronUp className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                        <MapPin className="w-3 h-3" /> {b.commune}
-                      </div>
+
+                      {/* Card Details Body (Shown when Open) */}
+                      {!isCardClosed && (
+                        <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
+                          {/* Buying Prices Table */}
+                          <div className={`relative rounded-xl border overflow-hidden mb-3 ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
+                            <table className={`w-full text-center text-xs border-collapse transition ${!isSubscribed ? 'blur-xs select-none pointer-events-none' : ''}`}>
+                              <thead>
+                                <tr className={`${isSlaughterhouse ? 'bg-indigo-50' : 'bg-amber-50'}`}>
+                                  <th className="py-2 px-3 font-black text-slate-700">الفئة</th>
+                                  <th className={`py-2 px-3 font-black ${isSlaughterhouse ? 'text-indigo-800' : 'text-amber-800'}`}>سعر الشراء (د.ج/كغ)</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200">
+                                <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">خشنة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyKhashna ?? '—'}</td></tr>
+                                <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">متوسطة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyMotawassita ?? '—'}</td></tr>
+                                <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">رقيقة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyRaqiqa ?? '—'}</td></tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="space-y-1 text-[11px] text-slate-700 mb-3">
+                            {b.maxPurchaseKg && <p>الكمية القصوى: <strong className="text-slate-900">{b.maxPurchaseKg}</strong></p>}
+                            {b.deliveryArea && <p>نطاق التوزيع: <strong className="text-slate-900">{b.deliveryArea}</strong></p>}
+                          </div>
+
+                          {b.buyingDetails && (
+                            <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 mb-3">{b.buyingDetails}</p>
+                          )}
+
+                          {isSubscribed ? (
+                            <a href={`tel:${b.phone}`} className={`flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400 text-emerald-950'}`}>
+                              <Phone className="w-3.5 h-3.5" /> اتصال: {b.phone}
+                            </a>
+                          ) : (
+                            <button
+                              onClick={onOpenSubscribeModal}
+                              className="w-full flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-black py-2 rounded-xl transition shadow-xs cursor-pointer"
+                            >
+                              <Lock className="w-3.5 h-3.5 text-emerald-950" /> 🔒 عرض أرقام الهواتف والأسعار
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Buying Prices Table */}
-                  <div className={`relative rounded-xl border overflow-hidden mb-3 ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
-                    <table className={`w-full text-center text-xs border-collapse transition ${!isSubscribed ? 'blur-xs select-none pointer-events-none' : ''}`}>
-                      <thead>
-                        <tr className={`${isSlaughterhouse ? 'bg-indigo-50' : 'bg-amber-50'}`}>
-                          <th className="py-2 px-3 font-black text-slate-700">الفئة</th>
-                          <th className={`py-2 px-3 font-black ${isSlaughterhouse ? 'text-indigo-800' : 'text-amber-800'}`}>سعر الشراء (د.ج/كغ)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">خشنة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyKhashna ?? '—'}</td></tr>
-                        <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">متوسطة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyMotawassita ?? '—'}</td></tr>
-                        <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">رقيقة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyRaqiqa ?? '—'}</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="space-y-1 text-[11px] text-slate-700 mb-3">
-                    {b.maxPurchaseKg && <p>الكمية القصوى: <strong className="text-slate-900">{b.maxPurchaseKg}</strong></p>}
-                    {b.deliveryArea && <p>نطاق التوزيع: <strong className="text-slate-900">{b.deliveryArea}</strong></p>}
-                  </div>
-
-                  {b.buyingDetails && (
-                    <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 mb-3">{b.buyingDetails}</p>
-                  )}
-
-                  {isSubscribed ? (
-                    <a href={`tel:${b.phone}`} className={`flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400'}`}>
-                      <Phone className="w-3.5 h-3.5 text-white" /> {b.phone}
-                    </a>
-                  ) : (
-                    <button
-                      onClick={onOpenSubscribeModal}
-                      className="w-full flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-black py-2 rounded-xl transition shadow-sm cursor-pointer"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-emerald-950" /> 🔒 عرض أرقام الهواتف والأسعار
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
