@@ -2,6 +2,6 @@
   "dialect": "postgresql",
   "schema": "./src/db/schema.ts",
   "dbCredentials": {
-    "url": "postgresql://postgres:abdo1abdo2abdo3@db.wtrzxqsiidyawcqhahpb.supabase.co:5432/postgres"
+    "url": "postgresql://postgres:abdo1abdo2abdo3@db.wtrzxqsiidyawcqhahpb.supabase.co:5432/postgres?sslmode=require"
   }
 }
