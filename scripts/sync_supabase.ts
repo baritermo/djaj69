@@ -3,7 +3,7 @@ import { pool } from '../src/db/index';
 async function syncSupabase() {
   console.log('🔄 Starting Supabase Database Table Synchronization...');
   try {
-    // 1. official_prices
+    // 1. Re-create / Alter official_prices table without categories
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "official_prices" (
         "wilaya_code" text PRIMARY KEY NOT NULL,
@@ -12,26 +12,25 @@ async function syncSupabase() {
         "region" text NOT NULL,
         "trend" text DEFAULT 'stable' NOT NULL,
         "trend_percent" text DEFAULT '0%',
-        "khashna_farmer" integer,
-        "khashna_slaughter" integer,
-        "khashna_intermediary" integer,
-        "motawassita_farmer" integer,
-        "motawassita_slaughter" integer,
-        "motawassita_intermediary" integer,
-        "raqiqa_farmer" integer,
-        "raqiqa_slaughter" integer,
-        "raqiqa_intermediary" integer,
+        "farmer_price" integer,
+        "slaughter_price" integer,
+        "intermediary_price" integer,
         "updated_at" timestamp DEFAULT now()
       );
-      ALTER TABLE "official_prices" ALTER COLUMN "khashna_farmer" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "khashna_slaughter" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "khashna_intermediary" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_farmer" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_slaughter" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_intermediary" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_farmer" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_slaughter" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_intermediary" DROP NOT NULL;
+
+      ALTER TABLE "official_prices" ADD COLUMN IF NOT EXISTS "farmer_price" integer;
+      ALTER TABLE "official_prices" ADD COLUMN IF NOT EXISTS "slaughter_price" integer;
+      ALTER TABLE "official_prices" ADD COLUMN IF NOT EXISTS "intermediary_price" integer;
+
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "khashna_farmer";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "khashna_slaughter";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "khashna_intermediary";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "motawassita_farmer";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "motawassita_slaughter";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "motawassita_intermediary";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "raqiqa_farmer";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "raqiqa_slaughter";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "raqiqa_intermediary";
     `);
 
     // 2. b2b_companies
@@ -163,7 +162,7 @@ async function syncSupabase() {
       );
     `);
 
-    console.log('✅ All Supabase tables successfully synchronized!');
+    console.log('✅ All Supabase tables successfully synchronized without categories!');
   } catch (err: any) {
     console.error('Error synchronizing database tables:', err.message);
   } finally {
