@@ -68,6 +68,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const sanitizeInt = (val: any, fallback = 0) => {
+      const num = Number(val);
+      return isNaN(num) ? fallback : Math.round(num);
+    };
+
     // If body is an array of price updates
     if (Array.isArray(body)) {
       const insertedList = [];
@@ -79,14 +84,14 @@ export async function POST(request: Request) {
             wilayaCode: String(item.wilayaCode),
             date: today,
             category: item.category || 'متوسطة',
-            farmerPrice: Number(item.farmerPrice || 0),
-            slaughterPrice: Number(item.slaughterPrice || 0),
-            intermediaryPrice: Number(item.intermediaryPrice || 0),
+            farmerPrice: sanitizeInt(item.farmerPrice, 0),
+            slaughterPrice: sanitizeInt(item.slaughterPrice, 0),
+            intermediaryPrice: sanitizeInt(item.intermediaryPrice, 0),
             trend: item.trend || 'stable',
             trendChangePercent: String(item.trendChangePercent || '0%'),
             notesAr: item.notesAr || 'تحديث من إدارة المنصة',
-            reportedBy: 'إدارة المنصة (صاحب الموقع)',
-            status: 'official',
+            reportedBy: item.reportedBy || 'إدارة المنصة (صاحب الموقع)',
+            status: item.status || 'official',
           })
           .returning();
         insertedList.push(inserted);
@@ -105,6 +110,7 @@ export async function POST(request: Request) {
       trendChangePercent = '0%',
       notesAr,
       reportedBy = 'إدارة المنصة (صاحب الموقع)',
+      status = 'official',
     } = body;
 
     if (!wilayaCode || farmerPrice === undefined) {
@@ -115,6 +121,7 @@ export async function POST(request: Request) {
     }
 
     const today = date || new Date().toISOString().split('T')[0];
+    const parsedFarmerPrice = sanitizeInt(farmerPrice, 0);
 
     const [inserted] = await db
       .insert(poultryPrices)
@@ -122,21 +129,22 @@ export async function POST(request: Request) {
         wilayaCode: String(wilayaCode),
         date: today,
         category,
-        farmerPrice: Number(farmerPrice),
-        slaughterPrice: Number(slaughterPrice || Number(farmerPrice) - 10),
-        intermediaryPrice: Number(intermediaryPrice || Number(farmerPrice) + 10),
+        farmerPrice: parsedFarmerPrice,
+        slaughterPrice: slaughterPrice !== undefined ? sanitizeInt(slaughterPrice, parsedFarmerPrice - 10) : parsedFarmerPrice - 10,
+        intermediaryPrice: intermediaryPrice !== undefined ? sanitizeInt(intermediaryPrice, parsedFarmerPrice + 10) : parsedFarmerPrice + 10,
         trend,
         trendChangePercent: String(trendChangePercent),
         notesAr: notesAr || `تحديث أسعار الدواجن لولاية ${wilayaCode}`,
         reportedBy,
-        status: 'official',
+        status,
       })
       .returning();
 
     return NextResponse.json({ status: 'success', price: inserted });
   } catch (error: any) {
+    console.error('Error inserting poultry price:', error);
     return NextResponse.json(
-      { status: 'error', message: error.message },
+      { status: 'error', message: error.message || 'فشل إضافة السعر في قاعدة البيانات' },
       { status: 500 }
     );
   }

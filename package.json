@@ -5,6 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:setup": "npx tsx src/db/setup.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
