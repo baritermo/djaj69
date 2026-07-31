@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { db } from './index';
-import { wilayas, poultryPrices, priceReports, marketOffers, b2bCompanies, jobs, workers, officialPrices } from './schema';
+import { users, wilayas, poultryPrices, priceReports, marketOffers, b2bCompanies, jobs, workers, officialPrices } from './schema';
 import { ALGERIA_WILAYAS } from '../lib/algeria-data';
 
 export async function seedDatabase() {
@@ -116,6 +116,20 @@ export async function seedDatabase() {
         { fullName: 'كريم قادري', specialty: 'slaughter_worker', wilayaCode: '09', wilayaName: 'البليدة', experienceYears: 5, willingToRelocate: false, phone: '0770445566', bio: 'خبرة في المذابح الآلية، مختص في الذبح والتغليف.', availableNow: true },
         { fullName: 'عمر بوزيد', specialty: 'farm_supervisor', wilayaCode: '19', wilayaName: 'سطيف', experienceYears: 10, willingToRelocate: true, phone: '0552334455', bio: 'مشرف مزارع 10 سنوات خبرة.', availableNow: true },
         { fullName: 'أمين طاهري', specialty: 'driver_refrigerated', wilayaCode: '31', wilayaName: 'وهران', experienceYears: 6, willingToRelocate: true, phone: '0668776655', bio: 'سائق تبريد خبرة توزيع لحوم بيضاء.', availableNow: true },
+      ]);
+    }
+
+    // ---- Users (حسابات الاختبار لجميع الفئات) ----
+    const existingUsers = await db.select().from(users).limit(1);
+    if (existingUsers.length === 0) {
+      await db.insert(users).values([
+        { fullName: 'إدارة البورصة (مدير المنصة)', phone: 'BARIHDANAJMA', password: 'BARIHDANAJMA', role: 'admin', subscriptionStatus: 'active', wilayaCode: '16' },
+        { fullName: 'فلاح الجزائر (مزرعة الأطلس)', phone: '0551002030', password: '123456', role: 'farmer', subscriptionStatus: 'active', wilayaCode: '10' },
+        { fullName: 'مذبح الهضاب المعتمد', phone: '0662345678', password: '123456', role: 'slaughterhouse', subscriptionStatus: 'active', wilayaCode: '19' },
+        { fullName: 'كورتي ووسيط توزيع', phone: '0556789012', password: '123456', role: 'broker', subscriptionStatus: 'active', wilayaCode: '09' },
+        { fullName: 'شركة أعلاف ومطاحن B2B', phone: '036809010', password: '123456', role: 'b2b', subscriptionStatus: 'active', wilayaCode: '19' },
+        { fullName: 'رشيد بن عمارة (عامل دواجن)', phone: '0558112233', password: '123456', role: 'worker', subscriptionStatus: 'active', wilayaCode: '10' },
+        { fullName: 'مستخدم تجريبي (غير مشترك)', phone: '0550000000', password: '123456', role: 'farmer', subscriptionStatus: 'none', wilayaCode: '16' },
       ]);
     }
   } catch (error) {

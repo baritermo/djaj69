@@ -154,15 +154,41 @@ async function syncSupabase() {
         "slaughter_price" integer NOT NULL,
         "intermediary_price" integer NOT NULL,
         "trend" text DEFAULT 'stable' NOT NULL,
-        "trend_change_percent" text DEFAULT '0%',
-        "notes_ar" text,
-        "reported_by" text DEFAULT 'الغرفة الفلاحية',
         "status" text DEFAULT 'official',
         "created_at" timestamp DEFAULT now()
       );
     `);
 
-    console.log('✅ All Supabase tables successfully synchronized without categories!');
+    // 8. users
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "full_name" text NOT NULL,
+        "phone" text UNIQUE NOT NULL,
+        "password" text NOT NULL,
+        "role" text DEFAULT 'farmer' NOT NULL,
+        "wilaya_code" text,
+        "commune" text,
+        "subscription_status" text DEFAULT 'none' NOT NULL,
+        "receipt_url" text,
+        "id_card_url" text,
+        "rejection_reason" text,
+        "subscription_date" timestamp,
+        "created_at" timestamp DEFAULT now()
+      );
+
+      INSERT INTO "users" ("full_name", "phone", "password", "role", "subscription_status", "wilaya_code")
+      VALUES
+        ('فلاح الجزائر (مزرعة الأطلس)', '0551002030', '123456', 'farmer', 'active', '10'),
+        ('مذبح الهضاب المعتمد', '0662345678', '123456', 'slaughterhouse', 'active', '19'),
+        ('كورتي ووسيط توزيع', '0556789012', '123456', 'broker', 'active', '09'),
+        ('شركة أعلاف ومطاحن B2B', '036809010', '123456', 'b2b', 'active', '19'),
+        ('رشيد بن عمارة (عامل دواجن)', '0558112233', '123456', 'worker', 'active', '10'),
+        ('مستخدم تجريبي (غير مشترك)', '0550000000', '123456', 'farmer', 'none', '16')
+      ON CONFLICT ("phone") DO UPDATE SET "subscription_status" = EXCLUDED."subscription_status", "password" = EXCLUDED."password";
+    `);
+
+    console.log('✅ All Supabase tables & test user accounts successfully synchronized!');
   } catch (err: any) {
     console.error('Error synchronizing database tables:', err.message);
   } finally {
