@@ -2,11 +2,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
 
-const databaseUrl = process.env.DATABASE_URL;
+const DEFAULT_DB_URL = "postgresql://postgres.wtrzxqsiidyawcqhahpb:abdo1abdo2abdo3@aws-0-eu-north-1.pooler.supabase.com:5432/postgres?sslmode=no-verify";
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
-}
+const databaseUrl = process.env.DATABASE_URL || DEFAULT_DB_URL;
 
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;

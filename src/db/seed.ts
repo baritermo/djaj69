@@ -96,10 +96,13 @@ export async function seedDatabase() {
   }
 }
 
-seedDatabase().then(() => {
-  console.log('✅ Seed completed successfully!');
-  process.exit(0);
-}).catch((err) => {
-  console.error('❌ Seed failed:', err);
-  process.exit(1);
-});
+// Only auto-run CLI if called directly via node/tsx
+if (typeof require !== 'undefined' && require.main === module) {
+  seedDatabase().then(() => {
+    console.log('✅ Seed completed successfully!');
+    process.exit(0);
+  }).catch((err) => {
+    console.error('❌ Seed failed:', err);
+    process.exit(1);
+  });
+}
