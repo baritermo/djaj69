@@ -34,6 +34,11 @@ async function ensureTables() {
       ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_farmer" DROP NOT NULL;
       ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_slaughter" DROP NOT NULL;
       ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_intermediary" DROP NOT NULL;
+      UPDATE "official_prices" SET 
+        khashna_farmer = NULL, khashna_slaughter = NULL, khashna_intermediary = NULL,
+        motawassita_farmer = NULL, motawassita_slaughter = NULL, motawassita_intermediary = NULL,
+        raqiqa_farmer = NULL, raqiqa_slaughter = NULL, raqiqa_intermediary = NULL
+      WHERE khashna_farmer IN (300, 320, 325) OR motawassita_farmer IN (290, 300, 310);
     `);
   } catch (e) {
     // Ignore if already altered

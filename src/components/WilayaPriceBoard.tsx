@@ -72,44 +72,26 @@ export default function WilayaPriceBoard({
     return <>{val} <span className="text-[10px] font-normal opacity-75">د.ج</span></>;
   };
 
-  // Build wilaya data with prices from DB or fallback
+  // Build wilaya data with prices from DB (defaults to null / غير محدد)
   const wilayaDataWithPrices = useMemo(() => {
     return ALGERIA_WILAYAS.map((wilaya) => {
       const dbOfficial = officialMap[wilaya.code];
 
-      let khashna = {
-        farmer: dbOfficial?.khashnaFarmer ?? wilaya.khashna_farmer,
-        slaughter: dbOfficial?.khashnaSlaughter ?? wilaya.khashna_slaughter,
-        intermediary: dbOfficial?.khashnaIntermediary ?? wilaya.khashna_intermediary,
+      const khashna = {
+        farmer: dbOfficial?.khashnaFarmer ?? null,
+        slaughter: dbOfficial?.khashnaSlaughter ?? null,
+        intermediary: dbOfficial?.khashnaIntermediary ?? null,
       };
-      let motawassita = {
-        farmer: dbOfficial?.motawassitaFarmer ?? wilaya.motawassita_farmer,
-        slaughter: dbOfficial?.motawassitaSlaughter ?? wilaya.motawassita_slaughter,
-        intermediary: dbOfficial?.motawassitaIntermediary ?? wilaya.motawassita_intermediary,
+      const motawassita = {
+        farmer: dbOfficial?.motawassitaFarmer ?? null,
+        slaughter: dbOfficial?.motawassitaSlaughter ?? null,
+        intermediary: dbOfficial?.motawassitaIntermediary ?? null,
       };
-      let raqiqa = {
-        farmer: dbOfficial?.raqiqaFarmer ?? wilaya.raqiqa_farmer,
-        slaughter: dbOfficial?.raqiqaSlaughter ?? wilaya.raqiqa_slaughter,
-        intermediary: dbOfficial?.raqiqaIntermediary ?? wilaya.raqiqa_intermediary,
+      const raqiqa = {
+        farmer: dbOfficial?.raqiqaFarmer ?? null,
+        slaughter: dbOfficial?.raqiqaSlaughter ?? null,
+        intermediary: dbOfficial?.raqiqaIntermediary ?? null,
       };
-
-      if (dbOfficial) {
-        khashna = {
-          farmer: dbOfficial.khashnaFarmer,
-          slaughter: dbOfficial.khashnaSlaughter,
-          intermediary: dbOfficial.khashnaIntermediary,
-        };
-        motawassita = {
-          farmer: dbOfficial.motawassitaFarmer,
-          slaughter: dbOfficial.motawassitaSlaughter,
-          intermediary: dbOfficial.motawassitaIntermediary,
-        };
-        raqiqa = {
-          farmer: dbOfficial.raqiqaFarmer,
-          slaughter: dbOfficial.raqiqaSlaughter,
-          intermediary: dbOfficial.raqiqaIntermediary,
-        };
-      }
 
       const trend = dbOfficial?.trend || wilaya.trend;
       const trendPercent = dbOfficial?.trendPercent || wilaya.trendPercent;
