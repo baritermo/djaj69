@@ -38,6 +38,10 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
   };
 
   const toggleCard = (id: number) => {
+    if (!isSubscribed) {
+      if (onOpenSubscribeModal) onOpenSubscribeModal();
+      return;
+    }
     setClosedCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -133,7 +137,7 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
             {!isWilayaClosed && (
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
                 {items.map((b) => {
-                  const isCardClosed = closedCards[b.id];
+                  const isCardClosed = !isSubscribed ? true : closedCards[b.id];
                   return (
                     <div key={b.id} className={`relative rounded-xl border p-4 bg-white hover:shadow-lg transition overflow-hidden ${isSlaughterhouse ? 'border-indigo-200 hover:border-indigo-400' : 'border-amber-200 hover:border-amber-400'}`}>
                       {/* Card Body (Blurred when not subscribed) */}

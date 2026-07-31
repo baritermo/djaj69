@@ -38,8 +38,12 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
     setClosedWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
-  const toggleCard = (id: number) => {
-    setClosedCards((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleCard = (farmerId: number) => {
+    if (!isSubscribed) {
+      if (onOpenSubscribeModal) onOpenSubscribeModal();
+      return;
+    }
+    setClosedCards((prev) => ({ ...prev, [farmerId]: !prev[farmerId] }));
   };
 
   const grouped = useMemo(() => {
@@ -107,7 +111,7 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
             {!isWilayaClosed && (
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fadeIn">
                 {items.map((farmer) => {
-                  const isCardClosed = closedCards[farmer.id];
+                  const isCardClosed = !isSubscribed ? true : closedCards[farmer.id];
                   return (
                     <div key={farmer.id} className="relative rounded-xl border border-slate-200 bg-gradient-to-bl from-emerald-50/60 to-white p-4 hover:shadow-lg hover:border-emerald-400 transition overflow-hidden">
                       {/* Card Content (Blurred when not subscribed) */}
