@@ -374,7 +374,7 @@ export default function HomePage() {
         onClose={() => setIsPriceModalOpen(false)}
         onSuccess={() => {
           fetchAllData();
-          setActiveTab('reports');
+          setActiveTab('prices');
         }}
         defaultWilaya={selectedWilayaForReport}
       />
