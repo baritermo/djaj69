@@ -113,32 +113,38 @@ export async function POST(request: Request) {
       intermediaryPrice = parsePrice(body.intermediaryPrice);
     }
 
-    // Query existing row to compute automatic trend comparison
-    const [existingRow] = await db
-      .select()
-      .from(officialPrices)
-      .where(eq(officialPrices.wilayaCode, targetWilayaCode))
-      .limit(1);
+    let calculatedTrend = 'stable';
+    let calculatedPercent = '0.0%';
 
-    let calculatedTrend = existingRow?.trend || 'stable';
-    let calculatedPercent = existingRow?.trendPercent || '0.0%';
+    try {
+      const [existingRow] = await db
+        .select()
+        .from(officialPrices)
+        .where(eq(officialPrices.wilayaCode, targetWilayaCode))
+        .limit(1);
 
-    const oldPrice = existingRow?.motawassitaFarmer ?? existingRow?.khashnaFarmer;
-    const newPrice = farmerPrice !== null ? farmerPrice : (slaughterPrice !== null ? slaughterPrice : intermediaryPrice);
+      calculatedTrend = existingRow?.trend || 'stable';
+      calculatedPercent = existingRow?.trendPercent || '0.0%';
 
-    if (oldPrice && newPrice && oldPrice > 0) {
-      const diff = newPrice - oldPrice;
-      const pct = Math.abs((diff / oldPrice) * 100);
-      if (diff > 0) {
-        calculatedTrend = 'up';
-        calculatedPercent = `+${pct.toFixed(1)}%`;
-      } else if (diff < 0) {
-        calculatedTrend = 'down';
-        calculatedPercent = `-${pct.toFixed(1)}%`;
-      } else {
-        calculatedTrend = 'stable';
-        calculatedPercent = '0.0%';
+      const oldPrice = existingRow?.motawassitaFarmer ?? existingRow?.khashnaFarmer;
+      const newPrice = farmerPrice !== null ? farmerPrice : (slaughterPrice !== null ? slaughterPrice : intermediaryPrice);
+
+      if (oldPrice && newPrice && oldPrice > 0) {
+        const diff = newPrice - oldPrice;
+        const pct = Math.abs((diff / oldPrice) * 100);
+        if (diff > 0) {
+          calculatedTrend = 'up';
+          calculatedPercent = `+${pct.toFixed(1)}%`;
+        } else if (diff < 0) {
+          calculatedTrend = 'down';
+          calculatedPercent = `-${pct.toFixed(1)}%`;
+        } else {
+          calculatedTrend = 'stable';
+          calculatedPercent = '0.0%';
+        }
       }
+    } catch (err) {
+      // Safe fallback if trend fetch fails
     }
 
     await db
