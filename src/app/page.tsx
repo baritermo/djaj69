@@ -37,7 +37,19 @@ export default function HomePage() {
     const savedUser = localStorage.getItem('poultry_user');
     if (savedUser) {
       try {
-        setCurrentUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setCurrentUser(parsed);
+        if (parsed.phone) {
+          fetch(`/api/auth/me?phone=${encodeURIComponent(parsed.phone)}`)
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.status === 'success' && data.user) {
+                setCurrentUser(data.user);
+                localStorage.setItem('poultry_user', JSON.stringify(data.user));
+              }
+            })
+            .catch((e) => console.error(e));
+        }
       } catch (e) {
         console.error(e);
       }
