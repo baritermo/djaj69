@@ -60,18 +60,9 @@ export const officialPrices = pgTable('official_prices', {
   region: text('region').notNull(),
   trend: text('trend').notNull().default('stable'),
   trendPercent: text('trend_percent').default('0%'),
-  // خشنة
-  khashnaFarmer: integer('khashna_farmer'),
-  khashnaSlaughter: integer('khashna_slaughter'),
-  khashnaIntermediary: integer('khashna_intermediary'),
-  // متوسطة
-  motawassitaFarmer: integer('motawassita_farmer'),
-  motawassitaSlaughter: integer('motawassita_slaughter'),
-  motawassitaIntermediary: integer('motawassita_intermediary'),
-  // رقيقة
-  raqiqaFarmer: integer('raqiqa_farmer'),
-  raqiqaSlaughter: integer('raqiqa_slaughter'),
-  raqiqaIntermediary: integer('raqiqa_intermediary'),
+  farmerPrice: integer('farmer_price'),
+  slaughterPrice: integer('slaughter_price'),
+  intermediaryPrice: integer('intermediary_price'),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 

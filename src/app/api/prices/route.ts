@@ -14,34 +14,26 @@ async function ensureTables() {
         "region" text NOT NULL,
         "trend" text DEFAULT 'stable' NOT NULL,
         "trend_percent" text DEFAULT '0%',
-        "khashna_farmer" integer,
-        "khashna_slaughter" integer,
-        "khashna_intermediary" integer,
-        "motawassita_farmer" integer,
-        "motawassita_slaughter" integer,
-        "motawassita_intermediary" integer,
-        "raqiqa_farmer" integer,
-        "raqiqa_slaughter" integer,
-        "raqiqa_intermediary" integer,
+        "farmer_price" integer,
+        "slaughter_price" integer,
+        "intermediary_price" integer,
         "updated_at" timestamp DEFAULT now()
       );
-      ALTER TABLE "official_prices" ALTER COLUMN "khashna_farmer" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "khashna_slaughter" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "khashna_intermediary" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_farmer" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_slaughter" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "motawassita_intermediary" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_farmer" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_slaughter" DROP NOT NULL;
-      ALTER TABLE "official_prices" ALTER COLUMN "raqiqa_intermediary" DROP NOT NULL;
-      UPDATE "official_prices" SET 
-        khashna_farmer = NULL, khashna_slaughter = NULL, khashna_intermediary = NULL,
-        motawassita_farmer = NULL, motawassita_slaughter = NULL, motawassita_intermediary = NULL,
-        raqiqa_farmer = NULL, raqiqa_slaughter = NULL, raqiqa_intermediary = NULL
-      WHERE khashna_farmer IN (300, 320, 325) OR motawassita_farmer IN (290, 300, 310);
+      ALTER TABLE "official_prices" ADD COLUMN IF NOT EXISTS "farmer_price" integer;
+      ALTER TABLE "official_prices" ADD COLUMN IF NOT EXISTS "slaughter_price" integer;
+      ALTER TABLE "official_prices" ADD COLUMN IF NOT EXISTS "intermediary_price" integer;
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "khashna_farmer";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "khashna_slaughter";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "khashna_intermediary";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "motawassita_farmer";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "motawassita_slaughter";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "motawassita_intermediary";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "raqiqa_farmer";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "raqiqa_slaughter";
+      ALTER TABLE "official_prices" DROP COLUMN IF EXISTS "raqiqa_intermediary";
     `);
   } catch (e) {
-    // Ignore if already altered
+    // Ignore if columns already dropped/added
   }
 }
 
@@ -98,7 +90,6 @@ export async function POST(request: Request) {
     };
 
     const targetWilayaCode = String((Array.isArray(body) ? body[0]?.wilayaCode : body.wilayaCode) || '16').padStart(2, '0');
-    const trend = (Array.isArray(body) ? body[0]?.trend : body.trend) || 'stable';
 
     let farmerPrice: number | null = null;
     let slaughterPrice: number | null = null;
@@ -131,7 +122,7 @@ export async function POST(request: Request) {
       calculatedTrend = existingRow?.trend || 'stable';
       calculatedPercent = existingRow?.trendPercent || '0.0%';
 
-      const oldPrice = existingRow?.motawassitaFarmer ?? existingRow?.khashnaFarmer;
+      const oldPrice = existingRow?.farmerPrice;
       const newPrice = farmerPrice !== null ? farmerPrice : (slaughterPrice !== null ? slaughterPrice : intermediaryPrice);
 
       if (oldPrice && newPrice && oldPrice > 0) {
@@ -155,15 +146,9 @@ export async function POST(request: Request) {
     await db
       .update(officialPrices)
       .set({
-        khashnaFarmer: farmerPrice,
-        khashnaSlaughter: slaughterPrice,
-        khashnaIntermediary: intermediaryPrice,
-        motawassitaFarmer: farmerPrice,
-        motawassitaSlaughter: slaughterPrice,
-        motawassitaIntermediary: intermediaryPrice,
-        raqiqaFarmer: farmerPrice,
-        raqiqaSlaughter: slaughterPrice,
-        raqiqaIntermediary: intermediaryPrice,
+        farmerPrice,
+        slaughterPrice,
+        intermediaryPrice,
         trend: calculatedTrend,
         trendPercent: calculatedPercent,
         updatedAt: new Date(),

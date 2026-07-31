@@ -27,15 +27,9 @@ export async function seedDatabase() {
         region: w.region,
         trend: 'stable',
         trendPercent: '0%',
-        khashnaFarmer: null,
-        khashnaSlaughter: null,
-        khashnaIntermediary: null,
-        motawassitaFarmer: null,
-        motawassitaSlaughter: null,
-        motawassitaIntermediary: null,
-        raqiqaFarmer: null,
-        raqiqaSlaughter: null,
-        raqiqaIntermediary: null,
+        farmerPrice: null,
+        slaughterPrice: null,
+        intermediaryPrice: null,
         updatedAt: new Date(),
       }));
       await db.insert(officialPrices).values(officialList);

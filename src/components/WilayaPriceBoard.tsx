@@ -77,21 +77,13 @@ export default function WilayaPriceBoard({
     return ALGERIA_WILAYAS.map((wilaya) => {
       const dbOfficial = officialMap[wilaya.code];
 
-      const khashna = {
-        farmer: dbOfficial?.khashnaFarmer ?? null,
-        slaughter: dbOfficial?.khashnaSlaughter ?? null,
-        intermediary: dbOfficial?.khashnaIntermediary ?? null,
-      };
-      const motawassita = {
-        farmer: dbOfficial?.motawassitaFarmer ?? null,
-        slaughter: dbOfficial?.motawassitaSlaughter ?? null,
-        intermediary: dbOfficial?.motawassitaIntermediary ?? null,
-      };
-      const raqiqa = {
-        farmer: dbOfficial?.raqiqaFarmer ?? null,
-        slaughter: dbOfficial?.raqiqaSlaughter ?? null,
-        intermediary: dbOfficial?.raqiqaIntermediary ?? null,
-      };
+      const farmerPrice = dbOfficial?.farmerPrice ?? dbOfficial?.motawassitaFarmer ?? dbOfficial?.khashnaFarmer ?? null;
+      const slaughterPrice = dbOfficial?.slaughterPrice ?? dbOfficial?.motawassitaSlaughter ?? dbOfficial?.khashnaSlaughter ?? null;
+      const intermediaryPrice = dbOfficial?.intermediaryPrice ?? dbOfficial?.motawassitaIntermediary ?? dbOfficial?.khashnaIntermediary ?? null;
+
+      const khashna = { farmer: farmerPrice, slaughter: slaughterPrice, intermediary: intermediaryPrice };
+      const motawassita = { farmer: farmerPrice, slaughter: slaughterPrice, intermediary: intermediaryPrice };
+      const raqiqa = { farmer: farmerPrice, slaughter: slaughterPrice, intermediary: intermediaryPrice };
 
       const trend = dbOfficial?.trend || wilaya.trend;
       const trendPercent = dbOfficial?.trendPercent || wilaya.trendPercent;
