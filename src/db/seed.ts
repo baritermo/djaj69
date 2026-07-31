@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { db } from './index';
 import { wilayas, poultryPrices, priceReports, marketOffers, b2bCompanies, jobs, workers } from './schema';
 import { ALGERIA_WILAYAS } from '../lib/algeria-data';
@@ -94,3 +95,11 @@ export async function seedDatabase() {
     console.error('Seed error:', error);
   }
 }
+
+seedDatabase().then(() => {
+  console.log('✅ Seed completed successfully!');
+  process.exit(0);
+}).catch((err) => {
+  console.error('❌ Seed failed:', err);
+  process.exit(1);
+});
