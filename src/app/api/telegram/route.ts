@@ -56,6 +56,8 @@ export async function GET(request: Request) {
   });
 }
 
+const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -64,6 +66,12 @@ export async function POST(request: Request) {
     if (body.message && body.message.text) {
       const chatId = body.message.chat.id;
       const messageText = body.message.text.trim();
+
+      // Security check: Only allow admin chat ID if configured
+      if (ADMIN_CHAT_ID && String(chatId) !== String(ADMIN_CHAT_ID)) {
+        await sendTelegramMessage(chatId, '⛔ <b>عذراً، هذا البوت مخصص لمشرف البورصة فقط.</b>');
+        return NextResponse.json({ status: 'unauthorized' });
+      }
 
       // Check Help / Start Command
       if (messageText.startsWith('/start') || messageText.startsWith('/help')) {
