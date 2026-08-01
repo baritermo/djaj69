@@ -42,79 +42,49 @@ async function ensureTables() {
   }
 }
 
+// Pool of authentic Algerian First Names ONLY (أسماء فقط بدون ألقاب)
 const FIRST_NAMES = [
   'أحمد', 'محمد', 'عبد القادر', 'مصطفى', 'سفيان', 'بوعلام', 'كريم', 'ياسين', 'فاروق', 'حمزة',
   'رشيد', 'سليم', 'عمار', 'رضا', 'أمين', 'خالد', 'زبير', 'بلال', 'عمر', 'هشام',
   'وليد', 'عثمان', 'إسماعيل', 'توفيق', 'سمير', 'زهير', 'عبد السلام', 'شريف', 'حكيم', 'مالك',
   'فتحي', 'إسلام', 'يوسف', 'طاهر', 'منير', 'عادل', 'سامي', 'رفيق', 'فيصل', 'صالح',
   'فؤاد', 'مجيد', 'زكريا', 'شكيب', 'أنيس', 'إلياس', 'حسام', 'حميد', 'نبيل', 'مرزوق',
-  'وسيم', 'بشير', 'عبد الحق', 'مراد', 'عنتر', 'بن علي', 'بوزيان', 'مقداد', 'العربي', 'طاهر'
+  'وسيم', 'بشير', 'عبد الحق', 'مراد', 'عنتر', 'بن علي', 'بوزيان', 'مقداد', 'العربي', 'حاج بوعلام',
+  'نور الدين', 'صلاح الدين', 'جمال', 'حاج إسماعيل', 'حاج موسى', 'عبد الجليل', 'عبد الرزاق', 'عبد الرحيم', 'حبيب', 'سيد أحمد',
+  'رابح', 'جيلالي', 'خير الدين', 'مبروك', 'لمين', 'مهدي', 'رمزي', 'يونس', 'سيف الدين', 'حسين',
+  'زين الدين', 'رياض', 'سليمان', 'كمال', 'مصطفي', 'عبد الرحمان', 'عياش', 'منصور', 'إبراهيم', 'يعقوب'
 ];
 
-const LAST_NAMES = [
-  'كوان', 'زروقي', 'بلحاج', 'براهيمي', 'مزياني', 'دراجي', 'بوقرة', 'طاهري', 'عمارة', 'سعدي',
-  'بوزيد', 'بلمختار', 'مرابط', 'غانم', 'عثماني', 'تومي', 'سليماني', 'جبار', 'عيادي', 'شريف',
-  'قادري', 'بوسالم', 'بلمدني', 'حداد', 'مزهود', 'سعيد', 'عيساوي', 'بلخير', 'بوزيان', 'منصوري',
-  'قاسم', 'مرزوق', 'بن عيسى', 'حدادي', 'بوغرة', 'بوجمعة', 'مزغنة', 'بن سالم', 'عاشور', 'يحياوي',
-  'مصباحي', 'مدني', 'رحماني', 'بشيري', 'بوعزة', 'مزيان', 'طهراوي', 'رباحي', 'ناصري', 'مسعودي'
-];
-
-const FARM_PREFIXES = [
-  'مزرعة البركة', 'مزرعة الأمل', 'مزرعة التيسير', 'مزارع الهضاب', 'مزرعة الخير',
-  'مزرعة النور', 'مزرعة الواحة', 'مزارع الأوراس', 'مزرعة الصداقة', 'مزرعة الريان',
-  'مزارع السهول', 'مزرعة الوفاء', 'مزرعة الفجر', 'مزارع متيجة', 'مزرعة السلام',
-  'مزرعة الأفق', 'مزارع الزيبان', 'مزرعة البستان', 'مزرعة النخيل', 'مزارع الحضنة',
-  'مزرعة الشهاب', 'مزرعة التضامن', 'مزارع التيطري', 'مزرعة السرور', 'مزرعة النهضة'
-];
-
-const BROKER_PREFIXES = [
-  'الكورتي', 'الوسيط', 'مكتب الكورتي', 'مكتب الوساطة الفلاحية', 'مكتب التوزيع السريع',
-  'الوسيط الفلاحي', 'مكتب الأمانة للتوزيع', 'مكتب النجم للوساطة', 'مكتب الفرسان للجملة',
-  'مكتب الوفاق للتوزيع', 'مكتب المدى الفلاحي', 'مكتب الاتحاد الفلاحي', 'مكتب الجودة والتوزيع'
-];
-
-const SLAUGHTER_PREFIXES = [
-  'مذبح البركة للجملة', 'مذابح الأمل الحديثة', 'مذبح السلام الصناعي', 'مذابح النور الوطنية',
-  'مذبح المتيجة العصري', 'مذابح الهضاب الكبرى', 'مذبح الأوراس الصناعي', 'مذابح الواحة لتبريد اللحوم',
-  'مذبح التيسير لحوم بيضاء', 'مذابح الحضنة الحديثة', 'مذبح الأفق للصناعات الغذائية', 'مذابح الزيبان للدواجن',
-  'مذبح التيطري العصري', 'مذابح الوفاق لتجهيز اللحوم', 'مذبح النجم للحوم البيضاء', 'مذابح الشرق الوطنية',
-  'مذبح الغرب العصري', 'مذابح الوسط الصناعية', 'مذبح الفجر للتبريد', 'مذابح السهول للدواجن'
-];
-
-// Helper to generate 350+ unique clean human names per category (no "مزرعة", "فلاح", "كورتي", "مذبح")
+// Helper to generate 350+ unique names formatted as: "فلاح احمد", "كورتي احمد", "مذبح احمد"
 function generateAccountPools() {
   const farmers: string[] = [];
   const brokers: string[] = [];
   const slaughters: string[] = [];
 
-  // Generate 350 Farmers (Clean Human Names)
-  let fIdx = 0;
-  while (farmers.length < 350) {
-    const fn = FIRST_NAMES[fIdx % FIRST_NAMES.length];
-    const ln = LAST_NAMES[(fIdx * 3) % LAST_NAMES.length];
-    const name = `${fn} ${ln}`;
-    if (!farmers.includes(name)) farmers.push(name);
-    fIdx++;
+  const totalNames = FIRST_NAMES.length;
+
+  // Generate 350 Farmers ("فلاح احمد", "فلاح سفيان"...)
+  for (let i = 0; i < 350; i++) {
+    const baseName = FIRST_NAMES[i % totalNames];
+    const cycle = Math.floor(i / totalNames);
+    const name = cycle === 0 ? `فلاح ${baseName}` : `فلاح ${baseName} (${cycle + 1})`;
+    farmers.push(name);
   }
 
-  // Generate 350 Brokers (Clean Human Names)
-  let bIdx = 0;
-  while (brokers.length < 350) {
-    const fn = FIRST_NAMES[(bIdx * 2) % FIRST_NAMES.length];
-    const ln = LAST_NAMES[(bIdx * 5) % LAST_NAMES.length];
-    const name = `${fn} ${ln}`;
-    if (!farmers.includes(name) && !brokers.includes(name)) brokers.push(name);
-    bIdx++;
+  // Generate 350 Brokers ("كورتي احمد", "كورتي إسماعيل"...)
+  for (let i = 0; i < 350; i++) {
+    const baseName = FIRST_NAMES[(i + 30) % totalNames];
+    const cycle = Math.floor((i + 30) / totalNames);
+    const name = cycle === 0 ? `كورتي ${baseName}` : `كورتي ${baseName} (${cycle + 1})`;
+    brokers.push(name);
   }
 
-  // Generate 350 Slaughterhouses (Clean Human Names)
-  let sIdx = 0;
-  while (slaughters.length < 350) {
-    const fn = FIRST_NAMES[(sIdx * 4) % FIRST_NAMES.length];
-    const ln = LAST_NAMES[(sIdx * 7) % LAST_NAMES.length];
-    const name = `${fn} ${ln}`;
-    if (!farmers.includes(name) && !brokers.includes(name) && !slaughters.includes(name)) slaughters.push(name);
-    sIdx++;
+  // Generate 350 Slaughterhouses ("مذبح احمد", "مذبح بوعلام"...)
+  for (let i = 0; i < 350; i++) {
+    const baseName = FIRST_NAMES[(i + 60) % totalNames];
+    const cycle = Math.floor((i + 60) / totalNames);
+    const name = cycle === 0 ? `مذبح ${baseName}` : `مذبح ${baseName} (${cycle + 1})`;
+    slaughters.push(name);
   }
 
   return { farmers, brokers, slaughters };
@@ -345,5 +315,44 @@ export async function seedAllWilayas(baseFarmerPrice: number) {
     success: true,
     totalWilayasSeeded: results.length,
     totalOffersGenerated: results.length * 15,
+  };
+}
+
+/**
+ * Direct Update of Official Prices Table for a single Wilaya without seeding B2B offers.
+ */
+export async function updateOfficialPriceBoard(
+  wilayaCode: string,
+  farmerPrice: number,
+  brokerPrice: number,
+  slaughterPrice: number
+) {
+  await ensureTables();
+  const wilaya = getWilayaByCode(wilayaCode);
+  if (!wilaya) {
+    throw new Error(`الولاية ذات الرمز ${wilayaCode} غير موجودة.`);
+  }
+
+  await pool.query(
+    `
+    INSERT INTO "official_prices" ("wilaya_code", "name_ar", "name_fr", "region", "farmer_price", "slaughter_price", "intermediary_price", "trend", "trend_percent", "updated_at")
+    VALUES ($1, $2, $3, $4, $5, $6, $7, 'stable', '0%', NOW())
+    ON CONFLICT ("wilaya_code")
+    DO UPDATE SET
+      "farmer_price" = EXCLUDED.farmer_price,
+      "slaughter_price" = EXCLUDED.slaughter_price,
+      "intermediary_price" = EXCLUDED.intermediary_price,
+      "updated_at" = NOW();
+  `,
+    [wilaya.code, wilaya.nameAr, wilaya.nameFr, wilaya.region, farmerPrice, slaughterPrice, brokerPrice]
+  );
+
+  return {
+    success: true,
+    wilayaCode: wilaya.code,
+    wilayaName: wilaya.nameAr,
+    farmerPrice,
+    brokerPrice,
+    slaughterPrice,
   };
 }

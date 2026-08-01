@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { seedOffersForWilaya, seedAllWilayas } from '@/lib/bot-seeder';
+import { seedOffersForWilaya, seedAllWilayas, updateOfficialPriceBoard } from '@/lib/bot-seeder';
 import { ALGERIA_WILAYAS, getWilayaByCode } from '@/lib/algeria-data';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
 
 // In-memory state for user step-by-step wizard (ChatId -> WilayaCode)
-const USER_WILAYA_STATE = new Map<string, string>();
+const USER_WILAYA_STATE = new Map<string, string>(); // For market offer seeder
+const USER_BOARD_STATE = new Map<string, string>();  // For direct official board update
 
 // Helper: Parse single price or price range (e.g. "280 315", "280-315", "من 280 الى 315")
 function parsePriceInput(text: string): { minPrice: number; maxPrice: number } | null {
@@ -34,6 +35,7 @@ function parsePriceInput(text: string): { minPrice: number; maxPrice: number } |
 const MAIN_KEYBOARD = {
   keyboard: [
     [{ text: '📢 أمر نشر ولاية جديد (اختر من الـ 58 ولاية)' }],
+    [{ text: '📊 تحديث أسعار البورصة الرسمية (فلاح - كورتي - مذبح)' }],
     [{ text: '🌐 تحديث جميع الـ 58 ولاية (280 د.ج)' }, { text: '🌐 تحديث جميع الـ 58 ولاية (290 د.ج)' }],
     [{ text: '📍 سطيف (19)' }, { text: '📍 الجزائر (16)' }, { text: '📍 البليدة (09)' }, { text: '📍 وهران (31)' }],
     [{ text: '❓ مساعدة ودليل الأوامر' }],
@@ -41,7 +43,7 @@ const MAIN_KEYBOARD = {
   resize_keyboard: true,
 };
 
-// Helper: Build Paginated 58 Wilayas Keyboard
+// Helper 1: Build Paginated 58 Wilayas Keyboard for Offer Seeder
 function getWilayasKeyboard(page: number = 1) {
   const pageSize = 20;
   const startIdx = (page - 1) * pageSize;
@@ -72,6 +74,43 @@ function getWilayasKeyboard(page: number = 1) {
   navRow.push({ text: `صفحة ${page} من 3`, callback_data: 'noop' });
   if (page < 3) {
     navRow.push({ text: 'التالية ▶️', callback_data: `wilaya_page_${page + 1}` });
+  }
+  rows.push(navRow);
+
+  return { inline_keyboard: rows };
+}
+
+// Helper 2: Build Paginated 58 Wilayas Keyboard for Official Board Update
+function getBoardWilayasKeyboard(page: number = 1) {
+  const pageSize = 20;
+  const startIdx = (page - 1) * pageSize;
+  const endIdx = startIdx + pageSize;
+  const pageWilayas = ALGERIA_WILAYAS.slice(startIdx, endIdx);
+
+  const rows: any[][] = [];
+  let currentRow: any[] = [];
+
+  for (let i = 0; i < pageWilayas.length; i++) {
+    const w = pageWilayas[i];
+    currentRow.push({
+      text: `${w.code} - ${w.nameAr}`,
+      callback_data: `select_board_wilaya_${w.code}`,
+    });
+
+    if (currentRow.length === 2 || i === pageWilayas.length - 1) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+  }
+
+  // Navigation row
+  const navRow: any[] = [];
+  if (page > 1) {
+    navRow.push({ text: '◀️ السابقة', callback_data: `board_page_${page - 1}` });
+  }
+  navRow.push({ text: `صفحة ${page} من 3`, callback_data: 'noop' });
+  if (page < 3) {
+    navRow.push({ text: 'التالية ▶️', callback_data: `board_page_${page + 1}` });
   }
   rows.push(navRow);
 
@@ -165,6 +204,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'unauthorized' });
       }
 
+      // Offer Seeder Pagination
       if (dataStr.startsWith('wilaya_page_')) {
         const pageNum = Number(dataStr.replace('wilaya_page_', ''));
         await answerCallbackQuery(cb.id, `الصفحة ${pageNum}`);
@@ -176,10 +216,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Step 1: User Selected a Wilaya
+      // Official Board Update Pagination
+      if (dataStr.startsWith('board_page_')) {
+        const pageNum = Number(dataStr.replace('board_page_', ''));
+        await answerCallbackQuery(cb.id, `الصفحة ${pageNum}`);
+        await sendTelegramMessage(
+          chatId,
+          `📊 <b>تحديث أسعار البورصة الرسمية (صفحة ${pageNum} من 3): اختر الولاية:</b>`,
+          getBoardWilayasKeyboard(pageNum)
+        );
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Step 1 for Offer Seeder: User Selected a Wilaya
       if (dataStr.startsWith('select_wilaya_')) {
         const wilayaCode = dataStr.replace('select_wilaya_', '');
         USER_WILAYA_STATE.set(chatId, wilayaCode);
+        USER_BOARD_STATE.delete(chatId);
         const wilaya = getWilayaByCode(wilayaCode);
 
         await answerCallbackQuery(cb.id, `تم اختيار ${wilaya?.nameAr}`);
@@ -211,7 +264,31 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Step 2: User Selected a Price Button
+      // Step 1 for Official Board Update: User Selected a Board Wilaya
+      if (dataStr.startsWith('select_board_wilaya_')) {
+        const wilayaCode = dataStr.replace('select_board_wilaya_', '');
+        USER_BOARD_STATE.set(chatId, wilayaCode);
+        USER_WILAYA_STATE.delete(chatId);
+        const wilaya = getWilayaByCode(wilayaCode);
+
+        await answerCallbackQuery(cb.id, `تحديث البورصة لـ ${wilaya?.nameAr}`);
+
+        const promptText = `
+📊 <b>تحديث جدول البورصة الرسمية لولاية: ${wilaya?.nameAr} (${wilayaCode})</b>
+
+✏️ <b>أرسل الأسعار الـ 3 كرسالة نصية واحدة بالترتيب (فلاح ثم كورتي ثم مذبح):</b>
+مثال أرسل:
+<code>285 278 270</code>
+
+• سعر الفلاح (بيع): <b>285 د.ج</b>
+• سعر الكورتي (شراء): <b>278 د.ج</b>
+• سعر المذبح (شراء): <b>270 د.ج</b>
+        `;
+        await sendTelegramMessage(chatId, promptText);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Step 2 for Offer Seeder: User Selected a Price Button
       if (dataStr.startsWith('post_')) {
         const parts = dataStr.split('_'); // ["post", "19", "285"]
         const wilayaCode = parts[1];
@@ -246,8 +323,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'unauthorized' });
       }
 
-      // Action: Start Publish Wizard (📢 أمر نشر ولاية جديد)
+      // Action 1: Start Offer Seeder Wizard (📢 أمر نشر ولاية جديد)
       if (text.includes('أمر نشر ولاية جديد') || text === '/publish' || text === 'نشر') {
+        USER_BOARD_STATE.delete(chatId);
         await sendTelegramMessage(
           chatId,
           '🇩🇿 <b>اختر الولاية المراد التحديث والنشر فيها (كافة الـ 58 ولاية متاحة):</b>',
@@ -256,7 +334,53 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Check if user has a pending Wilaya selection and typed a price or price range!
+      // Action 2: Start Official Price Board Update Wizard (📊 تحديث أسعار البورصة الرسمية)
+      if (text.includes('تحديث أسعار البورصة الرسمية') || text === '/board' || text === '/price') {
+        USER_WILAYA_STATE.delete(chatId);
+        await sendTelegramMessage(
+          chatId,
+          '📊 <b>اختر الولاية المراد تحديث أسعار بورصتها الرسمية (فلاح - كورتي - مذبح):</b>',
+          getBoardWilayasKeyboard(1)
+        );
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Check if user is in Official Board Update Wizard and typed 3 prices! (e.g. "285 278 270")
+      if (USER_BOARD_STATE.has(chatId)) {
+        const numbers = text.match(/\d{2,4}/g);
+        if (numbers && numbers.length >= 3) {
+          const wilayaCode = USER_BOARD_STATE.get(chatId)!;
+          const farmerPrice = Number(numbers[0]);
+          const brokerPrice = Number(numbers[1]);
+          const slaughterPrice = Number(numbers[2]);
+
+          USER_BOARD_STATE.delete(chatId); // Clear state
+
+          await sendTelegramMessage(chatId, `⏳ جاري تحديث جدول البورصة لولاية ${wilayaCode}...`);
+          const res = await updateOfficialPriceBoard(wilayaCode, farmerPrice, brokerPrice, slaughterPrice);
+
+          const successMsg = `
+✅ <b>تم تحديث أسعار البورصة الرسمية لولاية ${res.wilayaName} (${res.wilayaCode}) بنجاح!</b>
+
+📊 <b>الأسعار الرسمية المحدثة فوراً في الموقع:</b>
+• 🌾 سعر الفلاح (بيع المزرعة): <b>${res.farmerPrice} د.ج/كغ</b>
+• 🤝 سعر الكورتي (شراء وسيط): <b>${res.brokerPrice} د.ج/كغ</b>
+• 🔪 سعر المذبح (شراء جملة): <b>${res.slaughterPrice} د.ج/كغ</b>
+
+✨ التحديث ظهر مباشرة في لوحة أسعار الولايات المفتوحة في الموقع!
+          `;
+          await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+          return NextResponse.json({ status: 'ok' });
+        } else {
+          await sendTelegramMessage(
+            chatId,
+            '⚠️ <b>يرجى إرسال الأسعار الـ 3 بالترتيب (فلاح كورتي مذبح)!</b>\nمثال أرسل: <code>285 278 270</code>'
+          );
+          return NextResponse.json({ status: 'ok' });
+        }
+      }
+
+      // Check if user is in Offer Seeder Wizard and typed a price or price range!
       if (USER_WILAYA_STATE.has(chatId)) {
         const parsedPrice = parsePriceInput(text);
         if (parsedPrice) {
@@ -341,37 +465,22 @@ export async function POST(request: Request) {
         const helpText = `
 🏛️ <b>مرحباً بك في بوت الإدارة لبورصة الدواجن (djaj69 Admin Bot)</b>
 
-<b>طريقة الاستخدام السريعة:</b>
-1️⃣ اضغط على <b>📢 أمر نشر ولاية جديد</b>
-2️⃣ تصفح الـ <b>58 ولاية</b> واضغط على الولاية المطلوبة.
-3️⃣ اكتب <b>السعر يدوياً</b> كرسالة نصية (مثال: اكتب <code>288</code>) أو اضغط زر السعر!
+<b>الأوامر والتحديثات المتاحة:</b>
+
+1️⃣ <b>تحديث جدول البورصة الرسمية مباشرة:</b>
+اضغط على <b>📊 تحديث أسعار البورصة الرسمية</b> -> اختر الولاية -> أرسل الأسعار الـ 3 (فلاح كورتي مذبح).
+
+2️⃣ <b>ضخ 15 عرضاً كودياً في السوق:</b>
+اضغط على <b>📢 أمر نشر ولاية جديد</b> -> اختر الولاية -> أرسل السعر أو نطاق السعر.
         `;
         await sendTelegramMessage(chatId, helpText, MAIN_KEYBOARD);
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Direct command /post 19 285
-      if (text.startsWith('/post')) {
-        const parts = text.split(/\s+/);
-        if (parts.length >= 3) {
-          const rawCode = parts[1].replace(/[^0-9]/g, '');
-          const wilayaCode = rawCode.padStart(2, '0');
-          const farmerPrice = Number(parts[2]);
-
-          const res = await seedOffersForWilaya({ wilayaCode, farmerPrice });
-          await sendTelegramMessage(
-            chatId,
-            `✅ <b>تم تحديث ولاية ${res.wilayaName} (${res.wilayaCode}) بنجاح!</b>\n🌾 سعر الفلاح: <b>${res.farmerPrice} د.ج</b>\n🤝 سعر الوسيط: <b>${res.farmerPrice - 7} د.ج</b>\n🔪 سعر المذبح: <b>${res.farmerPrice - 15} د.ج</b>`,
-            MAIN_KEYBOARD
-          );
-          return NextResponse.json({ status: 'ok' });
-        }
-      }
-
       // Default prompt
       await sendTelegramMessage(
         chatId,
-        '💡 <b>اضغط على "📢 أمر نشر ولاية جديد" لاختيار أي ولاية من الـ 58 ولاية وإدخال سعرها:</b>',
+        '💡 <b>اختر من الأزرار التفاعلية أدناه:</b>',
         MAIN_KEYBOARD
       );
     }
@@ -403,9 +512,10 @@ async function sendPricePrompt(chatId: string, wilayaCode: string) {
   const text = `
 📍 <b>تم اختيار ولاية: ${wilaya?.nameAr} (${wilayaCode})</b>
 
-✏️ <b>الآن أدخل سعر بيع الفلاح لهذه الولاية:</b>
-- أرسل السعر كرسالة نصية (مثال: اكتب <code>285</code> فقط).
-- أو اضغط على أحد الأسعار المقترحة أدناه:
+✏️ <b>أدخل السعر المطلوب كرسالة نصية:</b>
+• <b>سعر محدد:</b> أرسل الرقم فقط (مثال: <code>285</code>)
+• <b>نطاق سعر عشوائي:</b> أرسل النطاق (مثال: <code>280 315</code> أو <code>من 280 إلى 315</code>)
+• أو اختر من الأسعار السريعة أدناه:
   `;
   await sendTelegramMessage(chatId, text, inlinePrices);
   return NextResponse.json({ status: 'ok' });
