@@ -6,21 +6,11 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  MapPin,
-  ArrowUpDown,
-  AlertTriangle,
-  Info,
   Plus,
   RefreshCw,
-  Award,
-  Filter,
-  ChevronDown,
-  ChevronUp,
-  Maximize2,
-  Minimize2,
   Lock,
 } from 'lucide-react';
-import { ALGERIA_WILAYAS, WilayaInfo } from '@/lib/algeria-data';
+import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface WilayaPriceBoardProps {
   onReportForWilaya: (wilayaCode: string) => void;
@@ -43,7 +33,6 @@ export default function WilayaPriceBoard({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'code' | 'price_asc' | 'price_desc'>('code');
-  const [expandedWilayas, setExpandedWilayas] = useState<Record<string, boolean>>({});
 
   const regions = [
     { id: 'all', label: 'كافة الولايات (58)' },
@@ -82,25 +71,15 @@ export default function WilayaPriceBoard({
       const intermediaryPrice = dbOfficial?.intermediaryPrice ?? dbOfficial?.motawassitaIntermediary ?? dbOfficial?.khashnaIntermediary ?? null;
 
       const khashna = { farmer: farmerPrice, slaughter: slaughterPrice, intermediary: intermediaryPrice };
-      const motawassita = { farmer: farmerPrice, slaughter: slaughterPrice, intermediary: intermediaryPrice };
-      const raqiqa = { farmer: farmerPrice, slaughter: slaughterPrice, intermediary: intermediaryPrice };
-
       const trend = dbOfficial?.trend || wilaya.trend;
       const trendPercent = dbOfficial?.trendPercent || wilaya.trendPercent;
 
-      const validFarmerPrices = [khashna.farmer, motawassita.farmer, raqiqa.farmer]
-        .map(Number)
-        .filter((v) => !isNaN(v) && v > 0);
-
-      const avgPrice = validFarmerPrices.length > 0
-        ? Math.round(validFarmerPrices.reduce((a, b) => a + b, 0) / validFarmerPrices.length)
-        : 0;
+      const validFarmerPrices = [farmerPrice].map(Number).filter((v) => !isNaN(v) && v > 0);
+      const avgPrice = validFarmerPrices.length > 0 ? validFarmerPrices[0] : 0;
 
       return {
         ...wilaya,
         khashna,
-        motawassita,
-        raqiqa,
         trend,
         trendPercent,
         avgPrice,
@@ -126,44 +105,6 @@ export default function WilayaPriceBoard({
         return 0;
       });
   }, [wilayaDataWithPrices, searchQuery, selectedRegion, sortBy]);
-
-  // Quick stats
-  const sortedByAvg = [...wilayaDataWithPrices].sort((a, b) => a.avgPrice - b.avgPrice);
-  const cheapestW = sortedByAvg[0];
-  const highestW = sortedByAvg[sortedByAvg.length - 1];
-  const nationalAvg = Math.round(
-    wilayaDataWithPrices.reduce((acc, curr) => acc + curr.avgPrice, 0) / wilayaDataWithPrices.length
-  );
-
-  const toggleExpand = (code: string) => {
-    if (!isSubscribed) {
-      if (onOpenSubscribeModal) onOpenSubscribeModal();
-      return;
-    }
-    setExpandedWilayas((prev) => ({
-      ...prev,
-      [code]: !prev[code],
-    }));
-  };
-
-  const isAllExpanded =
-    filteredWilayas.length > 0 && filteredWilayas.every((w) => expandedWilayas[w.code]);
-
-  const toggleExpandAll = () => {
-    if (!isSubscribed) {
-      if (onOpenSubscribeModal) onOpenSubscribeModal();
-      return;
-    }
-    if (isAllExpanded) {
-      setExpandedWilayas({});
-    } else {
-      const all: Record<string, boolean> = {};
-      filteredWilayas.forEach((w) => {
-        all[w.code] = true;
-      });
-      setExpandedWilayas(all);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -244,22 +185,6 @@ export default function WilayaPriceBoard({
             </div>
 
             <button
-              onClick={toggleExpandAll}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
-              title={isAllExpanded ? 'طي الجميع' : 'توسيع الجميع'}
-            >
-              {isAllExpanded ? (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5" /> طي الكل
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5" /> عرض تفاصيل الكل
-                </>
-              )}
-            </button>
-
-            <button
               onClick={onRefresh}
               className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
               title="تحديث"
@@ -286,10 +211,9 @@ export default function WilayaPriceBoard({
         </div>
       </div>
 
-      {/* ===== COMPACT WILAYA CARDS GRID WITH "SHOW MORE / عرض المزيد" ===== */}
+      {/* WILAYA CARDS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredWilayas.map((w) => {
-          const isExpanded = !!expandedWilayas[w.code];
           const regionLabel =
             w.region === 'الشمال الأوسط'
               ? 'وسط'
@@ -304,9 +228,7 @@ export default function WilayaPriceBoard({
           return (
             <div
               key={w.code}
-              className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md hover:border-emerald-400 transition-all duration-200 flex flex-col justify-between ${
-                isExpanded ? 'md:col-span-2 lg:col-span-3 border-emerald-500 shadow-md ring-1 ring-emerald-500/20' : ''
-              }`}
+              className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md hover:border-emerald-400 transition-all duration-200 flex flex-col justify-between"
             >
               {/* Wilaya Compact Card Header */}
               <div className="p-4 bg-gradient-to-l from-emerald-950 to-emerald-850 text-white">
@@ -343,7 +265,7 @@ export default function WilayaPriceBoard({
                   </div>
                 </div>
 
-                {/* Summary Price Badges inside the Compact Header */}
+                {/* Summary Price Badges */}
                 <div className="relative mt-3">
                   <div className={`grid grid-cols-3 gap-2 bg-emerald-900/60 p-2 rounded-xl border border-emerald-700/40 text-center transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
                     <div>
@@ -378,119 +300,9 @@ export default function WilayaPriceBoard({
                 </div>
               </div>
 
-              {/* ===== EXPANDABLE DETAILED TABLE (Appears when "عرض المزيد" is clicked) ===== */}
-              {isExpanded && (
-                <div className="p-4 bg-slate-50 border-t border-slate-200 animate-fadeIn relative overflow-hidden rounded-b-2xl">
-                  <div className={`text-xs font-bold text-slate-700 mb-2 flex items-center justify-between transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
-                    <span>تفاصيل الأسعار حسب الفئة في ولاية {w.nameAr}:</span>
-                    <span className="text-slate-400 font-normal text-[11px]">سعر الكلغم بالدينار</span>
-                  </div>
-
-                  <div className={`overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white relative transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
-                    <table className="w-full text-center border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200">
-                          <th className="py-2.5 px-3 font-black text-slate-800 bg-slate-200/80 text-right pr-4">
-                            الفئة
-                          </th>
-                          <th className="py-2.5 px-3 font-black text-emerald-800 bg-emerald-50/70 border-r border-slate-200">
-                            🌾 فلاح
-                          </th>
-                          <th className="py-2.5 px-3 font-black text-indigo-800 bg-indigo-50/70 border-r border-slate-200">
-                            🔪 مذبح
-                          </th>
-                          <th className="py-2.5 px-3 font-black text-amber-800 bg-amber-50/70 border-r border-slate-200">
-                            🤝 وسيط
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {/* خشنة */}
-                        <tr className="hover:bg-emerald-50/20 transition">
-                          <td className="py-2.5 px-3 font-bold text-slate-900 bg-slate-50 text-right pr-4">
-                            خشنة <span className="text-[10px] text-slate-500 font-normal">(&gt;2.3 كغ)</span>
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-emerald-800 text-sm">
-                            {formatDisplayPrice(w.khashna.farmer)}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-indigo-800 text-sm">
-                            {formatDisplayPrice(w.khashna.slaughter)}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-amber-800 text-sm">
-                            {formatDisplayPrice(w.khashna.intermediary)}
-                          </td>
-                        </tr>
-                        {/* متوسطة */}
-                        <tr className="hover:bg-emerald-50/20 transition bg-white">
-                          <td className="py-2.5 px-3 font-bold text-slate-900 bg-slate-50 text-right pr-4">
-                            متوسطة <span className="text-[10px] text-slate-500 font-normal">(1.6-2.3 كغ)</span>
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-emerald-800 text-sm">
-                            {formatDisplayPrice(w.motawassita.farmer)}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-indigo-800 text-sm">
-                            {formatDisplayPrice(w.motawassita.slaughter)}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-amber-800 text-sm">
-                            {formatDisplayPrice(w.motawassita.intermediary)}
-                          </td>
-                        </tr>
-                        {/* رقيقة */}
-                        <tr className="hover:bg-emerald-50/20 transition">
-                          <td className="py-2.5 px-3 font-bold text-slate-900 bg-slate-50 text-right pr-4">
-                            رقيقة <span className="text-[10px] text-slate-500 font-normal">(&lt;1.6 كغ)</span>
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-emerald-800 text-sm">
-                            {formatDisplayPrice(w.raqiqa.farmer)}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-indigo-800 text-sm">
-                            {formatDisplayPrice(w.raqiqa.slaughter)}
-                          </td>
-                          <td className="py-2.5 px-3 border-r border-slate-200 font-black text-amber-800 text-sm">
-                            {formatDisplayPrice(w.raqiqa.intermediary)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {!isSubscribed && (
-                    <button
-                      onClick={onOpenSubscribeModal}
-                      className="absolute inset-0 bg-emerald-950/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 p-4 text-center text-amber-300 font-black border border-amber-400/50 shadow-lg cursor-pointer z-10 transition hover:bg-emerald-950/90"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
-                        <Lock className="w-4.5 h-4.5 text-amber-400" />
-                      </div>
-                      <span className="text-sm">🔒 تفاصيل الأسعار حسب الفئة متاحة للمشتركين فقط</span>
-                      <span className="text-xs text-slate-200 font-normal">انقر هنا للتفعيل والاشتراك في البورصة لمشاهدة التفاصيل</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Card Footer Actions */}
-              <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
-                <button
-                  onClick={() => toggleExpand(w.code)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs transition ${
-                    isExpanded
-                      ? 'bg-emerald-800 text-white shadow-sm hover:bg-emerald-900'
-                      : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs'
-                  }`}
-                >
-                  {isExpanded ? (
-                    <>
-                      إخفاء التفاصيل <ChevronUp className="w-4 h-4" />
-                    </>
-                  ) : (
-                    <>
-                      عرض المزيد <ChevronDown className="w-4 h-4 text-emerald-700" />
-                    </>
-                  )}
-                </button>
-
-                {currentUser?.role === 'admin' && (
+              {/* Admin Actions Footer */}
+              {currentUser?.role === 'admin' && (
+                <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
                   <button
                     onClick={() => onReportForWilaya(w.code)}
                     className="py-2 px-3 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black rounded-xl text-xs transition shadow-2xs flex items-center gap-1 shrink-0 cursor-pointer"
@@ -498,8 +310,8 @@ export default function WilayaPriceBoard({
                     <Plus className="w-3.5 h-3.5" />
                     <span>تحديث الأسعار</span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -513,4 +325,3 @@ export default function WilayaPriceBoard({
     </div>
   );
 }
-
