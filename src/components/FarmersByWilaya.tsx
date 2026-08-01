@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, MapPin, Phone, Search, Lock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { CheckCircle2, MapPin, Search, Lock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface FarmerCard {
@@ -31,11 +31,13 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
   const isSubscribed = currentUser?.role === 'admin' || currentUser?.subscriptionStatus === 'active';
   const [wilayaCode, setWilayaCode] = useState('all');
   const [query, setQuery] = useState('');
-  const [closedWilayas, setClosedWilayas] = useState<Record<string, boolean>>({});
-  const [closedCards, setClosedCards] = useState<Record<number, boolean>>({});
+  
+  // Track open/closed states. Default is CLOSED for all wilayas & cards
+  const [openWilayas, setOpenWilayas] = useState<Record<string, boolean>>({});
+  const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
   const toggleWilaya = (code: string) => {
-    setClosedWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
+    setOpenWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
   const toggleCard = (farmerId: number) => {
@@ -43,7 +45,7 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
       if (onOpenSubscribeModal) onOpenSubscribeModal();
       return;
     }
-    setClosedCards((prev) => ({ ...prev, [farmerId]: !prev[farmerId] }));
+    setOpenCards((prev) => ({ ...prev, [farmerId]: !prev[farmerId] }));
   };
 
   const grouped = useMemo(() => {
@@ -89,7 +91,9 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
       {displayedWilayas.map((code) => {
         const wilaya = ALGERIA_WILAYAS.find((w) => w.code === code);
         const items = grouped.get(code)!;
-        const isWilayaClosed = closedWilayas[code];
+        
+        // Auto-expand wilaya if user searched or selected specific wilaya
+        const isWilayaOpen = (wilayaCode !== 'all' || query.trim() !== '') ? (openWilayas[code] ?? true) : Boolean(openWilayas[code]);
 
         return (
           <div key={code} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition">
@@ -101,24 +105,35 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
               <span className="text-lg">📍</span>
               <span className="font-black text-base">{wilaya?.nameAr || `ولاية ${code}`}</span>
               <span className="text-emerald-200 text-xs">({wilaya?.nameFr})</span>
-              <span className="mr-auto bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-                {items.length} {items.length === 1 ? 'فلاح' : 'فلاحين'}
-                {isWilayaClosed ? <ChevronDown className="w-4 h-4 text-emerald-300" /> : <ChevronUp className="w-4 h-4 text-emerald-300" />}
-              </span>
+              
+              <div className="mr-auto flex items-center gap-2">
+                <span className="bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                  {items.length} {items.length === 1 ? 'فلاح' : 'فلاحين'}
+                  {isWilayaOpen ? (
+                    <>
+                      <span className="text-[11px] font-black text-emerald-200">طي 🔼</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[11px] font-black text-amber-300">المزيد 🔽</span>
+                    </>
+                  )}
+                </span>
+              </div>
             </div>
 
             {/* Farmer Cards Container */}
-            {!isWilayaClosed && (
+            {isWilayaOpen && (
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fadeIn">
                 {items.map((farmer) => {
-                  const isCardClosed = !isSubscribed ? true : closedCards[farmer.id];
+                  const isCardOpen = isSubscribed && Boolean(openCards[farmer.id]);
                   return (
                     <div key={farmer.id} className="relative rounded-xl border border-slate-200 bg-gradient-to-bl from-emerald-50/60 to-white p-4 hover:shadow-lg hover:border-emerald-400 transition overflow-hidden">
                       {/* Card Content (Blurred when not subscribed) */}
                       <div className={!isSubscribed ? 'filter blur-sm select-none pointer-events-none opacity-50' : ''}>
                         {/* Icon Header with Open/Close Toggle Button */}
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shrink-0">
+                          <div className="w-11 h-11 rounded-2xl bg-emerald-600 flex items-center justify-center text-white text-base shadow-md shrink-0">
                             🌾
                           </div>
                           <div className="flex-1 min-w-0">
@@ -126,36 +141,45 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
                               <h4 className="font-black text-sm text-slate-900 truncate">{farmer.name}</h4>
                               {farmer.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                             </div>
-                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
+                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold mt-0.5">
                               <MapPin className="w-3 h-3 text-emerald-600" /> {farmer.commune}
+                              {farmer.availableQuantity && (
+                                <span className="mr-1 bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-black text-[10px]">
+                                  {farmer.availableQuantity}
+                                </span>
+                              )}
                             </div>
                           </div>
                           
-                          {/* Open/Close Toggle Icon Button */}
+                          {/* "المزيد 🔽" Expand Toggle Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleCard(farmer.id);
                             }}
-                            className="p-1.5 rounded-lg bg-emerald-100/80 hover:bg-emerald-200 text-emerald-900 transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-bold"
-                            title={isCardClosed ? "فتح العرض" : "غلق العرض"}
+                            className={`px-2.5 py-1.5 rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-black shadow-xs ${
+                              isCardOpen
+                                ? 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+                                : 'bg-emerald-600 text-white hover:bg-emerald-500'
+                            }`}
+                            title={isCardOpen ? "طي التفاصيل" : "عرض المزيد من التفاصيل"}
                           >
-                            {isCardClosed ? (
+                            {isCardOpen ? (
                               <>
-                                <span>فتح</span>
-                                <ChevronDown className="w-4 h-4" />
+                                <span>طي</span>
+                                <ChevronUp className="w-3.5 h-3.5" />
                               </>
                             ) : (
                               <>
-                                <span>غلق</span>
-                                <ChevronUp className="w-4 h-4" />
+                                <span>المزيد</span>
+                                <ChevronDown className="w-3.5 h-3.5" />
                               </>
                             )}
                           </button>
                         </div>
 
                         {/* Detailed Offer Body (Shown when Open) */}
-                        {!isCardClosed && (
+                        {isCardOpen && (
                           <div className="mt-3 pt-3 border-t border-emerald-100 space-y-2 animate-fadeIn">
                             {((farmer as any).farmerPrice || (farmer as any).farmer_price) && (
                               <div className="bg-gradient-to-r from-amber-500 to-emerald-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-xs flex items-center justify-between">
@@ -178,22 +202,29 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
                             {(() => {
                               const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && farmer.phone && (farmer.phone === currentUser.phone || farmer.phone.includes(currentUser.phone)));
                               return (
-                                <div className="mt-3 flex items-center gap-2">
-                                  <a href={`tel:${farmer.phone}`} className="flex-1 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-2 rounded-xl transition shadow-xs">
-                                    <Phone className="w-3.5 h-3.5 text-amber-300" /> اتصال: {farmer.phone}
-                                  </a>
+                                <div className="pt-1 flex items-center justify-between text-[11px]">
+                                  <span className="font-bold text-slate-700">{farmer.phone}</span>
                                   {canDelete && (
                                     <button
-                                      onClick={async () => {
-                                        if (confirm('هل أنت تأكد من حذف عرض هذا الفلاح نهائياً؟')) {
-                                          await fetch(`/api/offers?id=${farmer.id}`, { method: 'DELETE' });
-                                          window.location.reload();
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (confirm('هل أنت تأكد من حذف هذا العرض؟')) {
+                                          try {
+                                            const res = await fetch(`/api/offers/delete?id=${farmer.id}`, { method: 'DELETE' });
+                                            if (res.ok) {
+                                              alert('تم حذف العرض بنجاح.');
+                                              window.location.reload();
+                                            } else {
+                                              alert('حدث خطأ أثناء الحذف.');
+                                            }
+                                          } catch (err) {
+                                            alert('خطأ في الاتصال بالحذف.');
+                                          }
                                         }
                                       }}
-                                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
-                                      title="حذف العرض"
+                                      className="text-red-600 hover:text-red-700 font-bold flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition cursor-pointer"
                                     >
-                                      <Trash2 className="w-4 h-4" />
+                                      <Trash2 className="w-3 h-3" /> حذف
                                     </button>
                                   )}
                                 </div>
@@ -203,20 +234,21 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
                         )}
                       </div>
 
-                      {/* Lock Overlay when Not Subscribed */}
+                      {/* Locked Overlay for unsubscribed users */}
                       {!isSubscribed && (
-                        <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center gap-2 z-30">
-                          <div className="w-8 h-8 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-black shadow-lg animate-bounce">
+                        <div
+                          onClick={() => {
+                            if (onOpenSubscribeModal) onOpenSubscribeModal();
+                          }}
+                          className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center cursor-pointer transition hover:bg-slate-900/70"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg mb-1.5 animate-bounce">
                             <Lock className="w-4 h-4" />
                           </div>
-                          <span className="text-xs font-black text-amber-300 drop-shadow">
-                            🔒 يرجى الاشتراك لرؤية العروض والاتصال
-                          </span>
-                          <button
-                            onClick={onOpenSubscribeModal}
-                            className="px-3.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-lg transition cursor-pointer transform hover:scale-105"
-                          >
-                            اشترك الآن
+                          <h4 className="text-white font-black text-xs">عرض محمي بنظام البورصة</h4>
+                          <p className="text-[10px] text-amber-200 font-bold mt-0.5">اشترك مجاناً لمشاهدة السعر والاتصال المباشر</p>
+                          <button className="mt-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black px-3 py-1 rounded-lg shadow transition">
+                            فتح العرض الآن 🔓
                           </button>
                         </div>
                       )}

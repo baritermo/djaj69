@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, MapPin, Phone, Search, Lock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { CheckCircle2, MapPin, Search, Lock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface BuyerPost {
@@ -30,11 +32,13 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
   const [activeSubTab, setActiveSubTab] = useState<'slaughterhouse' | 'broker'>('slaughterhouse');
   const [wilayaCode, setWilayaCode] = useState('all');
   const [query, setQuery] = useState('');
-  const [closedWilayas, setClosedWilayas] = useState<Record<string, boolean>>({});
-  const [closedCards, setClosedCards] = useState<Record<number, boolean>>({});
+  
+  // Track open/closed states. Default is CLOSED for all wilayas & cards
+  const [openWilayas, setOpenWilayas] = useState<Record<string, boolean>>({});
+  const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
   const toggleWilaya = (code: string) => {
-    setClosedWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
+    setOpenWilayas((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
   const toggleCard = (id: number) => {
@@ -42,7 +46,7 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
       if (onOpenSubscribeModal) onOpenSubscribeModal();
       return;
     }
-    setClosedCards((prev) => ({ ...prev, [id]: !prev[id] }));
+    setOpenCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const hasBothTypes = buyers.some((b) => b.offerType === 'slaughterhouse') && buyers.some((b) => b.offerType === 'broker');
@@ -71,7 +75,7 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
   const codes = Array.from(grouped.keys()).sort((a, b) => parseInt(a) - parseInt(b));
 
   const isSlaughterhouse = !hasBothTypes ? buyers[0]?.offerType === 'slaughterhouse' : activeSubTab === 'slaughterhouse';
-  const label = isSlaughterhouse ? 'المذابح' : 'الكورتي / الوسطاء';
+  const label = isSlaughterhouse ? 'المذابح المعتمدة' : 'الكورتي / الوسطاء';
   const icon = isSlaughterhouse ? '🔪' : '🤝';
 
   return (
@@ -79,10 +83,24 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
       {/* Slaughterhouse / Broker sub-tabs */}
       {hasBothTypes && (
         <div className="flex items-center gap-2">
-          <button onClick={() => setActiveSubTab('slaughterhouse')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'slaughterhouse' ? 'bg-indigo-800 text-white border-indigo-800 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400'}`}>
+          <button
+            onClick={() => setActiveSubTab('slaughterhouse')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${
+              activeSubTab === 'slaughterhouse'
+                ? 'bg-indigo-800 text-white border-indigo-800 shadow'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400'
+            }`}
+          >
             🔪 عروض المذابح (شراء)
           </button>
-          <button onClick={() => setActiveSubTab('broker')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'broker' ? 'bg-amber-600 text-white border-amber-600 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-amber-400'}`}>
+          <button
+            onClick={() => setActiveSubTab('broker')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${
+              activeSubTab === 'broker'
+                ? 'bg-amber-600 text-white border-amber-600 shadow'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-amber-400'
+            }`}
+          >
             🤝 عروض الكورتي (شراء)
           </button>
         </div>
@@ -92,11 +110,9 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
         <div className="flex items-start gap-3">
           <span className="p-2 bg-white rounded-xl text-lg">{icon}</span>
           <div>
-            <h3 className="font-black text-base text-slate-900">{label} — أسعار الشراء لمستويات التعامل</h3>
+            <h3 className="font-black text-base text-slate-900">{label} — أسعار الشراء والطلب</h3>
             <p className="text-xs text-slate-600 mt-1">
-              {isSlaughterhouse
-                ? 'المذابح تعلن هنا عن الأسعار التي تشتري بها. اضغط على أيقونة فتح/غلق للتحكم في تفاصيل العرض.'
-                : 'الوسطاء (الكورتي) يعلنون هنا عن أسعار الشراء. اضغط على زر فتح/غلق للتحكم كلياً.'}
+              اضغط على أي ولاية ثم اضغط على زر <b>المزيد 🔽</b> لاستعراض أرقام الشراء وسعة الاستيعاب اليومية.
             </p>
           </div>
         </div>
@@ -105,135 +121,193 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`ابحث في ${label}...`} className="w-full pr-9 pl-3 py-2.5 border border-slate-300 bg-slate-50 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`ابحث في ${label}...`}
+            className="w-full pr-9 pl-3 py-2.5 border border-slate-300 bg-slate-50 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600"
+          />
         </div>
         <select value={wilayaCode} onChange={(e) => setWilayaCode(e.target.value)} className="px-3 py-2.5 border border-slate-300 bg-slate-50 rounded-xl text-xs font-bold focus:outline-none">
           <option value="all">كل الولايات</option>
-          {ALGERIA_WILAYAS.map((w) => <option key={w.code} value={w.code}>{w.code} — {w.nameAr}</option>)}
+          {ALGERIA_WILAYAS.map((w) => (
+            <option key={w.code} value={w.code}>
+              {w.code} — {w.nameAr}
+            </option>
+          ))}
         </select>
       </div>
 
       {codes.length === 0 && (
-        <div className="py-16 text-center text-slate-400 text-sm font-bold">لا توجد عروض {label} حالياً.</div>
+        <div className="py-16 text-center text-slate-400 text-sm font-bold">لا توجد عروض لهذه الفئة حالياً.</div>
       )}
 
       {codes.map((code) => {
         const wilaya = ALGERIA_WILAYAS.find((w) => w.code === code);
-        const items = grouped.get(code)!;
-        const isWilayaClosed = closedWilayas[code];
+        const posts = grouped.get(code)!;
+        
+        // Auto-expand wilaya if user searched or selected specific wilaya
+        const isWilayaOpen = (wilayaCode !== 'all' || query.trim() !== '') ? (openWilayas[code] ?? true) : Boolean(openWilayas[code]);
 
         return (
-          <div key={code} className={`rounded-2xl border shadow-sm overflow-hidden transition ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
-            {/* Wilaya Header with Open/Close Toggle */}
+          <div key={code} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition">
+            {/* Wilaya Header Bar with Open/Close Toggle */}
             <div
               onClick={() => toggleWilaya(code)}
-              className={`px-5 py-3 flex items-center gap-3 text-white cursor-pointer transition select-none ${isSlaughterhouse ? 'bg-indigo-800 hover:bg-indigo-750' : 'bg-amber-600 hover:bg-amber-550'}`}
+              className={`px-5 py-3 flex items-center gap-3 cursor-pointer transition select-none text-white ${
+                isSlaughterhouse ? 'bg-indigo-900 hover:bg-indigo-850' : 'bg-amber-700 hover:bg-amber-650'
+              }`}
             >
               <span className="text-lg">📍</span>
               <span className="font-black text-base">{wilaya?.nameAr || `ولاية ${code}`}</span>
-              <span className={`${isSlaughterhouse ? 'text-indigo-200' : 'text-amber-200'} text-xs`}>({wilaya?.nameFr})</span>
-              <span className="mr-auto bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-                {items.length} {isSlaughterhouse ? 'مذبح' : 'كورتي'}
-                {isWilayaClosed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-              </span>
+              <span className="text-white/70 text-xs">({wilaya?.nameFr})</span>
+
+              <div className="mr-auto flex items-center gap-2">
+                <span className="bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                  {posts.length} {isSlaughterhouse ? 'مذبح' : 'كورتي'}
+                  {isWilayaOpen ? (
+                    <span className="text-[11px] font-black text-white/90">طي 🔼</span>
+                  ) : (
+                    <span className="text-[11px] font-black text-amber-200">المزيد 🔽</span>
+                  )}
+                </span>
+              </div>
             </div>
 
-            {!isWilayaClosed && (
-              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
-                {items.map((b) => {
-                  const isCardClosed = !isSubscribed ? true : closedCards[b.id];
+            {/* Buyer Cards Container */}
+            {isWilayaOpen && (
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fadeIn">
+                {posts.map((buyer) => {
+                  const isCardOpen = isSubscribed && Boolean(openCards[buyer.id]);
                   return (
-                    <div key={b.id} className={`relative rounded-xl border p-4 bg-white hover:shadow-lg transition overflow-hidden ${isSlaughterhouse ? 'border-indigo-200 hover:border-indigo-400' : 'border-amber-200 hover:border-amber-400'}`}>
-                      {/* Card Body (Blurred when not subscribed) */}
+                    <div
+                      key={buyer.id}
+                      className={`relative rounded-xl border p-4 transition overflow-hidden ${
+                        buyer.offerType === 'slaughterhouse'
+                          ? 'border-indigo-200 bg-gradient-to-bl from-indigo-50/50 to-white hover:border-indigo-400'
+                          : 'border-amber-200 bg-gradient-to-bl from-amber-50/50 to-white hover:border-amber-400'
+                      }`}
+                    >
+                      {/* Card Content (Blurred when not subscribed) */}
                       <div className={!isSubscribed ? 'filter blur-sm select-none pointer-events-none opacity-50' : ''}>
-                        {/* Card Header with Open/Close Button */}
+                        {/* Icon Header with Toggle Button */}
                         <div className="flex items-center gap-3">
-                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow shrink-0 ${isSlaughterhouse ? 'bg-indigo-600' : 'bg-amber-500'}`}>
-                            {icon}
+                          <div
+                            className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white text-base shadow-md shrink-0 ${
+                              buyer.offerType === 'slaughterhouse' ? 'bg-indigo-600' : 'bg-amber-500 text-slate-950'
+                            }`}
+                          >
+                            {buyer.offerType === 'slaughterhouse' ? '🔪' : '🤝'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-black text-sm text-slate-900 truncate">{b.name}</h4>
-                              {b.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-black text-sm text-slate-900 truncate">{buyer.name}</h4>
+                              {buyer.verified && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                             </div>
-                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                              <MapPin className="w-3 h-3" /> {b.commune}
+                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold mt-0.5">
+                              <MapPin className="w-3 h-3 text-indigo-600" /> {buyer.commune}
+                              {buyer.maxPurchaseKg && (
+                                <span className="mr-1 bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded font-black text-[10px]">
+                                  {buyer.maxPurchaseKg}
+                                </span>
+                              )}
                             </div>
                           </div>
 
-                          {/* Open/Close Toggle Button */}
+                          {/* "المزيد 🔽" Expand Toggle Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleCard(b.id);
+                              toggleCard(buyer.id);
                             }}
-                            className={`p-1.5 rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-bold ${
-                              isSlaughterhouse ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950' : 'bg-amber-100 hover:bg-amber-200 text-amber-950'
+                            className={`px-2.5 py-1.5 rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1 text-[11px] font-black shadow-xs ${
+                              isCardOpen
+                                ? 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+                                : buyer.offerType === 'slaughterhouse'
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                                : 'bg-amber-500 text-slate-950 hover:bg-amber-400'
                             }`}
-                            title={isCardClosed ? "فتح العرض" : "غلق العرض"}
+                            title={isCardOpen ? "طي التفاصيل" : "عرض المزيد من التفاصيل"}
                           >
-                            {isCardClosed ? (
+                            {isCardOpen ? (
                               <>
-                                <span>فتح</span>
-                                <ChevronDown className="w-4 h-4" />
+                                <span>طي</span>
+                                <ChevronUp className="w-3.5 h-3.5" />
                               </>
                             ) : (
                               <>
-                                <span>غلق</span>
-                                <ChevronUp className="w-4 h-4" />
+                                <span>المزيد</span>
+                                <ChevronDown className="w-3.5 h-3.5" />
                               </>
                             )}
                           </button>
                         </div>
 
-                        {/* Card Details Body (Shown when Open) */}
-                        {!isCardClosed && (
-                          <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
-                            {/* Buying Prices Table */}
-                            <div className={`relative rounded-xl border overflow-hidden mb-3 ${isSlaughterhouse ? 'border-indigo-200' : 'border-amber-200'}`}>
-                              <table className="w-full text-center text-xs border-collapse transition">
-                                <thead>
-                                  <tr className={`${isSlaughterhouse ? 'bg-indigo-50' : 'bg-amber-50'}`}>
-                                    <th className="py-2 px-3 font-black text-slate-700">الفئة</th>
-                                    <th className={`py-2 px-3 font-black ${isSlaughterhouse ? 'text-indigo-800' : 'text-amber-800'}`}>سعر الشراء (د.ج/كغ)</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-200">
-                                  <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">خشنة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyKhashna ?? '—'}</td></tr>
-                                  <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">متوسطة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyMotawassita ?? '—'}</td></tr>
-                                  <tr className="hover:bg-slate-50"><td className="py-1.5 px-3 font-bold text-slate-800">رقيقة</td><td className="py-1.5 px-3 font-black text-emerald-800">{b.buyRaqiqa ?? '—'}</td></tr>
-                                </tbody>
-                              </table>
+                        {/* Detailed Offer Body (Shown when Open) */}
+                        {isCardOpen && (
+                          <div className="mt-3 pt-3 border-t border-slate-100 space-y-2 animate-fadeIn">
+                            {/* Buying Prices Breakdown */}
+                            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] font-bold bg-slate-50 p-2 rounded-xl border border-slate-100">
+                              <div className="bg-white p-1.5 rounded-lg border border-slate-100">
+                                <span className="text-slate-500 block">خشنة</span>
+                                <span className="text-xs font-black text-indigo-900">
+                                  {buyer.buyKhashna ? `${buyer.buyKhashna} د.ج` : '—'}
+                                </span>
+                              </div>
+                              <div className="bg-white p-1.5 rounded-lg border border-slate-100">
+                                <span className="text-slate-500 block">متوسطة</span>
+                                <span className="text-xs font-black text-indigo-900">
+                                  {buyer.buyMotawassita ? `${buyer.buyMotawassita} د.ج` : '—'}
+                                </span>
+                              </div>
+                              <div className="bg-white p-1.5 rounded-lg border border-slate-100">
+                                <span className="text-slate-500 block">رقيقة</span>
+                                <span className="text-xs font-black text-indigo-900">
+                                  {buyer.buyRaqiqa ? `${buyer.buyRaqiqa} د.ج` : '—'}
+                                </span>
+                              </div>
                             </div>
 
-                            <div className="space-y-1 text-[11px] text-slate-700 mb-3">
-                              {b.maxPurchaseKg && <p>الكمية القصوى: <strong className="text-slate-900">{b.maxPurchaseKg}</strong></p>}
-                              {b.deliveryArea && <p>نطاق التوزيع: <strong className="text-slate-900">{b.deliveryArea}</strong></p>}
-                            </div>
+                            {buyer.deliveryArea && (
+                              <p className="text-[11px] text-slate-700 font-medium">
+                                <span className="font-black text-slate-900">منطقة التوزيع:</span> {buyer.deliveryArea}
+                              </p>
+                            )}
 
-                            {b.buyingDetails && (
-                              <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100 mb-3">{b.buyingDetails}</p>
+                            {buyer.buyingDetails && (
+                              <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                {buyer.buyingDetails}
+                              </p>
                             )}
 
                             {(() => {
-                              const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && b.phone && (b.phone === currentUser.phone || b.phone.includes(currentUser.phone)));
+                              const canDelete =
+                                currentUser?.role === 'admin' ||
+                                (currentUser?.phone && buyer.phone && (buyer.phone === currentUser.phone || buyer.phone.includes(currentUser.phone)));
                               return (
-                                <div className="flex items-center gap-2">
-                                  <a href={`tel:${b.phone}`} className={`flex-1 flex items-center justify-center gap-2 text-white text-xs font-black py-2 rounded-xl transition ${isSlaughterhouse ? 'bg-indigo-700 hover:bg-indigo-600' : 'bg-amber-500 hover:bg-amber-400 text-emerald-950'}`}>
-                                    <Phone className="w-3.5 h-3.5" /> اتصال: {b.phone}
-                                  </a>
+                                <div className="pt-1 flex items-center justify-between text-[11px]">
+                                  <span className="font-bold text-slate-700">{buyer.phone}</span>
                                   {canDelete && (
                                     <button
-                                      onClick={async () => {
-                                        if (confirm('هل أنت تأكد من حذف هذا العرض نهائياً؟')) {
-                                          await fetch(`/api/offers?id=${b.id}`, { method: 'DELETE' });
-                                          window.location.reload();
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (confirm('هل أنت تأكد من حذف هذا العرض؟')) {
+                                          try {
+                                            const res = await fetch(`/api/offers/delete?id=${buyer.id}`, { method: 'DELETE' });
+                                            if (res.ok) {
+                                              alert('تم حذف العرض بنجاح.');
+                                              window.location.reload();
+                                            } else {
+                                              alert('حدث خطأ أثناء الحذف.');
+                                            }
+                                          } catch (err) {
+                                            alert('خطأ في الاتصال بالحذف.');
+                                          }
                                         }
                                       }}
-                                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition border border-rose-200 cursor-pointer"
-                                      title="حذف العرض"
+                                      className="text-red-600 hover:text-red-700 font-bold flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition cursor-pointer"
                                     >
-                                      <Trash2 className="w-4 h-4" />
+                                      <Trash2 className="w-3 h-3" /> حذف
                                     </button>
                                   )}
                                 </div>
@@ -243,20 +317,21 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
                         )}
                       </div>
 
-                      {/* Subscription Lock Overlay when Not Subscribed */}
+                      {/* Locked Overlay for unsubscribed users */}
                       {!isSubscribed && (
-                        <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center gap-2 z-30">
-                          <div className="w-8 h-8 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-black shadow-lg animate-bounce">
+                        <div
+                          onClick={() => {
+                            if (onOpenSubscribeModal) onOpenSubscribeModal();
+                          }}
+                          className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center cursor-pointer transition hover:bg-slate-900/70"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg mb-1.5 animate-bounce">
                             <Lock className="w-4 h-4" />
                           </div>
-                          <span className="text-xs font-black text-amber-300 drop-shadow">
-                            🔒 يرجى الاشتراك لرؤية العروض والاتصال
-                          </span>
-                          <button
-                            onClick={onOpenSubscribeModal}
-                            className="px-3.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-lg transition cursor-pointer transform hover:scale-105"
-                          >
-                            اشترك الآن
+                          <h4 className="text-white font-black text-xs">طلب شراء محمي بنظام البورصة</h4>
+                          <p className="text-[10px] text-amber-200 font-bold mt-0.5">اشترك مجاناً لمشاهدة السعر والاتصال المباشر</p>
+                          <button className="mt-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black px-3 py-1 rounded-lg shadow transition">
+                            فتح الطلب الآن 🔓
                           </button>
                         </div>
                       )}

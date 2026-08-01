@@ -22,10 +22,9 @@ export default function MarketOffersBoard({
   const farmers = offersList.filter((o) => o.offerType === 'farmer');
   const slaughterhouses = offersList.filter((o) => o.offerType === 'slaughterhouse');
   const brokers = offersList.filter((o) => o.offerType === 'broker');
-  const buyers = [...slaughterhouses, ...brokers];
 
-  // Active Category Tab Switcher: 'all' | 'farmer' | 'slaughterhouse' | 'broker'
-  const [activeTab, setActiveTab] = useState<'all' | 'farmer' | 'slaughterhouse' | 'broker'>('all');
+  // Active Category Tab Switcher: 'farmer' (default) | 'slaughterhouse' | 'broker'
+  const [activeTab, setActiveTab] = useState<'farmer' | 'slaughterhouse' | 'broker'>('farmer');
 
   const handlePublishOffer = (type: 'farmer' | 'slaughterhouse' | 'broker') => {
     if (!isSubscribed) {
@@ -58,9 +57,9 @@ export default function MarketOffersBoard({
               <Store className="w-3.5 h-3.5" />
               سوق الدواجن B2B المباشر — الفلاحين والمذابح والكورتية
             </div>
-            <h2 className="text-2xl font-black">العروض وطلبات الشراء والبيع المباشرة</h2>
+            <h2 className="text-2xl font-black">العروض وطلبات الشراء والبيع حسب الفئة والولاية</h2>
             <p className="text-sm text-emerald-100 mt-1 max-w-2xl">
-              تصفح عروض بيع الفلاحين أو طلبات شراء المذابح والكورتية حسب الولاية بسهولة عبر التبويبات المباشرة أدناه.
+              اختر التبويب المطلوب أدناه، ثم اضغط على زر <b>المزيد 🔽</b> في أي ولاية أو عرض لعرض التفاصيل الكاملة.
             </p>
           </div>
           {currentUser?.role !== 'worker' && (
@@ -93,28 +92,17 @@ export default function MarketOffersBoard({
           )}
         </div>
 
-        {/* Dynamic Category Navigation Tabs */}
+        {/* Dynamic Category Navigation Tabs (Removed "عرض الكل") */}
         <div className="mt-6 pt-4 border-t border-emerald-800/60 flex flex-wrap items-center gap-2">
           <div className="text-xs font-bold text-emerald-200 flex items-center gap-1 ml-2">
-            <Filter className="w-3.5 h-3.5" /> تصفية وتجهيز العروض:
+            <Filter className="w-3.5 h-3.5" /> اختر القسم التفاعلي:
           </div>
-
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'all'
-                ? 'bg-white text-emerald-950 shadow-md scale-105'
-                : 'bg-emerald-900/60 text-emerald-100 hover:bg-emerald-800/80 border border-emerald-700/50'
-            }`}
-          >
-            🌐 عرض الكل ({offersList.length})
-          </button>
 
           <button
             onClick={() => setActiveTab('farmer')}
             className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'farmer'
-                ? 'bg-emerald-500 text-white shadow-md scale-105'
+                ? 'bg-emerald-500 text-white shadow-md scale-105 ring-2 ring-emerald-300'
                 : 'bg-emerald-900/60 text-emerald-100 hover:bg-emerald-800/80 border border-emerald-700/50'
             }`}
           >
@@ -125,7 +113,7 @@ export default function MarketOffersBoard({
             onClick={() => setActiveTab('slaughterhouse')}
             className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'slaughterhouse'
-                ? 'bg-indigo-600 text-white shadow-md scale-105'
+                ? 'bg-indigo-600 text-white shadow-md scale-105 ring-2 ring-indigo-300'
                 : 'bg-emerald-900/60 text-emerald-100 hover:bg-emerald-800/80 border border-emerald-700/50'
             }`}
           >
@@ -136,7 +124,7 @@ export default function MarketOffersBoard({
             onClick={() => setActiveTab('broker')}
             className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'broker'
-                ? 'bg-amber-400 text-emerald-950 shadow-md scale-105'
+                ? 'bg-amber-400 text-emerald-950 shadow-md scale-105 ring-2 ring-amber-200'
                 : 'bg-emerald-900/60 text-emerald-100 hover:bg-emerald-800/80 border border-emerald-700/50'
             }`}
           >
@@ -146,17 +134,42 @@ export default function MarketOffersBoard({
       </div>
 
       <div className="p-5 md:p-6 space-y-10">
-        {/* Render SLAUGHTERHOUSES first if user selected Slaughterhouse Tab */}
-        {(activeTab === 'slaughterhouse' || activeTab === 'all') && (
-          <div className={activeTab === 'slaughterhouse' ? 'order-first' : ''}>
+        {/* Render FARMERS Section */}
+        {activeTab === 'farmer' && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <span className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow">
+                🌾
+              </span>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">عروض بيع الفلاحين — المزارع وعنابر التسمين</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  اضغط على أي ولاية ثم اضغط على زر <b>المزيد 🔽</b> في كرت الفلاح لعرض تفاصيل السعر والوزن.
+                </p>
+              </div>
+              <span className="mr-auto bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full">
+                {farmers.length} فلاح
+              </span>
+            </div>
+            <FarmersByWilaya
+              farmers={farmers}
+              currentUser={currentUser}
+              onOpenSubscribeModal={onOpenSubscribeModal}
+            />
+          </div>
+        )}
+
+        {/* Render SLAUGHTERHOUSES Section */}
+        {activeTab === 'slaughterhouse' && (
+          <div>
             <div className="flex items-center gap-3 mb-5">
               <span className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg shadow">
                 🔪
               </span>
               <div>
-                <h3 className="text-xl font-black text-slate-900">عروض وطلبات شراء المذابح</h3>
+                <h3 className="text-xl font-black text-slate-900">عروض وطلبات شراء المذابح المعتمدة</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  المذابح المعتمدة ينشرون أسعار الشراء للجملة (خشنة / متوسطة / رقيقة) مع سعة الاستيعاب اليومية.
+                  المذابح المعتمدة ينشرون أسعار الشراء للجملة. اضغط على زر <b>المزيد 🔽</b> للتحكم واستعراض العرض.
                 </p>
               </div>
               <span className="mr-auto bg-indigo-100 text-indigo-800 text-xs font-black px-2.5 py-1 rounded-full">
@@ -171,8 +184,8 @@ export default function MarketOffersBoard({
           </div>
         )}
 
-        {/* Render BROKERS first if user selected Broker Tab */}
-        {(activeTab === 'broker' || activeTab === 'all') && (
+        {/* Render BROKERS Section */}
+        {activeTab === 'broker' && (
           <div>
             <div className="flex items-center gap-3 mb-5">
               <span className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-emerald-950 text-lg shadow">
@@ -181,7 +194,7 @@ export default function MarketOffersBoard({
               <div>
                 <h3 className="text-xl font-black text-slate-900">عروض وطلبات شراء الكورتية والوسطاء التجار</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  مكاتب الكورتية والوسطاء ينشرون أسعار شراء وتوزيع الدواجن الفورية لحساب التجار.
+                  مكاتب الكورتية والوسطاء ينشرون أسعار شراء وتوزيع الدواجن الفورية. اضغط على <b>المزيد 🔽</b> للتفاصيل.
                 </p>
               </div>
               <span className="mr-auto bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-full">
@@ -190,31 +203,6 @@ export default function MarketOffersBoard({
             </div>
             <BuyersByWilaya
               buyers={brokers}
-              currentUser={currentUser}
-              onOpenSubscribeModal={onOpenSubscribeModal}
-            />
-          </div>
-        )}
-
-        {/* Render FARMERS if user selected Farmer Tab or All */}
-        {(activeTab === 'farmer' || activeTab === 'all') && (
-          <div>
-            <div className="flex items-center gap-3 mb-5">
-              <span className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow">
-                🌾
-              </span>
-              <div>
-                <h3 className="text-xl font-black text-slate-900">عروض بيع الفلاحين — المزارع وعنابر التسمين</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  كل فلاح يظهر كأيقونة مستقلة ضمن ولايته مع كمية الدجاج وسعر البيع.
-                </p>
-              </div>
-              <span className="mr-auto bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full">
-                {farmers.length} فلاح
-              </span>
-            </div>
-            <FarmersByWilaya
-              farmers={farmers}
               currentUser={currentUser}
               onOpenSubscribeModal={onOpenSubscribeModal}
             />
