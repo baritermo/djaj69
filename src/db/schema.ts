@@ -122,6 +122,7 @@ export const marketOffers = pgTable('market_offers', {
   buyingDetails: text('buying_details'),
   // مشترك
   verified: boolean('verified').default(true),
+  isBotGenerated: boolean('is_bot_generated').default(false),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

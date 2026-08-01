@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gte } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { marketOffers } from '@/db/schema';
@@ -32,9 +32,11 @@ async function ensureTables() {
         "delivery_area" text,
         "buying_details" text,
         "verified" boolean DEFAULT true NOT NULL,
+        "is_bot_generated" boolean DEFAULT false,
         "created_at" timestamp DEFAULT now()
       );
       ALTER TABLE "market_offers" ADD COLUMN IF NOT EXISTS "farmer_price" integer;
+      ALTER TABLE "market_offers" ADD COLUMN IF NOT EXISTS "is_bot_generated" boolean DEFAULT false;
     `);
   } catch (e) {}
 }
@@ -68,7 +70,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { offerType, name, wilayaCode, commune, phone, chickenCategories, weightRange, availableQuantity, breedType, farmAcreage, chickenAge, farmerPrice, details, buyKhashna, buyMotawassita, buyRaqiqa, maxPurchaseKg, deliveryArea, buyingDetails } = body;
+    const { offerType, name, wilayaCode, commune, phone, chickenCategories, weightRange, availableQuantity, breedType, farmAcreage, chickenAge, farmerPrice, details, buyKhashna, buyMotawassita, buyRaqiqa, maxPurchaseKg, deliveryArea, buyingDetails, isBotGenerated, isBot } = body;
 
     if (!offerType || !name || !wilayaCode || !phone) {
       return NextResponse.json({ status: 'error', message: 'يرجى إكمال جميع الحقول المطلوبة.' }, { status: 400 });
@@ -76,6 +78,32 @@ export async function POST(request: Request) {
 
     if (!['farmer', 'slaughterhouse', 'broker'].includes(offerType)) {
       return NextResponse.json({ status: 'error', message: 'نوع العرض غير صالح.' }, { status: 400 });
+    }
+
+    const isBotPost = isBotGenerated === true || isBot === true;
+
+    // Rate Limit for Real Users: Max 3 posts per 24 hours per phone number
+    if (!isBotPost) {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const userRecentOffers = await db
+        .select()
+        .from(marketOffers)
+        .where(
+          and(
+            eq(marketOffers.phone, phone),
+            gte(marketOffers.createdAt, twentyFourHoursAgo)
+          )
+        );
+
+      if (userRecentOffers.length >= 3) {
+        return NextResponse.json(
+          {
+            status: 'error',
+            message: '⚠️ لقد بلغت الحد الأقصى للنشر اليومي (3 عروض خلال 24 ساعة). يرجى الانتظار أو التواصل مع إدارة البورصة.',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const wilaya = getWilayaByCode(wilayaCode);
@@ -104,6 +132,7 @@ export async function POST(request: Request) {
         deliveryArea: deliveryArea || null,
         buyingDetails: buyingDetails || null,
         verified: true,
+        isBotGenerated: isBotPost,
       })
       .returning();
 
