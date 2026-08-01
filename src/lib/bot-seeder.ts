@@ -292,21 +292,30 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
 }
 
 /**
- * Seed all 58 Wilayas with regional price variations around a base farmer price.
+ * Seed all 58 Wilayas with regional price variations around a base farmer price or range.
  */
-export async function seedAllWilayas(baseFarmerPrice: number) {
+export async function seedAllWilayas(
+  baseFarmerPrice: number = 280,
+  minFarmerPrice?: number,
+  maxFarmerPrice?: number
+) {
   const results = [];
+  const minP = minFarmerPrice ?? baseFarmerPrice;
+  const maxP = maxFarmerPrice ?? baseFarmerPrice;
+
   for (const wilaya of ALGERIA_WILAYAS) {
-    // Add regional price variation (e.g. South +10 DA, Central/East/West ± 5 DA)
     let regionOffset = 0;
     if (wilaya.region === 'الجنوب') regionOffset = getRandomInt(8, 15);
     else if (wilaya.region === 'الهضاب العليا') regionOffset = getRandomInt(2, 6);
     else regionOffset = getRandomInt(-4, 4);
 
-    const wilayaFarmerPrice = baseFarmerPrice + regionOffset;
+    const wMin = minP === maxP ? minP + regionOffset : Math.max(50, minP + Math.floor(regionOffset / 2));
+    const wMax = minP === maxP ? maxP + regionOffset : maxP + Math.ceil(regionOffset / 2);
+
     const res = await seedOffersForWilaya({
       wilayaCode: wilaya.code,
-      farmerPrice: wilayaFarmerPrice,
+      minFarmerPrice: wMin,
+      maxFarmerPrice: wMax,
     });
     results.push(res);
   }
@@ -315,6 +324,8 @@ export async function seedAllWilayas(baseFarmerPrice: number) {
     success: true,
     totalWilayasSeeded: results.length,
     totalOffersGenerated: results.length * 15,
+    minFarmerPrice: minP,
+    maxFarmerPrice: maxP,
   };
 }
 

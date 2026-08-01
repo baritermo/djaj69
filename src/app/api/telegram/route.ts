@@ -5,9 +5,10 @@ import { ALGERIA_WILAYAS, getWilayaByCode } from '@/lib/algeria-data';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
 
-// In-memory state for user step-by-step wizard (ChatId -> WilayaCode)
-const USER_WILAYA_STATE = new Map<string, string>(); // For market offer seeder
+// In-memory state maps for step-by-step wizards
+const USER_WILAYA_STATE = new Map<string, string>(); // For single wilaya offer seeder
 const USER_BOARD_STATE = new Map<string, string>();  // For direct official board update
+const USER_ALL_STATE = new Map<string, boolean>();   // For full 58 wilayas update
 
 // Helper: Parse single price or price range (e.g. "280 315", "280-315", "من 280 الى 315")
 function parsePriceInput(text: string): { minPrice: number; maxPrice: number } | null {
@@ -34,9 +35,8 @@ function parsePriceInput(text: string): { minPrice: number; maxPrice: number } |
 // Main Persistent Reply Keyboard
 const MAIN_KEYBOARD = {
   keyboard: [
-    [{ text: '📢 أمر نشر ولاية جديد (اختر من الـ 58 ولاية)' }],
+    [{ text: '📢 أمر نشر ولاية جديد' }, { text: '🌐 تحديث كلي' }],
     [{ text: '📊 تحديث أسعار البورصة الرسمية (فلاح - كورتي - مذبح)' }],
-    [{ text: '🌐 تحديث جميع الـ 58 ولاية (280 د.ج)' }, { text: '🌐 تحديث جميع الـ 58 ولاية (290 د.ج)' }],
     [{ text: '📍 سطيف (19)' }, { text: '📍 الجزائر (16)' }, { text: '📍 البليدة (09)' }, { text: '📍 وهران (31)' }],
     [{ text: '❓ مساعدة ودليل الأوامر' }],
   ],
@@ -233,6 +233,7 @@ export async function POST(request: Request) {
         const wilayaCode = dataStr.replace('select_wilaya_', '');
         USER_WILAYA_STATE.set(chatId, wilayaCode);
         USER_BOARD_STATE.delete(chatId);
+        USER_ALL_STATE.delete(chatId);
         const wilaya = getWilayaByCode(wilayaCode);
 
         await answerCallbackQuery(cb.id, `تم اختيار ${wilaya?.nameAr}`);
@@ -269,6 +270,7 @@ export async function POST(request: Request) {
         const wilayaCode = dataStr.replace('select_board_wilaya_', '');
         USER_BOARD_STATE.set(chatId, wilayaCode);
         USER_WILAYA_STATE.delete(chatId);
+        USER_ALL_STATE.delete(chatId);
         const wilaya = getWilayaByCode(wilayaCode);
 
         await answerCallbackQuery(cb.id, `تحديث البورصة لـ ${wilaya?.nameAr}`);
@@ -323,9 +325,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'unauthorized' });
       }
 
-      // Action 1: Start Offer Seeder Wizard (📢 أمر نشر ولاية جديد)
+      // Action 1: Start Single Wilaya Seeder Wizard (📢 أمر نشر ولاية جديد)
       if (text.includes('أمر نشر ولاية جديد') || text === '/publish' || text === 'نشر') {
         USER_BOARD_STATE.delete(chatId);
+        USER_ALL_STATE.delete(chatId);
         await sendTelegramMessage(
           chatId,
           '🇩🇿 <b>اختر الولاية المراد التحديث والنشر فيها (كافة الـ 58 ولاية متاحة):</b>',
@@ -334,15 +337,66 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Action 2: Start Official Price Board Update Wizard (📊 تحديث أسعار البورصة الرسمية)
+      // Action 2: Start Full 58 Wilayas Update Wizard (🌐 تحديث كلي)
+      if (text.includes('تحديث كلي') || text === '/post_all' || text === 'تحديث الكل') {
+        USER_WILAYA_STATE.delete(chatId);
+        USER_BOARD_STATE.delete(chatId);
+        USER_ALL_STATE.set(chatId, true);
+
+        const promptText = `
+🌐 <b>التحديث الكلي لجميع الـ 58 ولاية</b>
+
+✏️ <b>أدخل سعر الفلاح أو نطاق السعر المطلوب لكافة الولايات:</b>
+• <b>نطاق سعر عشوائي:</b> أرسل النطاق كرسالة (مثال: <code>280 315</code> أو <code>من 280 إلى 315</code>)
+• <b>سعر محدد متوسط:</b> أرسل الرقم فقط (مثال: <code>280</code>)
+        `;
+        await sendTelegramMessage(chatId, promptText);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action 3: Start Official Price Board Update Wizard (📊 تحديث أسعار البورصة الرسمية)
       if (text.includes('تحديث أسعار البورصة الرسمية') || text === '/board' || text === '/price') {
         USER_WILAYA_STATE.delete(chatId);
+        USER_ALL_STATE.delete(chatId);
         await sendTelegramMessage(
           chatId,
           '📊 <b>اختر الولاية المراد تحديث أسعار بورصتها الرسمية (فلاح - كورتي - مذبح):</b>',
           getBoardWilayasKeyboard(1)
         );
         return NextResponse.json({ status: 'ok' });
+      }
+
+      // Check if user is in Full 58 Wilayas Update Wizard and typed a price or range!
+      if (USER_ALL_STATE.has(chatId)) {
+        const parsedPrice = parsePriceInput(text);
+        if (parsedPrice) {
+          const { minPrice, maxPrice } = parsedPrice;
+          if (minPrice >= 50 && maxPrice <= 1000) {
+            USER_ALL_STATE.delete(chatId); // Clear state
+
+            const priceMsgText = minPrice === maxPrice
+              ? `بسعر فلاح متوسط ${minPrice} د.ج`
+              : `بنطاق سعر فلاح من ${minPrice} إلى ${maxPrice} د.ج`;
+
+            await sendTelegramMessage(chatId, `⏳ جاري التحديث الكلي لجميع الـ 58 ولاية ${priceMsgText}...`);
+            const res = await seedAllWilayas(minPrice, minPrice, maxPrice);
+
+            const farmerPriceDisplay = minPrice === maxPrice
+              ? `<b>${minPrice} د.ج/كغ</b>`
+              : `<b>من ${minPrice} إلى ${maxPrice} د.ج/كغ</b>`;
+
+            const successMsg = `
+✅ <b>تم التحديث الكلي لجميع الـ 58 ولاية بنجاح!</b>
+
+📊 <b>ملخص النشر الضخم:</b>
+• 📦 إجمالي العروض المولدة: <b>${res.totalOffersGenerated} عرضاً</b> (15 عرضاً بكل ولاية)
+• 🌾 نطاق سعر بيع الفلاحين: ${farmerPriceDisplay}
+• 🔒 جميع العروض محمية وحسابات متغيرة بنظام الذاكرة وبأسماء غير مكررة.
+            `;
+            await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+            return NextResponse.json({ status: 'ok' });
+          }
+        }
       }
 
       // Check if user is in Official Board Update Wizard and typed 3 prices! (e.g. "285 278 270")
@@ -380,7 +434,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // Check if user is in Offer Seeder Wizard and typed a price or price range!
+      // Check if user is in Single Wilaya Seeder Wizard and typed a price or price range!
       if (USER_WILAYA_STATE.has(chatId)) {
         const parsedPrice = parsePriceInput(text);
         if (parsedPrice) {
@@ -419,29 +473,6 @@ export async function POST(request: Request) {
         }
       }
 
-      // Handle Presets for 58 Wilayas
-      if (text.includes('تحديث جميع الـ 58 ولاية (280')) {
-        await sendTelegramMessage(chatId, '⏳ جاري تحديث الـ 58 ولاية بسعر فلاح 280 د.ج...');
-        const res = await seedAllWilayas(280);
-        await sendTelegramMessage(
-          chatId,
-          `✅ <b>تم تحديث الـ 58 ولاية بنجاح!</b>\n📊 العروض المولدة: ${res.totalOffersGenerated}\n🌾 متوسط سعر الفلاح: 280 د.ج`,
-          MAIN_KEYBOARD
-        );
-        return NextResponse.json({ status: 'ok' });
-      }
-
-      if (text.includes('تحديث جميع الـ 58 ولاية (290')) {
-        await sendTelegramMessage(chatId, '⏳ جاري تحديث الـ 58 ولاية بسعر فلاح 290 د.ج...');
-        const res = await seedAllWilayas(290);
-        await sendTelegramMessage(
-          chatId,
-          `✅ <b>تم تحديث الـ 58 ولاية بنجاح!</b>\n📊 العروض المولدة: ${res.totalOffersGenerated}\n🌾 متوسط سعر الفلاح: 290 د.ج`,
-          MAIN_KEYBOARD
-        );
-        return NextResponse.json({ status: 'ok' });
-      }
-
       // Quick Shortcut Wilayas
       if (text.includes('سطيف (19)')) {
         USER_WILAYA_STATE.set(chatId, '19');
@@ -467,11 +498,14 @@ export async function POST(request: Request) {
 
 <b>الأوامر والتحديثات المتاحة:</b>
 
-1️⃣ <b>تحديث جدول البورصة الرسمية مباشرة:</b>
-اضغط على <b>📊 تحديث أسعار البورصة الرسمية</b> -> اختر الولاية -> أرسل الأسعار الـ 3 (فلاح كورتي مذبح).
+1️⃣ <b>تحديث كلي (جميع الـ 58 ولاية):</b>
+اضغط على <b>🌐 تحديث كلي</b> -> أدخل السعر أو نطاق السعر.
 
-2️⃣ <b>ضخ 15 عرضاً كودياً في السوق:</b>
-اضغط على <b>📢 أمر نشر ولاية جديد</b> -> اختر الولاية -> أرسل السعر أو نطاق السعر.
+2️⃣ <b>نشر عروض لولاية محددة:</b>
+اضغط على <b>📢 أمر نشر ولاية جديد</b> -> اختر الولاية -> أدخل السعر أو نطاق السعر.
+
+3️⃣ <b>تحديث جدول البورصة الرسمية مباشرة:</b>
+اضغط على <b>📊 تحديث أسعار البورصة الرسمية</b> -> اختر الولاية -> أرسل الأسعار الـ 3 (فلاح كورتي مذبح).
         `;
         await sendTelegramMessage(chatId, helpText, MAIN_KEYBOARD);
         return NextResponse.json({ status: 'ok' });
