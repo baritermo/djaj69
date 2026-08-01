@@ -186,6 +186,7 @@ export default function Navbar({
         onOpenLoginModal={onOpenLoginModal}
         onOpenRegisterModal={onOpenRegisterModal}
         onOpenSettingsModal={onOpenSettingsModal}
+        onOpenAdminSubModal={onOpenAdminSubModal}
         onLogout={onLogout}
       />
     </header>
