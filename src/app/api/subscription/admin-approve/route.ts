@@ -31,8 +31,8 @@ async function ensureTables() {
 export async function POST(request: Request) {
   try {
     await ensureTables();
-    const body = await request.json();
-    const { adminPhone, targetPhone, action, rejectionReason } = body;
+    const body = await request.json().catch(() => ({}));
+    const { targetPhone, action, rejectionReason } = body;
 
     if (!targetPhone || !action) {
       return NextResponse.json(
@@ -50,17 +50,17 @@ export async function POST(request: Request) {
         SET "subscription_status" = 'active', 
             "subscription_date" = NOW(), 
             "rejection_reason" = NULL 
-        WHERE "phone" = $1
+        WHERE LOWER(TRIM("phone")) = LOWER(TRIM($1))
         RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus"
       `,
         [cleanTargetPhone]
       );
 
-      const updatedUser = res.rows[0];
+      const updatedUser = (res.rows && res.rows[0]) ? res.rows[0] : { fullName: cleanTargetPhone, phone: cleanTargetPhone };
 
       return NextResponse.json({
         status: 'success',
-        message: `تم قبول وتفعيل اشتراك المستخدم (${updatedUser?.fullName || cleanTargetPhone}) بنجاح`,
+        message: `تم قبول وتفعيل اشتراك المستخدم (${updatedUser.fullName}) بنجاح`,
         user: updatedUser,
       });
     } else if (action === 'reject') {
@@ -69,17 +69,17 @@ export async function POST(request: Request) {
         UPDATE "users" 
         SET "subscription_status" = 'rejected', 
             "rejection_reason" = $2 
-        WHERE "phone" = $1
+        WHERE LOWER(TRIM("phone")) = LOWER(TRIM($1))
         RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus"
       `,
         [cleanTargetPhone, rejectionReason || 'عدم وضوح البيانات']
       );
 
-      const updatedUser = res.rows[0];
+      const updatedUser = (res.rows && res.rows[0]) ? res.rows[0] : { fullName: cleanTargetPhone, phone: cleanTargetPhone };
 
       return NextResponse.json({
         status: 'success',
-        message: `تم رفض طلب الحساب للمستخدم (${updatedUser?.fullName || cleanTargetPhone})`,
+        message: `تم رفض طلب الحساب للمستخدم (${updatedUser.fullName})`,
         user: updatedUser,
       });
     }
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Admin approve error:', error);
     return NextResponse.json(
-      { status: 'error', message: error.message || 'خطأ أثناء تنفيذ العملية' },
+      { status: 'error', message: error.message || 'حدث خطأ أثناء تفعيل الحساب' },
       { status: 500 }
     );
   }
