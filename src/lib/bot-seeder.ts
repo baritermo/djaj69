@@ -214,7 +214,9 @@ function formatQuantity(num: number): string {
 
 export interface SeedWilayaOptions {
   wilayaCode: string;
-  farmerPrice: number;
+  farmerPrice?: number;
+  minFarmerPrice?: number;
+  maxFarmerPrice?: number;
 }
 
 /**
@@ -223,7 +225,11 @@ export interface SeedWilayaOptions {
  */
 export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   await ensureTables();
-  const { wilayaCode, farmerPrice } = options;
+  const { wilayaCode } = options;
+  const minPrice = options.minFarmerPrice ?? options.farmerPrice ?? 280;
+  const maxPrice = options.maxFarmerPrice ?? options.farmerPrice ?? minPrice;
+  const baseFarmerPrice = Math.round((minPrice + maxPrice) / 2);
+
   const wilaya = getWilayaByCode(wilayaCode);
   if (!wilaya) {
     throw new Error(`الولاية ذات الرمز ${wilayaCode} غير موجودة.`);
@@ -232,12 +238,11 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   const hiddenPhone = '🔒 رقم الهاتف غير معلن بطلب من الناشر';
 
   // 1. Calculate Prices according to Pricing Hierarchy Rule:
-  // Farmer Price = P (with tiny ± 2 DA variation among the 5 farmers)
-  // Broker Buying Price = P - (5 to 10 DA) (Always lower than farmer)
-  // Slaughterhouse Buying Price = P - (12 to 18 DA) (Always lower than farmer and broker)
+  // Farmer Price = Random within [minPrice, maxPrice] for each farmer
+  // Broker Buying Price = BaseFarmerPrice - (5 to 10 DA) (Always lower than farmer)
+  // Slaughterhouse Buying Price = BaseFarmerPrice - (12 to 18 DA) (Always lower than farmer and broker)
 
   // 2. Select 5 unique Farmers, 5 unique Brokers, 5 unique Slaughterhouses
-  // Pick randomly from account pools
   const shuffledFarmers = [...FARMER_NAMES].sort(() => Math.random() - 0.5).slice(0, 5);
   const shuffledBrokers = [...BROKER_NAMES].sort(() => Math.random() - 0.5).slice(0, 5);
   const shuffledSlaughters = [...SLAUGHTERHOUSE_NAMES].sort(() => Math.random() - 0.5).slice(0, 5);
@@ -269,7 +274,10 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
 
   for (let i = 0; i < shuffledFarmers.length; i++) {
     const name = shuffledFarmers[i];
-    const pFarmer = farmerPrice + getRandomInt(-2, 2);
+    // Distribute farmer prices across the minPrice to maxPrice range if range given
+    const pFarmer = minPrice === maxPrice 
+      ? minPrice + getRandomInt(-2, 2)
+      : getRandomInt(minPrice, maxPrice);
     const qtyNum = getRandomInt(3000, 15000);
     const weightNum = (getRandomInt(20, 27) / 10).toFixed(1);
 
@@ -300,7 +308,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   // Prices: P_farmer - (5 to 10 DA)
   for (let i = 0; i < shuffledBrokers.length; i++) {
     const name = shuffledBrokers[i];
-    const pMotawassita = farmerPrice - getRandomInt(5, 10);
+    const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
     const pKhashna = pMotawassita + getRandomInt(5, 10);
     const pRaqiqa = pMotawassita - getRandomInt(5, 10);
     const qtyNum = getRandomInt(1000, 1300);
@@ -330,7 +338,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   // Prices: P_farmer - (12 to 18 DA) (Always lower than farmer and broker)
   for (let i = 0; i < shuffledSlaughters.length; i++) {
     const name = shuffledSlaughters[i];
-    const pMotawassita = farmerPrice - getRandomInt(12, 18);
+    const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
     const pKhashna = pMotawassita + getRandomInt(5, 10);
     const pRaqiqa = pMotawassita - getRandomInt(5, 10);
     const qtyNum = getRandomInt(6000, 24000);
@@ -362,8 +370,8 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
 
   // 5. Update Official Price Board for this Wilaya
   try {
-    const brokerAvg = farmerPrice - 7;
-    const slaughterAvg = farmerPrice - 15;
+    const brokerAvg = baseFarmerPrice - 7;
+    const slaughterAvg = baseFarmerPrice - 15;
 
     await pool.query(
       `
@@ -376,7 +384,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
         "intermediary_price" = EXCLUDED.intermediary_price,
         "updated_at" = NOW();
     `,
-      [wilaya.code, wilaya.nameAr, wilaya.nameFr, wilaya.region, farmerPrice, slaughterAvg, brokerAvg]
+      [wilaya.code, wilaya.nameAr, wilaya.nameFr, wilaya.region, baseFarmerPrice, slaughterAvg, brokerAvg]
     );
   } catch (e) {
     console.warn('Official price board update warning:', e);
@@ -386,7 +394,9 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
     success: true,
     wilayaCode: wilaya.code,
     wilayaName: wilaya.nameAr,
-    farmerPrice,
+    farmerPrice: baseFarmerPrice,
+    minFarmerPrice: minPrice,
+    maxFarmerPrice: maxPrice,
     generatedOffersCount: generatedOffers.length,
   };
 }
