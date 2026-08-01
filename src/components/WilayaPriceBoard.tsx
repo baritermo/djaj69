@@ -136,6 +136,10 @@ export default function WilayaPriceBoard({
   );
 
   const toggleExpand = (code: string) => {
+    if (!isSubscribed) {
+      if (onOpenSubscribeModal) onOpenSubscribeModal();
+      return;
+    }
     setExpandedWilayas((prev) => ({
       ...prev,
       [code]: !prev[code],
@@ -146,6 +150,10 @@ export default function WilayaPriceBoard({
     filteredWilayas.length > 0 && filteredWilayas.every((w) => expandedWilayas[w.code]);
 
   const toggleExpandAll = () => {
+    if (!isSubscribed) {
+      if (onOpenSubscribeModal) onOpenSubscribeModal();
+      return;
+    }
     if (isAllExpanded) {
       setExpandedWilayas({});
     } else {
@@ -372,13 +380,13 @@ export default function WilayaPriceBoard({
 
               {/* ===== EXPANDABLE DETAILED TABLE (Appears when "عرض المزيد" is clicked) ===== */}
               {isExpanded && (
-                <div className="p-4 bg-slate-50 border-t border-slate-200 animate-fadeIn">
-                  <div className="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+                <div className="p-4 bg-slate-50 border-t border-slate-200 animate-fadeIn relative overflow-hidden rounded-b-2xl">
+                  <div className={`text-xs font-bold text-slate-700 mb-2 flex items-center justify-between transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
                     <span>تفاصيل الأسعار حسب الفئة في ولاية {w.nameAr}:</span>
                     <span className="text-slate-400 font-normal text-[11px]">سعر الكلغم بالدينار</span>
                   </div>
 
-                  <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+                  <div className={`overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white relative transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
                     <table className="w-full text-center border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-100 border-b border-slate-200">
@@ -445,6 +453,19 @@ export default function WilayaPriceBoard({
                       </tbody>
                     </table>
                   </div>
+
+                  {!isSubscribed && (
+                    <button
+                      onClick={onOpenSubscribeModal}
+                      className="absolute inset-0 bg-emerald-950/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 p-4 text-center text-amber-300 font-black border border-amber-400/50 shadow-lg cursor-pointer z-10 transition hover:bg-emerald-950/90"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
+                        <Lock className="w-4.5 h-4.5 text-amber-400" />
+                      </div>
+                      <span className="text-sm">🔒 تفاصيل الأسعار حسب الفئة متاحة للمشتركين فقط</span>
+                      <span className="text-xs text-slate-200 font-normal">انقر هنا للتفعيل والاشتراك في البورصة لمشاهدة التفاصيل</span>
+                    </button>
+                  )}
                 </div>
               )}
 
