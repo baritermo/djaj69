@@ -129,9 +129,9 @@ export default function Navbar({
                   <button
                     onClick={onOpenAdminSubModal}
                     className="px-2 py-1 bg-amber-400 text-emerald-950 font-black text-xs rounded-lg shadow-sm hover:bg-amber-300 transition cursor-pointer"
-                    title="مراجعة وتفعيل طلبات الاشتراك والوثائق"
+                    title="مراجعة وتفعيل طلبات الحسابات والاشتراكات"
                   >
-                    📋 طلبات الاشتراك
+                    📋 طلبات الحسابات
                   </button>
                 )}
                 <button

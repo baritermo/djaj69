@@ -132,14 +132,17 @@ export default function Sidebar({
                   <div className="flex items-center gap-1">
                     {currentUser?.role === 'admin' && (
                       <button
-                        onClick={() => {
-                          if (onOpenAdminSubModal) onOpenAdminSubModal();
+                        onClick={(e) => {
+                          e.stopPropagation();
                           onClose();
+                          setTimeout(() => {
+                            if (onOpenAdminSubModal) onOpenAdminSubModal();
+                          }, 100);
                         }}
-                        className="px-2 py-1 bg-amber-400 text-emerald-950 font-black text-[11px] rounded-lg shadow-sm hover:bg-amber-300 transition cursor-pointer"
-                        title="مراجعة وتفعيل طلبات الاشتراك والوثائق"
+                        className="px-2.5 py-1.5 bg-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-md hover:bg-amber-300 transition cursor-pointer flex items-center gap-1 active:scale-95"
+                        title="مراجعة وتفعيل طلبات الحسابات والاشتراكات"
                       >
-                        📋 طلبات الاشتراك
+                        📋 طلبات الحسابات
                       </button>
                     )}
                     {currentUser?.role !== 'admin' && currentUser?.subscriptionStatus !== 'active' && (
