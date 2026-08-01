@@ -5,6 +5,7 @@ import {
   updateOfficialPriceBoard,
   updateAllOfficialPrices,
   deleteOfficialPriceForWilaya,
+  deleteAllOfficialPrices,
   getOfficialPriceForWilaya,
 } from '@/lib/bot-seeder';
 import { ALGERIA_WILAYAS, getWilayaByCode } from '@/lib/algeria-data';
@@ -43,6 +44,7 @@ function parsePriceInput(text: string): { minPrice: number; maxPrice: number } |
 const MAIN_KEYBOARD = {
   keyboard: [
     [{ text: '🌐 تحديث كلي لبورصة الـ 58 ولاية' }],
+    [{ text: '🗑️ حذف كلي لجميع أسعار البورصة (الـ 58 ولاية)' }],
     [{ text: '📊 تحديث أسعار بورصة ولاية' }],
     [{ text: '📢 ضخ عروض في السوق (ولايات)' }],
     [{ text: '📍 سطيف (19)' }, { text: '📍 الجزائر (16)' }, { text: '📍 البليدة (09)' }, { text: '📍 وهران (31)' }],
@@ -335,7 +337,7 @@ ${currentPriceText}
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Action: User clicked Delete Ask
+      // Action: User clicked Delete Ask for Single Wilaya
       if (dataStr.startsWith('delete_board_ask_')) {
         const wilayaCode = dataStr.replace('delete_board_ask_', '');
         const wilaya = getWilayaByCode(wilayaCode);
@@ -357,7 +359,7 @@ ${currentPriceText}
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Action: User clicked Delete Confirm (✅ موافق على الحذف)
+      // Action: User clicked Delete Confirm for Single Wilaya (✅ موافق على الحذف)
       if (dataStr.startsWith('delete_board_confirm_')) {
         const wilayaCode = dataStr.replace('delete_board_confirm_', '');
         const res = await deleteOfficialPriceForWilaya(wilayaCode);
@@ -367,6 +369,19 @@ ${currentPriceText}
         const successMsg = `
 🗑️ <b>تم حذف أسعار بورصة ولاية ${res.wilayaName} (${res.wilayaCode}) بنجاح!</b>
 تمت إزالة بيانات الأسعار الرسمية للولاية من الجدول في الموقع.
+        `;
+        await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: User clicked BULK Delete Confirm (✅ موافق وتأكيد الحذف الكلي)
+      if (dataStr === 'delete_all_board_confirm') {
+        await deleteAllOfficialPrices();
+        await answerCallbackQuery(cb.id, 'تم الحذف الكلي بنجاح');
+
+        const successMsg = `
+🗑️ <b>تم الحذف الكلي الجماعي لجدول أسعار البورصة للـ 58 ولاية بنجاح!</b>
+تم تفريغ وإزالة جميع الأسعار الرسمية من جدول البورصة بالموقع.
         `;
         await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
         return NextResponse.json({ status: 'ok' });
@@ -437,9 +452,35 @@ ${currentPriceText}
         return NextResponse.json({ status: 'unauthorized' });
       }
 
-      // Action 1: FULL 58 WILAYAS OFFICIAL PRICE BOARD UPDATE ONLY (🌐 تحديث كلي لبورصة الـ 58 ولاية)
+      // Action 1: BULK DELETE ALL OFFICIAL PRICES FOR ALL 58 WILAYAS (🗑️ حذف كلي لجميع أسعار البورصة)
       if (
-        text.includes('تحديث كلي') ||
+        text.includes('حذف كلي لجميع') ||
+        text.includes('حذف كلي') ||
+        text === '/delete_all' ||
+        text === 'حذف الكل'
+      ) {
+        USER_WILAYA_STATE.delete(chatId);
+        USER_BOARD_STATE.delete(chatId);
+        USER_ALL_BOARD_STATE.delete(chatId);
+
+        const confirmKeyboard = {
+          inline_keyboard: [
+            [{ text: '✅ موافق وتأكيد الحذف الكلي', callback_data: 'delete_all_board_confirm' }],
+            [{ text: '❌ إلغاء', callback_data: 'cancel_board' }],
+          ],
+        };
+
+        const promptText = `
+⚠️ <b>تأكيد الحذف الجماعي الكلي:</b>
+
+هل أنت تأكد من تفريغ وحذف جميع أسعار بورصة الـ 58 ولاية وإزالتها تماماً من الجدول الرسمي بالموقع؟
+        `;
+        await sendTelegramMessage(chatId, promptText, confirmKeyboard);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action 2: FULL 58 WILAYAS OFFICIAL PRICE BOARD UPDATE ONLY (🌐 تحديث كلي لبورصة الـ 58 ولاية)
+      if (
         text.includes('تحديث كلي لبورصة') ||
         text === '/update_board' ||
         text === '/all'
@@ -459,7 +500,7 @@ ${currentPriceText}
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Action 2: Single Wilaya Official Price Board Update (📊 تحديث أسعار بورصة ولاية)
+      // Action 3: Single Wilaya Official Price Board Control Panel (📊 تحديث أسعار بورصة ولاية)
       if (
         text.includes('تحديث أسعار بورصة ولاية') ||
         text.includes('أسعار البورصة الرسمية') ||
@@ -476,7 +517,7 @@ ${currentPriceText}
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Action 3: B2B Market Offers Seeder (📢 ضخ عروض في السوق (ولايات))
+      // Action 4: B2B Market Offers Seeder (📢 ضخ عروض في السوق (ولايات))
       if (
         text.includes('ضخ عروض') ||
         text.includes('أمر نشر ولاية') ||
@@ -521,7 +562,7 @@ ${currentPriceText}
 • 🤝 نطاق سعر الوسطاء: <b>أقل بـ 7 د.ج/كغ</b>
 • 🔪 نطاق سعر المذابح: <b>أقل بـ 15 د.ج/كغ</b>
 
-✨ ظهرت الأسعار الرسمية المحدثة مباشرة في جدول بورصة الموقع!
+✨ ظهرت الأسعار الرسمية المحدثة مباشرة في جدول بورصة الموقع (دون نشر أي عروض بالسوق)!
             `;
             await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
             return NextResponse.json({ status: 'ok' });
@@ -629,16 +670,19 @@ ${currentPriceText}
         const helpText = `
 🏛️ <b>مرحباً بك في بوت الإدارة لبورصة الدواجن (djaj69 Admin Bot)</b>
 
-<b>الأوامر المنفصلة والمتاحة للمدير:</b>
+<b>الأوامر المتاحة لمشرف البورصة:</b>
 
 1️⃣ <b>🌐 تحديث كلي لبورصة الـ 58 ولاية:</b>
-يحدث جدول الأسعار الرسمية للـ 58 ولاية بالموقع مباشرة.
+يحدث جدول الأسعار الرسمية للـ 58 ولاية دفعة واحدة.
 
-2️⃣ <b>📊 تحديث أسعار بورصة ولاية:</b>
-لوحة تحكم كاملة للولايات (تعديل / حذف / تأكيد الحفظ بنقرة <b>موافق</b>).
+2️⃣ <b>🗑️ حذف كلي لجميع أسعار البورصة:</b>
+يمحو ويفرغ جميع أسعار البورصة للـ 58 ولاية بنقرة واحدة (مع تأكيد الحذف).
 
-3️⃣ <b>📢 ضخ عروض في السوق (ولايات):</b>
-يضخ 15 عرضاً كودياً بسوق ولاية معينة عند الحاجة.
+3️⃣ <b>📊 تحديث أسعار بورصة ولاية:</b>
+لوحة تحكم لولاية معينة (تعديل / حذف فردي).
+
+4️⃣ <b>📢 ضخ عروض في السوق (ولايات):</b>
+يضخ 15 عرضاً كودياً بسوق ولاية معينة.
         `;
         await sendTelegramMessage(chatId, helpText, MAIN_KEYBOARD);
         return NextResponse.json({ status: 'ok' });

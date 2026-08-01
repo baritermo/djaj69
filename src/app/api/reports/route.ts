@@ -1,21 +1,30 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/index';
+import { and, desc, eq, gte } from 'drizzle-orm';
+import { db, pool } from '@/db/index';
 import { priceReports } from '@/db/schema';
-import { desc, eq } from 'drizzle-orm';
 import { getWilayaByCode } from '@/lib/algeria-data';
 
 export async function GET(request: Request) {
   try {
+    // Auto-Cleanup: Delete expired reports published more than 24 hours ago
+    try {
+      await pool.query(`DELETE FROM "price_reports" WHERE "created_at" < NOW() - INTERVAL '24 hours'`);
+    } catch (e) {}
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const { searchParams } = new URL(request.url);
     const wilayaCode = searchParams.get('wilayaCode');
 
-    const query = wilayaCode && wilayaCode !== 'all'
-      ? await db
-          .select()
-          .from(priceReports)
-          .where(eq(priceReports.wilayaCode, wilayaCode))
-          .orderBy(desc(priceReports.createdAt))
-      : await db.select().from(priceReports).orderBy(desc(priceReports.createdAt));
+    const conditions = [gte(priceReports.createdAt, twentyFourHoursAgo)];
+    if (wilayaCode && wilayaCode !== 'all') {
+      conditions.push(eq(priceReports.wilayaCode, wilayaCode));
+    }
+
+    const query = await db
+      .select()
+      .from(priceReports)
+      .where(and(...conditions))
+      .orderBy(desc(priceReports.createdAt));
 
     return NextResponse.json({ status: 'success', reports: query });
   } catch (error: any) {

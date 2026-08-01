@@ -44,11 +44,18 @@ async function ensureTables() {
 export async function GET(request: Request) {
   try {
     await ensureTables();
+
+    // Auto-Cleanup: Delete expired offers published more than 24 hours ago (اختفاء العروض في اليوم التالي تلقائياً)
+    try {
+      await pool.query(`DELETE FROM "market_offers" WHERE "created_at" < NOW() - INTERVAL '24 hours'`);
+    } catch (e) {}
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const { searchParams } = new URL(request.url);
     const offerType = searchParams.get('offerType');
     const wilayaCode = searchParams.get('wilayaCode');
 
-    const conditions = [];
+    const conditions = [gte(marketOffers.createdAt, twentyFourHoursAgo)];
     if (offerType && offerType !== 'all') {
       conditions.push(eq(marketOffers.offerType, offerType));
     }
@@ -56,9 +63,11 @@ export async function GET(request: Request) {
       conditions.push(eq(marketOffers.wilayaCode, wilayaCode));
     }
 
-    const offers = conditions.length > 0
-      ? await db.select().from(marketOffers).where(and(...conditions)).orderBy(desc(marketOffers.createdAt))
-      : await db.select().from(marketOffers).orderBy(desc(marketOffers.createdAt));
+    const offers = await db
+      .select()
+      .from(marketOffers)
+      .where(and(...conditions))
+      .orderBy(desc(marketOffers.createdAt));
 
     return NextResponse.json({ status: 'success', offers });
   } catch (error: any) {

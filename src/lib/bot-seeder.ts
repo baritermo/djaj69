@@ -551,3 +551,14 @@ export async function getOfficialPriceForWilaya(wilayaCode: string) {
   );
   return res.rows[0] || null;
 }
+
+/**
+ * Delete ALL official prices from "official_prices" table for all 58 Wilayas.
+ */
+export async function deleteAllOfficialPrices() {
+  await ensureTables();
+  await pool.query(`DELETE FROM "official_prices"`);
+  return {
+    success: true,
+  };
+}
