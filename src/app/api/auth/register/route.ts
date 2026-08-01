@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         role: String(role),
         wilayaCode: String(wilayaCode),
         commune: String(commune),
+        subscriptionStatus: 'pending',
       })
       .returning();
 

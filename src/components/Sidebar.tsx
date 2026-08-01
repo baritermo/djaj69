@@ -149,9 +149,9 @@ export default function Sidebar({
                           onClose();
                         }}
                         className="px-2 py-1 bg-amber-500 text-emerald-950 font-black text-[11px] rounded-lg shadow-sm hover:bg-amber-400 transition cursor-pointer"
-                        title="تفعيل الاشتراك وتأكيد الهوية"
+                        title="حالة التفعيل والاعتماد من طرف الإدارة"
                       >
-                        🔓 تفعيل الاشتراك
+                        ⏳ قيد مراجعة الأدمن
                       </button>
                     )}
                     <button

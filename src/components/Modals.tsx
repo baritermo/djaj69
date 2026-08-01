@@ -1523,178 +1523,57 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
   );
 }
 
-// 10. USER SUBSCRIPTION MODAL
+// 10. USER SUBSCRIPTION MODAL (Admin Approval Pending View)
 interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: any;
-  onSuccess: (user: any) => void;
+  currentUser?: any;
+  onSuccess?: (user: any) => void;
 }
 
-export function SubscriptionModal({ isOpen, onClose, currentUser, onSuccess }: SubscriptionModalProps) {
-  const [receiptUrl, setReceiptUrl] = useState('');
-  const [idCardUrl, setIdCardUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
+export function SubscriptionModal({ isOpen, onClose, currentUser }: SubscriptionModalProps) {
   if (!isOpen) return null;
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setter(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    if (!receiptUrl || !idCardUrl) {
-      setError('يرجى اختيار وإرفاق صورة وصل الدفع وصورة وثيقة الهوية / الاعتماد');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch('/api/subscription/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: currentUser?.phone,
-          receiptUrl,
-          idCardUrl,
-        }),
-      });
-      const data = await res.json();
-      if (data.status === 'success') {
-        onSuccess(data.user);
-        setSuccessMsg(data.message);
-      } else {
-        setError(data.message || 'خطأ أثناء إرسال الطلب');
-      }
-    } catch {
-      setError('خطأ في الاتصال بالسيرفر');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 text-right">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-right space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
             <div className="p-2.5 bg-amber-400 text-emerald-950 rounded-xl shadow-xs font-black">
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">تفعيل الاشتراك وتأكيد الهوية</h3>
-              <p className="text-xs text-slate-500">رفع وصل الدفع ووثيقة الاعتماد لإزالة التضبيب وتفعيل الحساب</p>
+              <h3 className="text-base font-black text-slate-900">مراجعة وتأكيد الحساب</h3>
+              <p className="text-[11px] text-slate-500">حالة التفعيل والاعتماد من طرف الإدارة</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {error}
+        <div className="space-y-4 text-center">
+          <div className="w-16 h-16 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black shadow-inner animate-pulse">
+            ⏳
           </div>
-        )}
-
-        {successMsg ? (
-          <div className="space-y-4 py-4 text-center">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-            </div>
-            <h4 className="text-lg font-black text-slate-900">تم إرسال الطلب والوثائق بنجاح!</h4>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-              طلبك قيد المراجعة حالياً من طرف إدارة البورصة. سيتم تفعيل حسابك وإزالة التضبيب فور التدقيق في وصل الدفع والوثائق.
+          <div className="space-y-2">
+            <h4 className="text-base font-black text-slate-900">
+              {currentUser ? `مرحباً بك (${currentUser.fullName})` : 'مرحباً بك في البورصة!'}
+            </h4>
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-200">
+              حسابك حالياً <b>قيد المراجعة والموافقة</b> من قِبل إدارة منصة بورصة الدواجن.
+              <br />
+              بمجرد تفعيل حسابك من قِبل الأدمن، ستتمكن فوراً من تصفح كافة العروض والتواصل المباشر مع متعاملي البورصة.
             </p>
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 bg-emerald-800 text-white font-black rounded-xl text-xs shadow-md cursor-pointer"
-            >
-              حسناً، فهمت
-            </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
-            {/* Step 1: Payment CCP Info */}
-            <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-amber-950 font-black">
-                <span>💳 الخطوة 1: تحويل مبلغ الاشتراك البريدي</span>
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-amber-200 text-xs text-slate-800 space-y-1 font-mono text-center">
-                <div>الحساب البريدي (CCP): <span className="font-black text-emerald-950">0012345678 المفتاح 90</span></div>
-                <div>رمز RIP: <span className="font-black text-emerald-950">007 99999 0012345678 90</span></div>
-                <div className="text-[10px] text-amber-900 font-sans font-bold">أو عبر تطبيق BaridiMob بالإرسال للحساب أعلاه</div>
-              </div>
-            </div>
 
-            {/* Step 2: Upload Receipt */}
-            <div className="space-y-1.5">
-              <label className="block text-slate-800 font-black">
-                🧾 الخطوة 2: رفع صورة وصل الاشتراك / تحويل بريدي موب
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                required
-                onChange={(e) => handleFileUpload(e, setReceiptUrl)}
-                className="w-full text-xs text-slate-600 file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-emerald-100 file:text-emerald-950 hover:file:bg-emerald-200 border border-slate-300 rounded-xl p-1 bg-slate-50 cursor-pointer"
-              />
-              {receiptUrl && (
-                <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800 text-[11px]">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>تم اختيار صورة الوصل بنجاح</span>
-                </div>
-              )}
-            </div>
-
-            {/* Step 3: Upload ID Document */}
-            <div className="space-y-1.5">
-              <label className="block text-slate-800 font-black">
-                🆔 الخطوة 3: رفع صورة وثيقة الهوية (بطاقة تعريف / بطاقة فلاح / سجّل تجاري)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                required
-                onChange={(e) => handleFileUpload(e, setIdCardUrl)}
-                className="w-full text-xs text-slate-600 file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-emerald-100 file:text-emerald-950 hover:file:bg-emerald-200 border border-slate-300 rounded-xl p-1 bg-slate-50 cursor-pointer"
-              />
-              {idCardUrl && (
-                <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800 text-[11px]">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>تم اختيار صورة وثيقة الهوية بنجاح</span>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <button type="button" onClick={onClose} className="px-4 py-2.5 text-slate-600">
-                إلغاء
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !receiptUrl || !idCardUrl}
-                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black rounded-xl shadow-lg transition text-xs disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? 'جاري الإرسال...' : 'إرسال وصل الدفع والوثائق للتفعيل'}
-              </button>
-            </div>
-          </form>
-        )}
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition cursor-pointer"
+          >
+            حسناً، فهمت 👍
+          </button>
+        </div>
       </div>
     </div>
   );
