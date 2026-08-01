@@ -137,7 +137,7 @@ export default function JobsAndWorkersBoard({
             </button>
           )}
 
-          {(currentUser?.role === 'worker' || currentUser?.role === 'admin') && (
+          {currentUser?.role === 'worker' && (
             <button
               onClick={() => {
                 if (!isSubscribed) {

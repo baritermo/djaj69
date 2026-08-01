@@ -83,7 +83,7 @@ export default function B2BDirectory({
             تواصل مباشر وحصري مع المزارع، المذابح، باعة الأعلاف والفلوس (الصوص)، والبيطرة في ولايتك لضمان أفضل سعر وأعلى جودة.
           </p>
         </div>
-        {currentUser?.role !== 'worker' && (
+        {currentUser?.role === 'b2b' && (
           <button
             onClick={() => {
               if (!isSubscribed) {

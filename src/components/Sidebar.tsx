@@ -328,7 +328,7 @@ export default function Sidebar({
                   <span>نشر عرض توظيف جديد</span>
                 </button>
 
-                {(currentUser?.role === 'worker' || currentUser?.role === 'admin') && (
+                {currentUser?.role === 'worker' && (
                   <button
                     onClick={() => {
                       onOpenWorkerModal();
@@ -341,16 +341,18 @@ export default function Sidebar({
                   </button>
                 )}
 
-                <button
-                  onClick={() => {
-                    onOpenCompanyModal();
-                    onClose();
-                  }}
-                  className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                >
-                  <Building2 className="w-4 h-4 text-amber-400" />
-                  <span>إضافة نشاط B2B جديد</span>
-                </button>
+                {currentUser?.role === 'b2b' && (
+                  <button
+                    onClick={() => {
+                      onOpenCompanyModal();
+                      onClose();
+                    }}
+                    className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
+                  >
+                    <Building2 className="w-4 h-4 text-amber-400" />
+                    <span>إضافة نشاط B2B جديد</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
