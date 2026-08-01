@@ -45,15 +45,17 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
     setClosedCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const hasBothTypes = buyers.some((b) => b.offerType === 'slaughterhouse') && buyers.some((b) => b.offerType === 'broker');
+
   const filtered = useMemo(() => {
     return buyers.filter((b) => {
-      const typeMatch = b.offerType === activeSubTab;
+      const typeMatch = !hasBothTypes || b.offerType === activeSubTab;
       const wMatch = wilayaCode === 'all' || b.wilayaCode === wilayaCode;
       const q = query.toLowerCase();
       const qMatch = !q || b.name.toLowerCase().includes(q) || b.wilayaName.includes(q) || b.commune.includes(q);
       return typeMatch && wMatch && qMatch;
     });
-  }, [buyers, activeSubTab, wilayaCode, query]);
+  }, [buyers, hasBothTypes, activeSubTab, wilayaCode, query]);
 
   // Group by wilaya
   const grouped = useMemo(() => {
@@ -68,21 +70,23 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
 
   const codes = Array.from(grouped.keys()).sort((a, b) => parseInt(a) - parseInt(b));
 
-  const isSlaughterhouse = activeSubTab === 'slaughterhouse';
+  const isSlaughterhouse = !hasBothTypes ? buyers[0]?.offerType === 'slaughterhouse' : activeSubTab === 'slaughterhouse';
   const label = isSlaughterhouse ? 'المذابح' : 'الكورتي / الوسطاء';
   const icon = isSlaughterhouse ? '🔪' : '🤝';
 
   return (
     <section className="space-y-5 select-none">
       {/* Slaughterhouse / Broker sub-tabs */}
-      <div className="flex items-center gap-2">
-        <button onClick={() => setActiveSubTab('slaughterhouse')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'slaughterhouse' ? 'bg-indigo-800 text-white border-indigo-800 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400'}`}>
-          🔪 عروض المذابح (شراء)
-        </button>
-        <button onClick={() => setActiveSubTab('broker')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'broker' ? 'bg-amber-600 text-white border-amber-600 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-amber-400'}`}>
-          🤝 عروض الكورتي (شراء)
-        </button>
-      </div>
+      {hasBothTypes && (
+        <div className="flex items-center gap-2">
+          <button onClick={() => setActiveSubTab('slaughterhouse')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'slaughterhouse' ? 'bg-indigo-800 text-white border-indigo-800 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400'}`}>
+            🔪 عروض المذابح (شراء)
+          </button>
+          <button onClick={() => setActiveSubTab('broker')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black border transition ${activeSubTab === 'broker' ? 'bg-amber-600 text-white border-amber-600 shadow' : 'bg-white text-slate-700 border-slate-200 hover:border-amber-400'}`}>
+            🤝 عروض الكورتي (شراء)
+          </button>
+        </div>
+      )}
 
       <div className={`rounded-2xl border p-4 ${isSlaughterhouse ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'}`}>
         <div className="flex items-start gap-3">
