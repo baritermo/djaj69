@@ -111,6 +111,7 @@ export const marketOffers = pgTable('market_offers', {
   breedType: text('breed_type'), // سلالة: Ross 308 ، Cobb 500 ، محلي
   farmAcreage: text('farm_acreage'), // مساحة المزرعة
   chickenAge: text('chicken_age'), // العمر بالأيام
+  farmerPrice: integer('farmer_price'), // سعر البيع المطلوب د.ج/كغ
   details: text('details'),
   // --- للمذبح والكورتي (أسعار الشراء لكل فئة) ---
   buyKhashna: integer('buy_khashna'), // سعر شراء الخشنة د.ج/كغ

@@ -157,6 +157,12 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
                         {/* Detailed Offer Body (Shown when Open) */}
                         {!isCardClosed && (
                           <div className="mt-3 pt-3 border-t border-emerald-100 space-y-2 animate-fadeIn">
+                            {((farmer as any).farmerPrice || (farmer as any).farmer_price) && (
+                              <div className="bg-gradient-to-r from-amber-500 to-emerald-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-xs flex items-center justify-between">
+                                <span>🌾 سعر البيع المطلوب:</span>
+                                <span className="text-sm font-black text-amber-200">{((farmer as any).farmerPrice || (farmer as any).farmer_price)} د.ج/كغ</span>
+                              </div>
+                            )}
                             <div className="space-y-1.5 text-[11px] text-slate-700">
                               {farmer.chickenCategories && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الفئة:</span><span className="bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-bold">{farmer.chickenCategories}</span></p>}
                               {farmer.weightRange && <p className="flex items-start gap-1"><span className="font-black text-slate-900 shrink-0">الوزن:</span><span>{farmer.weightRange}</span></p>}

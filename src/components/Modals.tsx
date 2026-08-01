@@ -333,6 +333,7 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
   const [breedType, setBreedType] = useState('Ross 308');
   const [farmAcreage, setFarmAcreage] = useState('');
   const [chickenAge, setChickenAge] = useState('');
+  const [farmerPrice, setFarmerPrice] = useState('');
   const [details, setDetails] = useState('');
   // Buyer fields
   const [buyKhashna, setBuyKhashna] = useState('');
@@ -357,6 +358,7 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
     try {
       const body: Record<string, any> = { offerType, name, wilayaCode, commune, phone: finalPhone };
       if (isFarmer) {
+        body.farmerPrice = farmerPrice ? Number(farmerPrice) : null;
         body.chickenCategories = chickenCategories;
         body.weightRange = weightRange;
         body.availableQuantity = availableQuantity;
@@ -389,7 +391,7 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-900">{isFarmer ? 'نشر عرض فلاح — بيع الدجاج' : `نشر عرض ${offerType === 'slaughterhouse' ? 'مذبح' : 'كورتي'} — أسعار الشراء`}</h3>
-              <p className="text-xs text-slate-500">{isFarmer ? 'معلومات مزرعتك ونوع الدجاج والكمية' : 'أدخل الأسعار التي تشتري بها كل فئة دجاج'}</p>
+              <p className="text-xs text-slate-500">{isFarmer ? 'معلومات مزرعتك ونوع الدجاج والكمية والسعر' : 'أدخل الأسعار التي تشتري بها كل فئة دجاج'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><X className="w-5 h-5" /></button>
@@ -418,18 +420,21 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
             // Farmer form
             <>
               <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-3">
-                <div className="text-xs font-black text-emerald-800">معلومات الدجاج المعروض</div>
+                <div className="text-xs font-black text-emerald-800">معلومات الدجاج وسعر البيع المعروض</div>
                 <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-emerald-950 font-black mb-1">💰 سعر البيع المطلوب (د.ج / كغ)</label>
+                    <input type="number" required value={farmerPrice} onChange={(e) => setFarmerPrice(e.target.value)} placeholder="مثال: 285" className="w-full px-3 py-2 border border-emerald-500 bg-white font-black text-emerald-900 rounded-lg shadow-2xs focus:ring-2 focus:ring-emerald-600" />
+                  </div>
                   <div><label className="block text-slate-700 mb-1">فئة الدجاج</label><select value={chickenCategories} onChange={(e) => setChickenCategories(e.target.value)} className="w-full px-2 py-2 border border-slate-300 rounded-lg"><option>خشنة</option><option>متوسطة</option><option>رقيقة</option><option>خشنة، متوسطة</option><option>متوسطة، رقيقة</option><option>خشنة، متوسطة، رقيقة</option></select></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div><label className="block text-slate-700 mb-1">الوزن (كغ)</label><input value={weightRange} onChange={(e) => setWeightRange(e.target.value)} placeholder="2.0-2.6 كغ" className="w-full px-2 py-2 border border-slate-300 rounded-lg" /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
                   <div><label className="block text-slate-700 mb-1">الكمية المتاحة</label><input required value={availableQuantity} onChange={(e) => setAvailableQuantity(e.target.value)} placeholder="5,000 طير" className="w-full px-2 py-2 border border-slate-300 rounded-lg" /></div>
-                  <div><label className="block text-slate-700 mb-1">السلالة</label><select value={breedType} onChange={(e) => setBreedType(e.target.value)} className="w-full px-2 py-2 border border-slate-300 rounded-lg"><option>Ross 308</option><option>Cobb 500</option><option>محلي</option><option>محلي محسّن</option></select></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
+                  <div><label className="block text-slate-700 mb-1">السلالة</label><select value={breedType} onChange={(e) => setBreedType(e.target.value)} className="w-full px-2 py-2 border border-slate-300 rounded-lg"><option>Ross 308</option><option>Cobb 500</option><option>محلي</option><option>محلي محسّن</option></select></div>
                   <div><label className="block text-slate-700 mb-1">العمر بالأيام</label><input value={chickenAge} onChange={(e) => setChickenAge(e.target.value)} placeholder="45 يوم" className="w-full px-2 py-2 border border-slate-300 rounded-lg" /></div>
-                  <div><label className="block text-slate-700 mb-1">مساحة المزرعة</label><input value={farmAcreage} onChange={(e) => setFarmAcreage(e.target.value)} placeholder="3 عنابر × 5,000 م²" className="w-full px-2 py-2 border border-slate-300 rounded-lg" /></div>
                 </div>
                 <div><label className="block text-slate-700 mb-1">تفاصيل إضافية</label><textarea rows={2} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="تفاصيل عن التغذية، التلقيح، الاستلام..." className="w-full px-3 py-2 border border-slate-300 rounded-lg" /></div>
               </div>

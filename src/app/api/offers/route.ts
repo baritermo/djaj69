@@ -23,6 +23,7 @@ async function ensureTables() {
         "breed_type" text,
         "farm_acreage" text,
         "chicken_age" text,
+        "farmer_price" integer,
         "details" text,
         "buy_khashna" integer,
         "buy_motawassita" integer,
@@ -33,6 +34,7 @@ async function ensureTables() {
         "verified" boolean DEFAULT true NOT NULL,
         "created_at" timestamp DEFAULT now()
       );
+      ALTER TABLE "market_offers" ADD COLUMN IF NOT EXISTS "farmer_price" integer;
     `);
   } catch (e) {}
 }
@@ -66,7 +68,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { offerType, name, wilayaCode, commune, phone, chickenCategories, weightRange, availableQuantity, breedType, farmAcreage, chickenAge, details, buyKhashna, buyMotawassita, buyRaqiqa, maxPurchaseKg, deliveryArea, buyingDetails } = body;
+    const { offerType, name, wilayaCode, commune, phone, chickenCategories, weightRange, availableQuantity, breedType, farmAcreage, chickenAge, farmerPrice, details, buyKhashna, buyMotawassita, buyRaqiqa, maxPurchaseKg, deliveryArea, buyingDetails } = body;
 
     if (!offerType || !name || !wilayaCode || !phone) {
       return NextResponse.json({ status: 'error', message: 'يرجى إكمال جميع الحقول المطلوبة.' }, { status: 400 });
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
         breedType: breedType || null,
         farmAcreage: farmAcreage || null,
         chickenAge: chickenAge || null,
+        farmerPrice: farmerPrice ? Number(farmerPrice) : null,
         details: details || null,
         buyKhashna: buyKhashna ? Number(buyKhashna) : null,
         buyMotawassita: buyMotawassita ? Number(buyMotawassita) : null,
