@@ -265,24 +265,35 @@ export default function WilayaPriceBoard({
                   </div>
                 </div>
 
-                {/* Summary Price Badges */}
+                {/* Summary Price Badges with Distinct Custom Colors */}
                 <div className="relative mt-3">
-                  <div className={`grid grid-cols-3 gap-2 bg-emerald-900/60 p-2 rounded-xl border border-emerald-700/40 text-center transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
-                    <div>
-                      <div className="text-[10px] text-emerald-200 font-bold">🌾 فلاح</div>
-                      <div className="text-sm font-black text-amber-300">
+                  <div className={`grid grid-cols-3 gap-2 transition ${!isSubscribed ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                    {/* 🌾 فلاح */}
+                    <div className="bg-gradient-to-b from-emerald-950/90 to-emerald-900/80 border border-emerald-500/40 rounded-xl p-2 text-center shadow-sm flex flex-col items-center justify-center">
+                      <div className="inline-flex items-center gap-1 text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md font-black text-[10px] mb-1">
+                        <span>🌾</span> فلاح
+                      </div>
+                      <div className="text-sm md:text-base font-black text-amber-300 drop-shadow-xs">
                         {formatDisplayPrice(w.khashna.farmer)}
                       </div>
                     </div>
-                    <div className="border-r border-emerald-700/60">
-                      <div className="text-[10px] text-indigo-200 font-bold">🔪 مذبح</div>
-                      <div className="text-sm font-black text-white">
+
+                    {/* 🔪 مذبح */}
+                    <div className="bg-gradient-to-b from-indigo-950/90 to-slate-900/80 border border-indigo-500/40 rounded-xl p-2 text-center shadow-sm flex flex-col items-center justify-center">
+                      <div className="inline-flex items-center gap-1 text-indigo-200 bg-indigo-500/20 px-2 py-0.5 rounded-md font-black text-[10px] mb-1">
+                        <span>🔪</span> مذبح
+                      </div>
+                      <div className="text-sm md:text-base font-black text-cyan-200 drop-shadow-xs">
                         {formatDisplayPrice(w.khashna.slaughter)}
                       </div>
                     </div>
-                    <div className="border-r border-emerald-700/60">
-                      <div className="text-[10px] text-amber-200 font-bold">🤝 وسيط</div>
-                      <div className="text-sm font-black text-amber-300">
+
+                    {/* 🤝 وسيط */}
+                    <div className="bg-gradient-to-b from-amber-950/90 to-slate-900/80 border border-amber-500/40 rounded-xl p-2 text-center shadow-sm flex flex-col items-center justify-center">
+                      <div className="inline-flex items-center gap-1 text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md font-black text-[10px] mb-1">
+                        <span>🤝</span> وسيط
+                      </div>
+                      <div className="text-sm md:text-base font-black text-amber-300 drop-shadow-xs">
                         {formatDisplayPrice(w.khashna.intermediary)}
                       </div>
                     </div>
