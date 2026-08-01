@@ -328,16 +328,18 @@ export default function Sidebar({
                   <span>نشر عرض توظيف جديد</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    onOpenWorkerModal();
-                    onClose();
-                  }}
-                  className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                >
-                  <Users className="w-4 h-4 text-amber-400" />
-                  <span>تسجيل بيانات عامل للتوظيف</span>
-                </button>
+                {(currentUser?.role === 'worker' || currentUser?.role === 'admin') && (
+                  <button
+                    onClick={() => {
+                      onOpenWorkerModal();
+                      onClose();
+                    }}
+                    className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 text-amber-400" />
+                    <span>تسجيل بيانات عامل للتوظيف</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
