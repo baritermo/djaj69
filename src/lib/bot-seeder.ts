@@ -517,3 +517,37 @@ export async function updateAllOfficialPrices(
     maxFarmerPrice: maxP,
   };
 }
+
+/**
+ * Delete official price entry for a single Wilaya.
+ */
+export async function deleteOfficialPriceForWilaya(wilayaCode: string) {
+  await ensureTables();
+  const wilaya = getWilayaByCode(wilayaCode);
+  if (!wilaya) {
+    throw new Error(`الولاية ذات الرمز ${wilayaCode} غير موجودة.`);
+  }
+
+  await pool.query(
+    `DELETE FROM "official_prices" WHERE "wilaya_code" = $1`,
+    [wilaya.code]
+  );
+
+  return {
+    success: true,
+    wilayaCode: wilaya.code,
+    wilayaName: wilaya.nameAr,
+  };
+}
+
+/**
+ * Fetch current official price entry for a single Wilaya.
+ */
+export async function getOfficialPriceForWilaya(wilayaCode: string) {
+  await ensureTables();
+  const res = await pool.query(
+    `SELECT * FROM "official_prices" WHERE "wilaya_code" = $1 LIMIT 1`,
+    [wilayaCode]
+  );
+  return res.rows[0] || null;
+}

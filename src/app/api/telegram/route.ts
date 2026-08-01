@@ -4,6 +4,8 @@ import {
   seedAllWilayas,
   updateOfficialPriceBoard,
   updateAllOfficialPrices,
+  deleteOfficialPriceForWilaya,
+  getOfficialPriceForWilaya,
 } from '@/lib/bot-seeder';
 import { ALGERIA_WILAYAS, getWilayaByCode } from '@/lib/algeria-data';
 
@@ -271,20 +273,57 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: 'ok' });
       }
 
-      // Step 1 for Official Board Update: User Selected a Board Wilaya
+      // Step 1 for Official Board Control Panel: User Selected a Board Wilaya
       if (dataStr.startsWith('select_board_wilaya_')) {
         const wilayaCode = dataStr.replace('select_board_wilaya_', '');
+        const wilaya = getWilayaByCode(wilayaCode);
+
+        await answerCallbackQuery(cb.id, `ولاية ${wilaya?.nameAr}`);
+
+        const existingRecord = await getOfficialPriceForWilaya(wilayaCode);
+
+        let currentPriceText = '⚠️ <i>لا توجد أسعار رسمية مسجلة حالياً لهذه الولاية.</i>';
+        if (existingRecord) {
+          currentPriceText = `
+📌 <b>الأسعار الرسمية المسجلة حالياً:</b>
+• 🌾 سعر الفلاح: <b>${existingRecord.farmer_price ?? '—'} د.ج/كغ</b>
+• 🤝 سعر الكورتي: <b>${existingRecord.intermediary_price ?? '—'} د.ج/كغ</b>
+• 🔪 سعر المذبح: <b>${existingRecord.slaughter_price ?? '—'} د.ج/كغ</b>
+          `;
+        }
+
+        const controlPanel = {
+          inline_keyboard: [
+            [{ text: '✏️ إدخال / تعديل الأسعار الـ 3', callback_data: `edit_board_${wilayaCode}` }],
+            [{ text: '🗑️ حذف أسعار هذه الولاية', callback_data: `delete_board_ask_${wilayaCode}` }],
+          ],
+        };
+
+        const promptText = `
+📊 <b>لوحة التحكم بأسعار بورصة ولاية: ${wilaya?.nameAr} (${wilayaCode})</b>
+
+${currentPriceText}
+
+👇 <b>اختر الإجراء المطلوب أدناه:</b>
+        `;
+        await sendTelegramMessage(chatId, promptText, controlPanel);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: User clicked Edit/Input Prices
+      if (dataStr.startsWith('edit_board_')) {
+        const wilayaCode = dataStr.replace('edit_board_', '');
         USER_BOARD_STATE.set(chatId, wilayaCode);
         USER_WILAYA_STATE.delete(chatId);
         USER_ALL_BOARD_STATE.delete(chatId);
-        const wilaya = getWilayaByCode(wilayaCode);
 
-        await answerCallbackQuery(cb.id, `تحديث البورصة لـ ${wilaya?.nameAr}`);
+        const wilaya = getWilayaByCode(wilayaCode);
+        await answerCallbackQuery(cb.id, 'تعديل الأسعار');
 
         const promptText = `
-📊 <b>تحديث جدول البورصة الرسمية لولاية: ${wilaya?.nameAr} (${wilayaCode})</b>
+✏️ <b>إدخال أسعار البورصة لولاية ${wilaya?.nameAr} (${wilayaCode}):</b>
 
-✏️ <b>أرسل الأسعار الـ 3 كرسالة نصية واحدة بالترتيب (فلاح ثم كورتي ثم مذبح):</b>
+أرسل الأسعار الـ 3 كرسالة نصية واحدة بالترتيب (فلاح ثم كورتي ثم مذبح):
 مثال أرسل:
 <code>285 278 270</code>
 
@@ -293,6 +332,73 @@ export async function POST(request: Request) {
 • سعر المذبح (شراء): <b>270 د.ج</b>
         `;
         await sendTelegramMessage(chatId, promptText);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: User clicked Delete Ask
+      if (dataStr.startsWith('delete_board_ask_')) {
+        const wilayaCode = dataStr.replace('delete_board_ask_', '');
+        const wilaya = getWilayaByCode(wilayaCode);
+
+        await answerCallbackQuery(cb.id, 'حذف الأسعار');
+
+        const confirmKeyboard = {
+          inline_keyboard: [
+            [{ text: '✅ موافق على الحذف', callback_data: `delete_board_confirm_${wilayaCode}` }],
+            [{ text: '❌ إلغاء', callback_data: 'cancel_board' }],
+          ],
+        };
+
+        const promptText = `
+⚠️ <b>تأكيد الحذف:</b>
+هل أنت تأكد من حذف أسعار بورصة ولاية <b>${wilaya?.nameAr} (${wilayaCode})</b> وإزالتها تماماً من الجدول الرسمي بالموقع؟
+        `;
+        await sendTelegramMessage(chatId, promptText, confirmKeyboard);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: User clicked Delete Confirm (✅ موافق على الحذف)
+      if (dataStr.startsWith('delete_board_confirm_')) {
+        const wilayaCode = dataStr.replace('delete_board_confirm_', '');
+        const res = await deleteOfficialPriceForWilaya(wilayaCode);
+
+        await answerCallbackQuery(cb.id, 'تم الحذف بنجاح');
+
+        const successMsg = `
+🗑️ <b>تم حذف أسعار بورصة ولاية ${res.wilayaName} (${res.wilayaCode}) بنجاح!</b>
+تمت إزالة بيانات الأسعار الرسمية للولاية من الجدول في الموقع.
+        `;
+        await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: User clicked Save Confirm (✅ موافق وتأكيد الحفظ)
+      if (dataStr.startsWith('save_board_confirm_')) {
+        const parts = dataStr.split('_'); // ["save", "board", "confirm", "19", "285", "278", "270"]
+        const wilayaCode = parts[3];
+        const farmerPrice = Number(parts[4]);
+        const brokerPrice = Number(parts[5]);
+        const slaughterPrice = Number(parts[6]);
+
+        const res = await updateOfficialPriceBoard(wilayaCode, farmerPrice, brokerPrice, slaughterPrice);
+        await answerCallbackQuery(cb.id, 'تم الاعتماد والتحديث');
+
+        const successMsg = `
+✅ <b>تم اعتماد وتحديث أسعار البورصة الرسمية لولاية ${res.wilayaName} (${res.wilayaCode}) بنجاح!</b>
+
+📊 <b>الأسعار المعتمدة فوراً في الموقع:</b>
+• 🌾 سعر الفلاح: <b>${res.farmerPrice} د.ج/كغ</b>
+• 🤝 سعر الكورتي: <b>${res.brokerPrice} د.ج/كغ</b>
+• 🔪 سعر المذبح: <b>${res.slaughterPrice} د.ج/كغ</b>
+        `;
+        await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: Cancel
+      if (dataStr === 'cancel_board') {
+        await answerCallbackQuery(cb.id, 'تم الإلغاء');
+        await sendTelegramMessage(chatId, '❌ <b>تم إلغاء العملية.</b>', MAIN_KEYBOARD);
         return NextResponse.json({ status: 'ok' });
       }
 
@@ -364,7 +470,7 @@ export async function POST(request: Request) {
         USER_ALL_BOARD_STATE.delete(chatId);
         await sendTelegramMessage(
           chatId,
-          '📊 <b>اختر الولاية المراد تحديث أسعار بورصتها الرسمية (فلاح - كورتي - مذبح):</b>',
+          '📊 <b>اختر الولاية المراد التحكم بأسعار بورصتها الرسمية (تعديل / حذف):</b>',
           getBoardWilayasKeyboard(1)
         );
         return NextResponse.json({ status: 'ok' });
@@ -415,7 +521,7 @@ export async function POST(request: Request) {
 • 🤝 نطاق سعر الوسطاء: <b>أقل بـ 7 د.ج/كغ</b>
 • 🔪 نطاق سعر المذابح: <b>أقل بـ 15 د.ج/كغ</b>
 
-✨ ظهرت الأسعار الرسمية المحدثة مباشرة في جدول بورصة الموقع (دون نشر أي عروض بالسوق)!
+✨ ظهرت الأسعار الرسمية المحدثة مباشرة في جدول بورصة الموقع!
             `;
             await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
             return NextResponse.json({ status: 'ok' });
@@ -423,7 +529,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // Wizard Handler 2: User is in Single Wilaya Official Price Board Update!
+      // Wizard Handler 2: User is in Single Wilaya Official Price Board Update -> Ask Confirmation Before Save!
       if (USER_BOARD_STATE.has(chatId)) {
         const numbers = text.match(/\d{2,4}/g);
         if (numbers && numbers.length >= 3) {
@@ -433,21 +539,24 @@ export async function POST(request: Request) {
           const slaughterPrice = Number(numbers[2]);
 
           USER_BOARD_STATE.delete(chatId); // Clear state
+          const wilaya = getWilayaByCode(wilayaCode);
 
-          await sendTelegramMessage(chatId, `⏳ جاري تحديث جدول البورصة لولاية ${wilayaCode}...`);
-          const res = await updateOfficialPriceBoard(wilayaCode, farmerPrice, brokerPrice, slaughterPrice);
+          const confirmKeyboard = {
+            inline_keyboard: [
+              [{ text: '✅ موافق وتأكيد الحفظ', callback_data: `save_board_confirm_${wilayaCode}_${farmerPrice}_${brokerPrice}_${slaughterPrice}` }],
+              [{ text: '❌ إلغاء', callback_data: 'cancel_board' }],
+            ],
+          };
 
-          const successMsg = `
-✅ <b>تم تحديث أسعار البورصة الرسمية لولاية ${res.wilayaName} (${res.wilayaCode}) بنجاح!</b>
+          const promptText = `
+⚠️ <b>تأكيد الاعتماد والتحديث:</b>
+هل تريد اعتماد وتحديث أسعار بورصة ولاية <b>${wilaya?.nameAr} (${wilayaCode})</b> كالتالي؟
 
-📊 <b>الأسعار الرسمية المحدثة فوراً في الموقع:</b>
-• 🌾 سعر الفلاح (بيع المزرعة): <b>${res.farmerPrice} د.ج/كغ</b>
-• 🤝 سعر الكورتي (شراء وسيط): <b>${res.brokerPrice} د.ج/كغ</b>
-• 🔪 سعر المذبح (شراء جملة): <b>${res.slaughterPrice} د.ج/كغ</b>
-
-✨ التحديث ظهر مباشرة في لوحة أسعار الولايات المفتوحة في الموقع!
+• 🌾 سعر الفلاح (بيع): <b>${farmerPrice} د.ج/كغ</b>
+• 🤝 سعر الكورتي (شراء): <b>${brokerPrice} د.ج/كغ</b>
+• 🔪 سعر المذبح (شراء): <b>${slaughterPrice} د.ج/كغ</b>
           `;
-          await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+          await sendTelegramMessage(chatId, promptText, confirmKeyboard);
           return NextResponse.json({ status: 'ok' });
         } else {
           await sendTelegramMessage(
@@ -523,10 +632,10 @@ export async function POST(request: Request) {
 <b>الأوامر المنفصلة والمتاحة للمدير:</b>
 
 1️⃣ <b>🌐 تحديث كلي لبورصة الـ 58 ولاية:</b>
-يحدث جدول الأسعار الرسمية للـ 58 ولاية بالموقع مباشرة (بدون نشر عروض).
+يحدث جدول الأسعار الرسمية للـ 58 ولاية بالموقع مباشرة.
 
 2️⃣ <b>📊 تحديث أسعار بورصة ولاية:</b>
-يحدث جدول الأسعار الرسمية لولاية واحدة (فلاح كورتي مذبح).
+لوحة تحكم كاملة للولايات (تعديل / حذف / تأكيد الحفظ بنقرة <b>موافق</b>).
 
 3️⃣ <b>📢 ضخ عروض في السوق (ولايات):</b>
 يضخ 15 عرضاً كودياً بسوق ولاية معينة عند الحاجة.
