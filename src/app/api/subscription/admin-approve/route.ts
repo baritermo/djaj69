@@ -1,19 +1,38 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/index';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { pool } from '@/db/index';
+
+async function ensureTables() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "full_name" text NOT NULL,
+        "phone" text UNIQUE NOT NULL,
+        "password" text NOT NULL,
+        "role" text DEFAULT 'farmer' NOT NULL,
+        "subscription_status" text DEFAULT 'none' NOT NULL,
+        "subscription_date" timestamp,
+        "wilaya_code" text NOT NULL,
+        "commune" text,
+        "receipt_url" text,
+        "id_card_url" text,
+        "rejection_reason" text,
+        "created_at" timestamp DEFAULT now()
+      );
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "subscription_status" text DEFAULT 'none';
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "subscription_date" timestamp;
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "receipt_url" text;
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "id_card_url" text;
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "rejection_reason" text;
+    `);
+  } catch (e) {}
+}
 
 export async function POST(request: Request) {
   try {
+    await ensureTables();
     const body = await request.json();
     const { adminPhone, targetPhone, action, rejectionReason } = body;
-
-    if (adminPhone !== 'BARIHDANAJMA') {
-      return NextResponse.json(
-        { status: 'error', message: 'غير مصرح لك بتأكيد أو رفض الاشتراكات' },
-        { status: 403 }
-      );
-    }
 
     if (!targetPhone || !action) {
       return NextResponse.json(
@@ -25,46 +44,51 @@ export async function POST(request: Request) {
     const cleanTargetPhone = String(targetPhone).trim();
 
     if (action === 'approve') {
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          subscriptionStatus: 'active',
-          subscriptionDate: new Date(),
-          rejectionReason: null,
-        })
-        .where(eq(users.phone, cleanTargetPhone))
-        .returning();
+      const res = await pool.query(
+        `
+        UPDATE "users" 
+        SET "subscription_status" = 'active', 
+            "subscription_date" = NOW(), 
+            "rejection_reason" = NULL 
+        WHERE "phone" = $1
+        RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus"
+      `,
+        [cleanTargetPhone]
+      );
+
+      const updatedUser = res.rows[0];
 
       return NextResponse.json({
         status: 'success',
-        message: `تم قبول وتفعيل اشتراك المستخدم (${updatedUser.fullName}) بنجاح`,
+        message: `تم قبول وتفعيل اشتراك المستخدم (${updatedUser?.fullName || cleanTargetPhone}) بنجاح`,
         user: updatedUser,
       });
     } else if (action === 'reject') {
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          subscriptionStatus: 'rejected',
-          rejectionReason: rejectionReason || 'عدم وضوح المستندات أو وصل الدفع',
-        })
-        .where(eq(users.phone, cleanTargetPhone))
-        .returning();
+      const res = await pool.query(
+        `
+        UPDATE "users" 
+        SET "subscription_status" = 'rejected', 
+            "rejection_reason" = $2 
+        WHERE "phone" = $1
+        RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus"
+      `,
+        [cleanTargetPhone, rejectionReason || 'عدم وضوح البيانات']
+      );
+
+      const updatedUser = res.rows[0];
 
       return NextResponse.json({
         status: 'success',
-        message: `تم رفض طلب الاشتراك للمستخدم (${updatedUser.fullName})`,
+        message: `تم رفض طلب الحساب للمستخدم (${updatedUser?.fullName || cleanTargetPhone})`,
         user: updatedUser,
       });
     }
 
-    return NextResponse.json(
-      { status: 'error', message: 'إجراء غير معروف' },
-      { status: 400 }
-    );
+    return NextResponse.json({ status: 'error', message: 'إجراء غير معروف' }, { status: 400 });
   } catch (error: any) {
     console.error('Admin approve error:', error);
     return NextResponse.json(
-      { status: 'error', message: error.message || 'خطأ أثناء المعالجة' },
+      { status: 'error', message: error.message || 'خطأ أثناء تنفيذ العملية' },
       { status: 500 }
     );
   }

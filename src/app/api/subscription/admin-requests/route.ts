@@ -1,13 +1,55 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db/index';
-import { users } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { pool } from '@/db/index';
+
+async function ensureTables() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "full_name" text NOT NULL,
+        "phone" text UNIQUE NOT NULL,
+        "password" text NOT NULL,
+        "role" text DEFAULT 'farmer' NOT NULL,
+        "subscription_status" text DEFAULT 'none' NOT NULL,
+        "subscription_date" timestamp,
+        "wilaya_code" text NOT NULL,
+        "commune" text,
+        "receipt_url" text,
+        "id_card_url" text,
+        "rejection_reason" text,
+        "created_at" timestamp DEFAULT now()
+      );
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "subscription_status" text DEFAULT 'none';
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "subscription_date" timestamp;
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "receipt_url" text;
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "id_card_url" text;
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "rejection_reason" text;
+    `);
+  } catch (e) {}
+}
 
 export async function GET() {
   try {
-    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
-    
-    // Filter users with subscription requests or pending status
+    await ensureTables();
+    const res = await pool.query(`
+      SELECT 
+        "id",
+        "full_name" AS "fullName",
+        "phone",
+        "role",
+        "subscription_status" AS "subscriptionStatus",
+        "subscription_date" AS "subscriptionDate",
+        "wilaya_code" AS "wilayaCode",
+        "commune",
+        "receipt_url" AS "receiptUrl",
+        "id_card_url" AS "idCardUrl",
+        "rejection_reason" AS "rejectionReason",
+        "created_at" AS "createdAt"
+      FROM "users"
+      ORDER BY "id" DESC
+    `);
+
+    const allUsers = res.rows || [];
     const requests = allUsers.filter(
       (u) => u.subscriptionStatus === 'pending' || u.subscriptionStatus === 'active' || u.subscriptionStatus === 'rejected'
     );
