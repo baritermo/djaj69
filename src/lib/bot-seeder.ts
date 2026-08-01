@@ -316,8 +316,12 @@ export async function seedAllWilayas(
     const wMax = minP === maxP ? maxP + regionOffset : maxP + Math.ceil(regionOffset / 2);
     const baseFarmerPrice = Math.round((wMin + wMax) / 2);
 
-    const { selectedFarmers, selectedBrokers, selectedSlaughters } = getWilayaAccountSlice(wilaya.code);
-    const hiddenPhone = getWilayaHiddenPhone(wilaya.code);
+    const codeNum = parseInt(wilaya.code, 10);
+    const startIdx = ((codeNum - 1) * 5) % FARMER_NAMES.length;
+    const selectedFarmers = FARMER_NAMES.slice(startIdx, startIdx + 5);
+    const selectedBrokers = BROKER_NAMES.slice(startIdx, startIdx + 5);
+    const selectedSlaughters = SLAUGHTERHOUSE_NAMES.slice(startIdx, startIdx + 5);
+    const hiddenPhone = '🔒 رقم الهاتف غير معلن بطلب من الناشر';
 
     // Farmers
     for (const name of selectedFarmers) {
