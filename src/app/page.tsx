@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import PriceTicker from '@/components/PriceTicker';
 import WilayaPriceBoard from '@/components/WilayaPriceBoard';
@@ -377,12 +378,18 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
+          <div className="mt-8 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
             <div>
               © {new Date().getFullYear()} دواجن الجزائر B2B - جميع الحقوق محفوظة لشبكة دواجن الجزائر B2B 🇩🇿
             </div>
             <div className="flex items-center gap-4">
-              <span>الأسعار بالدينار الجزائري (د.ج)</span>
+              <Link href="/privacy" className="hover:text-amber-400 underline transition-colors">
+                سياسة الخصوصية
+              </Link>
+              <span>•</span>
+              <Link href="/terms" className="hover:text-amber-400 underline transition-colors">
+                شروط الخدمة
+              </Link>
               <span>•</span>
               <span>58 ولاية</span>
             </div>
