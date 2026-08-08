@@ -222,9 +222,6 @@ export default function HomePage() {
         onLogout={handleLogout}
       />
 
-      {/* Live Poultry Price Averages Ticker (only on 'prices' & 'offers' tabs) */}
-      {(activeTab === 'prices' || activeTab === 'offers') && <PriceTicker />}
-
       {/* Main Container with Swipe Touch Handling */}
       <main
         onTouchStart={handleTouchStart}
