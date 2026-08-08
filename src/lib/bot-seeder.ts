@@ -519,6 +519,84 @@ export async function updateAllOfficialPrices(
 }
 
 /**
+ * Update Official Price Board for a custom LIST of Wilaya codes.
+ */
+export async function updateMultipleOfficialPrices(
+  wilayaCodes: string[],
+  farmerPrice: number,
+  brokerPrice?: number,
+  slaughterPrice?: number
+) {
+  await ensureTables();
+  const validWilayas: any[] = [];
+
+  const bPrice = brokerPrice ?? Math.max(0, farmerPrice - 7);
+  const sPrice = slaughterPrice ?? Math.max(0, farmerPrice - 15);
+
+  for (const code of wilayaCodes) {
+    const padded = String(code).padStart(2, '0');
+    const wilaya = getWilayaByCode(padded);
+    if (wilaya) {
+      await pool.query(
+        `
+        INSERT INTO "official_prices" ("wilaya_code", "name_ar", "name_fr", "region", "farmer_price", "slaughter_price", "intermediary_price", "trend", "trend_percent", "updated_at")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'stable', '0%', NOW())
+        ON CONFLICT ("wilaya_code")
+        DO UPDATE SET
+          "farmer_price" = EXCLUDED.farmer_price,
+          "slaughter_price" = EXCLUDED.slaughter_price,
+          "intermediary_price" = EXCLUDED.intermediary_price,
+          "updated_at" = NOW();
+      `,
+        [wilaya.code, wilaya.nameAr, wilaya.nameFr, wilaya.region, farmerPrice, sPrice, bPrice]
+      );
+      validWilayas.push(wilaya);
+    }
+  }
+
+  return {
+    success: true,
+    count: validWilayas.length,
+    updatedWilayas: validWilayas,
+    farmerPrice,
+    brokerPrice: bPrice,
+    slaughterPrice: sPrice,
+  };
+}
+
+/**
+ * Seed 15 realistic offers for EACH Wilaya in a given list of Wilaya codes.
+ */
+export async function seedOffersForMultipleWilayas(
+  wilayaCodes: string[],
+  minFarmerPrice?: number,
+  maxFarmerPrice?: number
+) {
+  await ensureTables();
+  const results: any[] = [];
+
+  for (const code of wilayaCodes) {
+    const padded = String(code).padStart(2, '0');
+    try {
+      const res = await seedOffersForWilaya({
+        wilayaCode: padded,
+        minFarmerPrice,
+        maxFarmerPrice,
+      });
+      results.push(res);
+    } catch (e) {
+      console.warn(`Error seeding offers for wilaya ${padded}:`, e);
+    }
+  }
+
+  return {
+    success: true,
+    count: results.length,
+    seededWilayas: results,
+  };
+}
+
+/**
  * Delete official price entry for a single Wilaya.
  */
 export async function deleteOfficialPriceForWilaya(wilayaCode: string) {
