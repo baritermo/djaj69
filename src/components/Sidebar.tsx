@@ -59,6 +59,8 @@ export default function Sidebar({
 }: SidebarProps) {
   if (!isOpen) return null;
 
+  const isSubscribed = currentUser?.role === 'admin' || currentUser?.subscriptionStatus === 'active';
+
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
     onClose();
@@ -309,52 +311,57 @@ export default function Sidebar({
                   </button>
                 )}
 
-                <button
-                  onClick={() => {
-                    onOpenOfferModal();
-                    onClose();
-                  }}
-                  className="w-full bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>نشر عرض بيع أو شراء بضاعة</span>
-                </button>
+                {/* Publish Action Buttons (Visible only for subscribed users) */}
+                {isSubscribed && (
+                  <>
+                    <button
+                      onClick={() => {
+                        onOpenOfferModal();
+                        onClose();
+                      }}
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>نشر عرض بيع أو شراء بضاعة</span>
+                    </button>
 
-                <button
-                  onClick={() => {
-                    onOpenJobModal();
-                    onClose();
-                  }}
-                  className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                >
-                  <Briefcase className="w-4 h-4 text-amber-400" />
-                  <span>نشر عرض توظيف جديد</span>
-                </button>
+                    <button
+                      onClick={() => {
+                        onOpenJobModal();
+                        onClose();
+                      }}
+                      className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
+                    >
+                      <Briefcase className="w-4 h-4 text-amber-400" />
+                      <span>نشر عرض توظيف جديد</span>
+                    </button>
 
-                {currentUser?.role === 'worker' && (
-                  <button
-                    onClick={() => {
-                      onOpenWorkerModal();
-                      onClose();
-                    }}
-                    className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                  >
-                    <Users className="w-4 h-4 text-amber-400" />
-                    <span>تسجيل بيانات عامل للتوظيف</span>
-                  </button>
-                )}
+                    {currentUser?.role === 'worker' && (
+                      <button
+                        onClick={() => {
+                          onOpenWorkerModal();
+                          onClose();
+                        }}
+                        className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
+                      >
+                        <Users className="w-4 h-4 text-amber-400" />
+                        <span>تسجيل بيانات عامل للتوظيف</span>
+                      </button>
+                    )}
 
-                {currentUser?.role === 'b2b' && (
-                  <button
-                    onClick={() => {
-                      onOpenCompanyModal();
-                      onClose();
-                    }}
-                    className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                  >
-                    <Building2 className="w-4 h-4 text-amber-400" />
-                    <span>إضافة نشاط B2B جديد</span>
-                  </button>
+                    {currentUser?.role === 'b2b' && (
+                      <button
+                        onClick={() => {
+                          onOpenCompanyModal();
+                          onClose();
+                        }}
+                        className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
+                      >
+                        <Building2 className="w-4 h-4 text-amber-400" />
+                        <span>إضافة نشاط B2B جديد</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

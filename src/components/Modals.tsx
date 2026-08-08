@@ -343,7 +343,7 @@ interface OfferPostModalProps extends ModalProps {
 }
 
 export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }: OfferPostModalProps) {
-  const [offerType, setOfferType] = useState<'farmer' | 'slaughterhouse' | 'broker'>(defaultOfferType);
+  const [offerType, setOfferType] = useState<'farmer' | 'slaughterhouse' | 'broker'>(defaultOfferType || 'farmer');
   const [name, setName] = useState('');
   const [wilayaCode, setWilayaCode] = useState('16');
   const [commune, setCommune] = useState('');
@@ -367,6 +367,12 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
   const [buyingDetails, setBuyingDetails] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    if (isOpen && defaultOfferType) {
+      setOfferType(defaultOfferType);
+    }
+  }, [defaultOfferType, isOpen]);
 
   if (!isOpen) return null;
 
@@ -407,18 +413,50 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 text-right">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-3">
           <div className="flex items-center gap-2">
-            <div className={`p-2 rounded-xl ${isFarmer ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'}`}>
+            <div className={`p-2 rounded-xl ${isFarmer ? 'bg-emerald-100 text-emerald-800' : offerType === 'slaughterhouse' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-900'}`}>
               {isFarmer ? '🌾' : offerType === 'slaughterhouse' ? '🔪' : '🤝'}
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">{isFarmer ? 'نشر عرض فلاح — بيع الدجاج' : `نشر عرض ${offerType === 'slaughterhouse' ? 'مذبح' : 'كورتي'} — أسعار الشراء`}</h3>
+              <h3 className="text-lg font-black text-slate-900">{isFarmer ? 'نشر عرض فلاح — بيع الدجاج' : `نشر عرض ${offerType === 'slaughterhouse' ? 'مذبح' : 'كورتي / وسيط'} — أسعار الشراء`}</h3>
               <p className="text-xs text-slate-500">{isFarmer ? 'معلومات مزرعتك ونوع الدجاج والكمية والسعر' : 'أدخل الأسعار التي تشتري بها كل فئة دجاج'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
+
+        {/* Offer Role Type Switcher Tabs */}
+        <div className="flex items-center gap-1.5 mb-4 bg-slate-100 p-1 rounded-2xl text-xs font-black">
+          <button
+            type="button"
+            onClick={() => setOfferType('farmer')}
+            className={`flex-1 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              offerType === 'farmer' ? 'bg-emerald-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>🌾 عرض فلاح (بيع)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setOfferType('slaughterhouse')}
+            className={`flex-1 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              offerType === 'slaughterhouse' ? 'bg-indigo-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>🔪 عرض مذبح (شراء)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setOfferType('broker')}
+            className={`flex-1 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              offerType === 'broker' ? 'bg-amber-400 text-emerald-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>🤝 عرض كورتي (شراء)</span>
+          </button>
+        </div>
+
         {error && <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-3 text-xs font-bold">
           <div className="grid grid-cols-2 gap-3">
