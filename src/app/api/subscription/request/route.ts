@@ -8,7 +8,8 @@ const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
 
 // Helper to send photo to Telegram channel/chat
 async function sendTelegramPhoto(chatId: string, photoSource: string, caption: string) {
-  if (!TELEGRAM_BOT_TOKEN || !chatId) return;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN || '8529857614:AAFqiz0Y_y-11gZSjgGAfcCbV3j42er720c';
+  if (!botToken || !chatId) return;
 
   try {
     if (photoSource.startsWith('data:image')) {
@@ -25,7 +26,7 @@ async function sendTelegramPhoto(chatId: string, photoSource: string, caption: s
         formData.append('parse_mode', 'HTML');
         formData.append('photo', blob, 'document.jpg');
 
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
           method: 'POST',
           body: formData,
         });
@@ -34,7 +35,7 @@ async function sendTelegramPhoto(chatId: string, photoSource: string, caption: s
     }
 
     if (photoSource.startsWith('http://') || photoSource.startsWith('https://')) {
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -92,11 +93,13 @@ export async function POST(request: Request) {
       .returning();
 
     // Instant Notification to Telegram Admin/Channel(s)
-    if (TELEGRAM_BOT_TOKEN && ADMIN_CHAT_ID) {
-      const targetChatIds = ADMIN_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean);
-      for (const targetId of targetChatIds) {
-        try {
-          const textMsg = `
+    const token = process.env.TELEGRAM_BOT_TOKEN || '8529857614:AAFqiz0Y_y-11gZSjgGAfcCbV3j42er720c';
+    const rawAdminIds = process.env.ADMIN_TELEGRAM_CHAT_ID || '-1004308858796,1636837664';
+    const targetChatIds = rawAdminIds.split(',').map((s) => s.trim()).filter(Boolean);
+
+    for (const targetId of targetChatIds) {
+      try {
+        const textMsg = `
 📋 <b>طلب اشتراك حساب جديد بحاجة لتفعيل!</b>
 
 • 📝 الاسم واللقب: <b>${user.fullName}</b>
@@ -105,49 +108,48 @@ export async function POST(request: Request) {
 • 📍 الولاية: <b>${user.wilayaCode}</b>
 • 💼 الصفة: <b>${user.role}</b>
 • ⏳ الحالة: <b>قيد المراجعة (Pending)</b>
-          `;
+        `;
 
-          const inlineButtons = {
-            inline_keyboard: [
-              [
-                { text: '✅ تفعيل اشتراك الحساب', callback_data: `approve_sub_${user.phone}` },
-                { text: '❌ رفض الطلب', callback_data: `reject_sub_${user.phone}` },
-              ],
+        const inlineButtons = {
+          inline_keyboard: [
+            [
+              { text: '✅ تفعيل اشتراك الحساب', callback_data: `approve_sub_${user.phone}` },
+              { text: '❌ رفض الطلب', callback_data: `reject_sub_${user.phone}` },
             ],
-          };
+          ],
+        };
 
-          // Send Text Notification with Action Buttons
-          await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: targetId,
-              text: textMsg,
-              parse_mode: 'HTML',
-              reply_markup: inlineButtons,
-            }),
-          });
+        // Send Text Notification with Action Buttons
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: targetId,
+            text: textMsg,
+            parse_mode: 'HTML',
+            reply_markup: inlineButtons,
+          }),
+        });
 
-          // Send Receipt Photo
-          if (receiptUrl) {
-            await sendTelegramPhoto(
-              targetId,
-              receiptUrl,
-              `🧾 <b>وصل الدفع المرفق لطلب اشتراك الحساب:</b>\n👤 ${user.fullName} | 📱 <code>${user.phone}</code>`
-            );
-          }
-
-          // Send ID Card Photo
-          if (idCardUrl) {
-            await sendTelegramPhoto(
-              targetId,
-              idCardUrl,
-              `🆔 <b>وثيقة الهوية المرفقة لطلب اشتراك الحساب:</b>\n👤 ${user.fullName} | 📱 <code>${user.phone}</code>`
-            );
-          }
-        } catch (e) {
-          console.error('Error pushing subscription request to Telegram:', e);
+        // Send Receipt Photo
+        if (receiptUrl) {
+          await sendTelegramPhoto(
+            targetId,
+            receiptUrl,
+            `🧾 <b>وصل الدفع المرفق لطلب اشتراك الحساب:</b>\n👤 ${user.fullName} | 📱 <code>${user.phone}</code>`
+          );
         }
+
+        // Send ID Card Photo
+        if (idCardUrl) {
+          await sendTelegramPhoto(
+            targetId,
+            idCardUrl,
+            `🆔 <b>وثيقة الهوية المرفقة لطلب اشتراك الحساب:</b>\n👤 ${user.fullName} | 📱 <code>${user.phone}</code>`
+          );
+        }
+      } catch (e) {
+        console.error(`Error pushing subscription request to Telegram target ${targetId}:`, e);
       }
     }
 
