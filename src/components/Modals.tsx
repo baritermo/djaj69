@@ -1,7 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, AlertCircle, Briefcase, User, Building2, TrendingUp, Plus, Trash2, Eye, EyeOff, Lock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  AlertCircle,
+  Briefcase,
+  User,
+  Building2,
+  TrendingUp,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
+  Lock,
+  ShieldCheck,
+  CheckCircle2,
+  Search,
+  Copy,
+  Check,
+  Upload,
+  FileText,
+  CreditCard,
+  Clock,
+  Sparkles,
+  Filter,
+} from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 
 interface ModalProps {
@@ -1523,7 +1546,7 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
   );
 }
 
-// 10. USER SUBSCRIPTION MODAL (Admin Approval Pending View)
+// 10. USER SUBSCRIPTION MODAL (Upload Documents & Pending 48h Review View)
 interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -1531,20 +1554,106 @@ interface SubscriptionModalProps {
   onSuccess?: (user: any) => void;
 }
 
-export function SubscriptionModal({ isOpen, onClose, currentUser }: SubscriptionModalProps) {
+export function SubscriptionModal({ isOpen, onClose, currentUser, onSuccess }: SubscriptionModalProps) {
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [idCardUrl, setIdCardUrl] = useState('');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  React.useEffect(() => {
+    if (currentUser?.phone) {
+      setPhone(currentUser.phone);
+    }
+  }, [currentUser]);
+
   if (!isOpen) return null;
 
+  const currentStatus = currentUser?.subscriptionStatus;
+  const isPending = currentStatus === 'pending' || submitted;
+  const isActive = currentStatus === 'active';
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (val: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('حجم الصورة كبير جداً. يرجى اختيار صورة أقل من 5 ميغابايت');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCopyRip = () => {
+    navigator.clipboard.writeText('00799999002360754196');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleSubmitDocs = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const targetPhone = phone || currentUser?.phone;
+    if (!targetPhone) {
+      setError('يرجى التأكد من رقم الهاتف المسجل');
+      return;
+    }
+
+    if (!receiptUrl || !idCardUrl) {
+      setError('يرجى رفع أو إرفاق صورتي وصل الإيداع وبطاقة الهوية/الفلاح لإكمال الطلب');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/subscription/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: targetPhone,
+          receiptUrl,
+          idCardUrl,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.status === 'success') {
+        const updatedUser = {
+          ...currentUser,
+          subscriptionStatus: 'pending',
+        };
+        localStorage.setItem('poultry_user', JSON.stringify(updatedUser));
+        if (onSuccess) onSuccess(updatedUser);
+        setSubmitted(true);
+      } else {
+        setError(data.message || 'حدث خطأ أثناء إرسال الوثائق');
+      }
+    } catch {
+      setError('خطأ في الاتصال بالسيرفر، يرجى المحاولة لاحقاً');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-right space-y-5">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 text-right space-y-5 relative">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
             <div className="p-2.5 bg-amber-400 text-emerald-950 rounded-xl shadow-xs font-black">
-              <Lock className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">مراجعة وتأكيد الحساب</h3>
-              <p className="text-[11px] text-slate-500">حالة التفعيل والاعتماد من طرف الإدارة</p>
+              <h3 className="text-base font-black text-slate-900">توثيق وتفعيل اشتراك البورصة</h3>
+              <p className="text-[11px] text-slate-500">منصة بورصة الدواجن الجزائرية الرسمية</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
@@ -1552,28 +1661,204 @@ export function SubscriptionModal({ isOpen, onClose, currentUser }: Subscription
           </button>
         </div>
 
-        <div className="space-y-4 text-center">
-          <div className="w-16 h-16 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black shadow-inner animate-pulse">
-            ⏳
+        {/* 1. ACTIVE SUBSCRIBER */}
+        {isActive ? (
+          <div className="space-y-4 text-center py-4">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black shadow-inner">
+              ✅
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-lg font-black text-slate-900">
+                مرحباً بك {currentUser?.fullName || 'عضو البورصة'}!
+              </h4>
+              <p className="text-xs text-emerald-800 font-bold bg-emerald-50 p-4 rounded-2xl border border-emerald-200 leading-relaxed">
+                حسابك مفعّل بنجاح. يمكنك الآن الاطلاع على كافة الأسعار اليومية، العروض، ودليل المتعاملين مباشرة.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-full py-3 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition cursor-pointer"
+            >
+              تصفح البورصة الآن 🚀
+            </button>
           </div>
-          <div className="space-y-2">
-            <h4 className="text-base font-black text-slate-900">
-              {currentUser ? `مرحباً بك (${currentUser.fullName})` : 'مرحباً بك في البورصة!'}
-            </h4>
-            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-200">
-              حسابك حالياً <b>قيد المراجعة والموافقة</b> من قِبل إدارة منصة بورصة الدواجن.
-              <br />
-              بمجرد تفعيل حسابك من قِبل الأدمن، ستتمكن فوراً من تصفح كافة العروض والتواصل المباشر مع متعاملي البورصة.
-            </p>
-          </div>
+        ) : isPending ? (
+          /* 2. PENDING REVIEW (48 HOURS NOTICE) */
+          <div className="space-y-4 text-center py-2">
+            <div className="w-20 h-20 bg-amber-100 text-amber-900 rounded-3xl flex items-center justify-center mx-auto text-4xl shadow-inner animate-pulse">
+              ⏳
+            </div>
 
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition cursor-pointer"
-          >
-            حسناً، فهمت 👍
-          </button>
-        </div>
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 text-amber-900 rounded-full text-xs font-black border border-amber-300">
+                <Clock className="w-4 h-4" />
+                طلبك قيد المراجعة والاعتماد
+              </div>
+
+              <h4 className="text-base font-black text-slate-900">
+                {currentUser?.fullName ? `أهلاً بك (${currentUser.fullName})` : 'أهلاً بك في منصة البورصة'}
+              </h4>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs font-bold text-amber-950 space-y-2 leading-relaxed">
+                <p className="text-sm font-black text-amber-900 flex items-center justify-center gap-1">
+                  <span>حسابك تحت المراجعة وسيتم تفعيله في غضون 48 ساعة</span>
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  لقد استلم فريق إدارة البورصة الوثائق الخاصة بك (وصل الإيداع ووثيقة التوثيق) وجاري التدقيق ليتم منحك التفعيل الشامل للوصول لكافة بيانات المتعاملين والعروض.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full py-3 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition cursor-pointer"
+            >
+              حسناً، فهمت 👍
+            </button>
+          </div>
+        ) : (
+          /* 3. NEW OR REJECTED SUBSCRIBER (PAYMENT DETAILS & DOCUMENT UPLOAD) */
+          <div className="space-y-4">
+            {/* Value Proposition Callout Banner */}
+            <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 text-white p-3.5 rounded-2xl shadow-md border border-emerald-700 flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-amber-300 shrink-0 animate-bounce" />
+              <p className="text-xs font-black leading-snug">
+                الاشتراك يحفظ حقوق جميع المتعاملين ويساهم في تطوير وتأطير سوق الدواجن الجزائرية
+              </p>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2 border border-rose-200">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {/* Payment Info Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 text-xs">
+              <div className="flex items-center justify-between font-black text-slate-900 border-b border-slate-200 pb-2">
+                <span className="flex items-center gap-1.5 text-emerald-800">
+                  <CreditCard className="w-4 h-4" />
+                  مبلغ الاشتراك الرسمي:
+                </span>
+                <span className="px-2.5 py-1 bg-amber-400 text-emerald-950 rounded-lg text-xs font-black">
+                  1000 دج / لمدة شهرين (2 أشهر)
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-slate-600 font-bold">يرجى إرسال مبلغ الاشتراك عبر الحساب البريدي BaridiMob:</p>
+                <div className="bg-white border-2 border-emerald-600/30 rounded-xl p-2.5 flex items-center justify-between">
+                  <div className="text-left font-mono font-black text-slate-900 text-xs dir-ltr tracking-wider">
+                    00799999002360754196
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyRip}
+                    className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold rounded-lg text-[11px] flex items-center gap-1 cursor-pointer transition"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>تم النسخ</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-emerald-800" />
+                        <span>نسخ الرقم</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Document Upload Form */}
+            <form onSubmit={handleSubmitDocs} className="space-y-3 text-xs">
+              {!currentUser?.phone && (
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">رقم الهاتف المسجل</label>
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600"
+                    placeholder="0550000000"
+                  />
+                </div>
+              )}
+
+              {/* Upload ID Card */}
+              <div>
+                <label className="block text-slate-800 font-black mb-1 flex items-center gap-1">
+                  <span>🆔 1. صورة وثيقة الهوية أو بطاقة الفلاح</span>
+                  <span className="text-rose-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-dashed border-slate-300 font-bold text-[11px] cursor-pointer flex items-center justify-center gap-2 transition">
+                    <Upload className="w-4 h-4 text-emerald-700" />
+                    <span>{idCardUrl ? '✓ تم اختيار صورة الهوية' : 'انقر لاختيار صورة بطاقة الهوية / بطاقة الفلاح'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, setIdCardUrl)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {idCardUrl && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <img src={idCardUrl} alt="الهوية" className="w-12 h-12 object-cover rounded-lg border border-slate-300" />
+                    <span className="text-[10px] text-emerald-700 font-bold">جاهز للإرسال</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Receipt */}
+              <div>
+                <label className="block text-slate-800 font-black mb-1 flex items-center gap-1">
+                  <span>🧾 2. صورة وصل الإيداع / تحويل BaridiMob</span>
+                  <span className="text-rose-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-dashed border-slate-300 font-bold text-[11px] cursor-pointer flex items-center justify-center gap-2 transition">
+                    <Upload className="w-4 h-4 text-emerald-700" />
+                    <span>{receiptUrl ? '✓ تم اختيار صورة الوصل' : 'انقر لاختيار صورة وصل التحويل البريدي'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, setReceiptUrl)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {receiptUrl && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <img src={receiptUrl} alt="الوصل" className="w-12 h-12 object-cover rounded-lg border border-slate-300" />
+                    <span className="text-[10px] text-emerald-700 font-bold">جاهز للإرسال</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black rounded-xl shadow-lg transition text-xs disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    'جاري إرسال الوثائق...'
+                  ) : (
+                    <>
+                      <span>تأكيد وإرسال وثائق الاشتراك 🚀</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1592,6 +1877,13 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [error, setError] = useState('');
+
+  // Status tab filter: 'pending' (default) | 'active' (المقبولين) | 'rejected' | 'all'
+  const [statusTab, setStatusTab] = useState<'pending' | 'active' | 'rejected' | 'all'>('pending');
+  // Search query (fullName or phone)
+  const [searchQuery, setSearchQuery] = useState('');
+  // Wilaya filter
+  const [selectedWilaya, setSelectedWilaya] = useState('');
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -1631,7 +1923,7 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
       });
       const data = await res.json();
       if (data.status === 'success') {
-        fetchRequests();
+        await fetchRequests();
         onRefresh();
       } else {
         alert(data.message || 'خطأ أثناء العملية');
@@ -1643,28 +1935,58 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
     }
   };
 
+  // Counts per tab
+  const pendingCount = requests.filter((r) => r.subscriptionStatus === 'pending').length;
+  const activeCount = requests.filter((r) => r.subscriptionStatus === 'active').length;
+  const rejectedCount = requests.filter((r) => r.subscriptionStatus === 'rejected').length;
+  const allCount = requests.length;
+
+  // Filter requests
+  const filteredRequests = requests.filter((req) => {
+    // 1. Status tab filter
+    if (statusTab !== 'all' && req.subscriptionStatus !== statusTab) {
+      return false;
+    }
+
+    // 2. Wilaya filter
+    if (selectedWilaya && String(req.wilayaCode) !== String(selectedWilaya)) {
+      return false;
+    }
+
+    // 3. Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = req.fullName && req.fullName.toLowerCase().includes(q);
+      const matchPhone = req.phone && req.phone.includes(q);
+      if (!matchName && !matchPhone) return false;
+    }
+
+    return true;
+  });
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 text-right">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 text-right space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-amber-400 text-emerald-950 rounded-xl font-black">
               📋
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">إدارة طلبات الاشتراك والوثائق</h3>
-              <p className="text-xs text-slate-500">معاينة وصل الدفع وبطاقة الهوية وتفعيل اشتراك المستخدمين</p>
+              <h3 className="text-lg font-black text-slate-900">إدارة طلبات الاشتراك والمشتركين</h3>
+              <p className="text-xs text-slate-500">معاينة وصل الدفع وتفعيل الاشتراكات والبحث وتصنيف الولايات</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
+          <div className="p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2 border border-rose-200">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
@@ -1683,84 +2005,183 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
           </div>
         )}
 
+        {/* STATUS TABS BAR */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-100">
+          <button
+            onClick={() => setStatusTab('pending')}
+            className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              statusTab === 'pending'
+                ? 'bg-amber-400 text-emerald-950 shadow-md'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <span>⏳ قيد المراجعة</span>
+            <span className="px-1.5 py-0.5 bg-white/60 rounded-full text-[10px] font-bold">{pendingCount}</span>
+          </button>
+
+          <button
+            onClick={() => setStatusTab('active')}
+            className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              statusTab === 'active'
+                ? 'bg-emerald-800 text-white shadow-md'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <span>✅ قائمة المقبولين</span>
+            <span className="px-1.5 py-0.5 bg-emerald-900/40 rounded-full text-[10px] font-bold">{activeCount}</span>
+          </button>
+
+          <button
+            onClick={() => setStatusTab('rejected')}
+            className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              statusTab === 'rejected'
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <span>❌ المرفوضين</span>
+            <span className="px-1.5 py-0.5 bg-rose-900/40 rounded-full text-[10px] font-bold">{rejectedCount}</span>
+          </button>
+
+          <button
+            onClick={() => setStatusTab('all')}
+            className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              statusTab === 'all'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <span>📂 جميع الحسابات</span>
+            <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-[10px] font-bold">{allCount}</span>
+          </button>
+        </div>
+
+        {/* SEARCH AND WILAYA FILTER BAR */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+          {/* Search by Name or Phone */}
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="البحث بالاسم واللقب أو رقم الهاتف..."
+              className="w-full pl-3 pr-9 py-2 border border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600 bg-white"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
+          </div>
+
+          {/* Filter by Wilaya */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-emerald-800 shrink-0" />
+            <select
+              value={selectedWilaya}
+              onChange={(e) => setSelectedWilaya(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-900 bg-white focus:ring-2 focus:ring-emerald-600"
+            >
+              <option value="">جميع الولايات (58 ولاية)</option>
+              {ALGERIA_WILAYAS.map((w) => (
+                <option key={w.code} value={w.code}>
+                  {w.code} - ولاية {w.nameAr}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* REQUESTS LIST */}
         {loading ? (
-          <div className="py-12 text-center text-slate-500 text-xs font-bold">جاري تحميل طلبات الاشتراك والوثائق...</div>
-        ) : requests.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-xs font-bold">لا توجد طلبات اشتراك حالياً.</div>
+          <div className="py-12 text-center text-slate-500 text-xs font-bold">جاري تحميل المشتركين والطلبات...</div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+            لا توجد حسابات أو طلبات اشتراك تطابق الفلتر المختار حالياً.
+          </div>
         ) : (
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {requests.map((req) => (
-              <div
-                key={req.id}
-                className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-              >
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-slate-900 text-sm">{req.fullName}</span>
-                    <span className="px-2 py-0.5 bg-slate-200 text-slate-800 rounded text-[10px] font-bold">
-                      {req.phone}
-                    </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                        req.subscriptionStatus === 'active'
-                          ? 'bg-emerald-100 text-emerald-800'
+          <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+            {filteredRequests.map((req) => {
+              const wilayaObj = ALGERIA_WILAYAS.find((w) => String(w.code) === String(req.wilayaCode));
+              const wilayaName = wilayaObj ? `ولاية ${wilayaObj.nameAr}` : `ولاية ${req.wilayaCode || 'غير حددة'}`;
+
+              return (
+                <div
+                  key={req.id}
+                  className="bg-slate-50 hover:bg-slate-100/80 transition rounded-2xl p-3.5 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+                >
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center flex-wrap gap-2">
+                      <span className="font-black text-slate-900 text-sm">{req.fullName}</span>
+                      <span className="px-2 py-0.5 bg-slate-200 text-slate-800 rounded text-[10px] font-mono font-bold">
+                        {req.phone}
+                      </span>
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-950 rounded text-[10px] font-bold">
+                        📍 {wilayaName}
+                      </span>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                          req.subscriptionStatus === 'active'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : req.subscriptionStatus === 'pending'
+                            ? 'bg-amber-100 text-amber-900 animate-pulse'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {req.subscriptionStatus === 'active'
+                          ? '✅ مشترك مفعّل'
                           : req.subscriptionStatus === 'pending'
-                          ? 'bg-amber-100 text-amber-900 animate-pulse'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
-                    >
-                      {req.subscriptionStatus === 'active'
-                        ? '✅ مشترك مفعّل'
-                        : req.subscriptionStatus === 'pending'
-                        ? '⏳ قيد المراجعة'
-                        : '❌ مرفوض'}
-                    </span>
+                          ? '⏳ قيد المراجعة'
+                          : '❌ مرفوض'}
+                      </span>
+                    </div>
+
+                    {/* Document Links */}
+                    <div className="flex items-center gap-2 pt-1">
+                      {req.receiptUrl ? (
+                        <button
+                          onClick={() => setPreviewImage(req.receiptUrl)}
+                          className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-emerald-300 cursor-pointer"
+                        >
+                          🧾 معاينة وصل الدفع
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">لا يوجد وصل دفع مرفق</span>
+                      )}
+
+                      {req.idCardUrl ? (
+                        <button
+                          onClick={() => setPreviewImage(req.idCardUrl)}
+                          className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-amber-300 cursor-pointer"
+                        >
+                          🆔 معاينة وثيقة الهوية
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">لا توجد صورة هوية مرفقة</span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Document Links */}
-                  <div className="flex items-center gap-3 pt-2">
-                    {req.receiptUrl && (
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                    {req.subscriptionStatus !== 'active' && (
                       <button
-                        onClick={() => setPreviewImage(req.receiptUrl)}
-                        className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-emerald-300 cursor-pointer"
+                        onClick={() => handleAction(req.phone, 'approve')}
+                        disabled={actionLoading === req.phone}
+                        className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md cursor-pointer disabled:opacity-50 transition"
                       >
-                        🧾 معاينة وصل الدفع
+                        {actionLoading === req.phone ? 'جاري...' : '✅ تفعيل الاشتراك'}
                       </button>
                     )}
-                    {req.idCardUrl && (
+                    {req.subscriptionStatus !== 'rejected' && (
                       <button
-                        onClick={() => setPreviewImage(req.idCardUrl)}
-                        className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-amber-300 cursor-pointer"
+                        onClick={() => handleAction(req.phone, 'reject')}
+                        disabled={actionLoading === req.phone}
+                        className="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50 transition"
                       >
-                        🆔 معاينة وثيقة الهوية
+                        ❌ رفض
                       </button>
                     )}
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {req.subscriptionStatus !== 'active' && (
-                    <button
-                      onClick={() => handleAction(req.phone, 'approve')}
-                      disabled={actionLoading === req.phone}
-                      className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md cursor-pointer disabled:opacity-50"
-                    >
-                      {actionLoading === req.phone ? 'جاري...' : '✅ تفعيل الاشتراك'}
-                    </button>
-                  )}
-                  {req.subscriptionStatus !== 'rejected' && (
-                    <button
-                      onClick={() => handleAction(req.phone, 'reject')}
-                      disabled={actionLoading === req.phone}
-                      className="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50"
-                    >
-                      ❌ رفض
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
