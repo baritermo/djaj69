@@ -8,6 +8,7 @@ import WilayaPriceBoard from '@/components/WilayaPriceBoard';
 import JobsAndWorkersBoard from '@/components/JobsAndWorkersBoard';
 import B2BDirectory from '@/components/B2BDirectory';
 import MarketOffersBoard from '@/components/MarketOffersBoard';
+import FridayHolidayScreen from '@/components/FridayHolidayScreen';
 import {
   PriceReportModal,
   JobPostModal,
@@ -33,6 +34,16 @@ export default function HomePage() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [isAdminSubModalOpen, setIsAdminSubModalOpen] = useState(false);
+  const [adminBypassFriday, setAdminBypassFriday] = useState(false);
+
+  const isFriday = React.useMemo(() => {
+    try {
+      const algeriaDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Algiers' }));
+      return algeriaDate.getDay() === 5;
+    } catch (e) {
+      return new Date().getDay() === 5;
+    }
+  }, []);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('poultry_user');
@@ -214,77 +225,86 @@ export default function HomePage() {
         onTouchEnd={handleTouchEnd}
         className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-8 touch-pan-y"
       >
-        {/* TAB 1: Algerian Wilaya Poultry Price Exchange */}
-        {activeTab === 'prices' && (
-          <WilayaPriceBoard
-            pricesList={pricesList}
-            isLoading={isLoading}
-            onRefresh={fetchAllData}
-            onReportForWilaya={handleOpenReportModalForWilaya}
+        {isFriday && !adminBypassFriday ? (
+          <FridayHolidayScreen
             currentUser={currentUser}
-            onOpenSubscribeModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsSubscribeModalOpen(true);
-            }}
+            onAdminBypass={() => setAdminBypassFriday(true)}
           />
-        )}
+        ) : (
+          <>
+            {/* TAB 1: Algerian Wilaya Poultry Price Exchange */}
+            {activeTab === 'prices' && (
+              <WilayaPriceBoard
+                pricesList={pricesList}
+                isLoading={isLoading}
+                onRefresh={fetchAllData}
+                onReportForWilaya={handleOpenReportModalForWilaya}
+                currentUser={currentUser}
+                onOpenSubscribeModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsSubscribeModalOpen(true);
+                }}
+              />
+            )}
 
-        {/* TAB 2: Direct Market Offers (سوق العروض والطلبات المباشرة) */}
-        {activeTab === 'offers' && (
-          <MarketOffersBoard
-            offersList={offersList}
-            currentUser={currentUser}
-            onOpenSubscribeModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsSubscribeModalOpen(true);
-            }}
-            onOpenOfferModal={(sellerType) => {
-              if (!currentUser) {
-                setIsRegisterModalOpen(true);
-                return;
-              }
-              setSelectedOfferSellerType(sellerType);
-              setIsOfferModalOpen(true);
-            }}
-          />
-        )}
+            {/* TAB 2: Direct Market Offers (سوق العروض والطلبات المباشرة) */}
+            {activeTab === 'offers' && (
+              <MarketOffersBoard
+                offersList={offersList}
+                currentUser={currentUser}
+                onOpenSubscribeModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsSubscribeModalOpen(true);
+                }}
+                onOpenOfferModal={(sellerType) => {
+                  if (!currentUser) {
+                    setIsRegisterModalOpen(true);
+                    return;
+                  }
+                  setSelectedOfferSellerType(sellerType);
+                  setIsOfferModalOpen(true);
+                }}
+              />
+            )}
 
-        {/* JOBS & RECRUITMENT TAB (مع مراعاة التوظيف والبحث عن عمال) */}
-        {activeTab === 'jobs' && (
-          <JobsAndWorkersBoard
-            jobsList={jobsList}
-            workersList={workersList}
-            currentUser={currentUser}
-            onOpenSubscribeModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsSubscribeModalOpen(true);
-            }}
-            onOpenJobModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsJobModalOpen(true);
-            }}
-            onOpenWorkerModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsWorkerModalOpen(true);
-            }}
-            onRefresh={fetchAllData}
-          />
-        )}
+            {/* JOBS & RECRUITMENT TAB (مع مراعاة التوظيف والبحث عن عمال) */}
+            {activeTab === 'jobs' && (
+              <JobsAndWorkersBoard
+                jobsList={jobsList}
+                workersList={workersList}
+                currentUser={currentUser}
+                onOpenSubscribeModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsSubscribeModalOpen(true);
+                }}
+                onOpenJobModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsJobModalOpen(true);
+                }}
+                onOpenWorkerModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsWorkerModalOpen(true);
+                }}
+                onRefresh={fetchAllData}
+              />
+            )}
 
-        {/* B2B COMPANIES DIRECTORY TAB */}
-        {activeTab === 'directory' && (
-          <B2BDirectory
-            companiesList={companiesList}
-            currentUser={currentUser}
-            onOpenSubscribeModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsSubscribeModalOpen(true);
-            }}
-            onOpenCompanyModal={() => {
-              if (!currentUser) setIsRegisterModalOpen(true);
-              else setIsCompanyModalOpen(true);
-            }}
-          />
+            {/* B2B COMPANIES DIRECTORY TAB */}
+            {activeTab === 'directory' && (
+              <B2BDirectory
+                companiesList={companiesList}
+                currentUser={currentUser}
+                onOpenSubscribeModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsSubscribeModalOpen(true);
+                }}
+                onOpenCompanyModal={() => {
+                  if (!currentUser) setIsRegisterModalOpen(true);
+                  else setIsCompanyModalOpen(true);
+                }}
+              />
+            )}
+          </>
         )}
       </main>
 
