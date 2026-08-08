@@ -426,6 +426,18 @@ export function OfferPostModal({ isOpen, onClose, onSuccess, defaultOfferType }:
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
 
+        {/* Daily Limit & Auto Expiration Notice Banner */}
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 text-xs font-bold space-y-1">
+          <div className="flex items-center gap-1.5 font-black text-amber-900">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>شروط ونظام نشر العروض في البورصة:</span>
+          </div>
+          <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-900/90 pr-1">
+            <li>يُسمح بنشر <b>3 عروض كحد أقصى</b> في اليوم نفسه (ينتهي العداد في منتصف الليل).</li>
+            <li>جميع العروض <b>تختفي تلقائياً في اليوم التالي</b> (حتى لو نُشرت في ساعات متاخرة من اليوم).</li>
+          </ul>
+        </div>
+
         {error && <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-3 text-xs font-bold">
           <div className="grid grid-cols-2 gap-3">

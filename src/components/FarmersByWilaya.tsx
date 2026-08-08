@@ -19,6 +19,8 @@ interface FarmerCard {
   chickenAge: string;
   details: string;
   verified: boolean;
+  isBotGenerated?: boolean;
+  is_bot_generated?: boolean;
 }
 
 interface FarmersByWilayaProps {
@@ -201,9 +203,12 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
 
                             {(() => {
                               const canDelete = currentUser?.role === 'admin' || (currentUser?.phone && farmer.phone && (farmer.phone === currentUser.phone || farmer.phone.includes(currentUser.phone)));
+                              const displayPhone = (farmer.isBotGenerated || farmer.is_bot_generated || farmer.phone?.includes('مخفي') || farmer.phone?.includes('غير معلن'))
+                                ? '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر'
+                                : farmer.phone;
                               return (
                                 <div className="pt-1 flex items-center justify-between text-[11px]">
-                                  <span className="font-bold text-slate-700">{farmer.phone}</span>
+                                  <span className="font-bold text-slate-700">{displayPhone}</span>
                                   {canDelete && (
                                     <button
                                       onClick={async (e) => {

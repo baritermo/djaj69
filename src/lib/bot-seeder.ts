@@ -125,7 +125,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
     throw new Error(`الولاية ذات الرمز ${wilayaCode} غير موجودة.`);
   }
 
-  const hiddenPhone = '🔒 رقم الهاتف غير معلن بطلب من الناشر';
+  const hiddenPhone = '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
 
   // 1. Calculate Prices according to Pricing Hierarchy Rule:
   // Farmer Price = Random within [minPrice, maxPrice] for each farmer
@@ -321,7 +321,7 @@ export async function seedAllWilayas(
     const selectedFarmers = FARMER_NAMES.slice(startIdx, startIdx + 5);
     const selectedBrokers = BROKER_NAMES.slice(startIdx, startIdx + 5);
     const selectedSlaughters = SLAUGHTERHOUSE_NAMES.slice(startIdx, startIdx + 5);
-    const hiddenPhone = '🔒 رقم الهاتف غير معلن بطلب من الناشر';
+    const hiddenPhone = '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
 
     // Farmers
     for (const name of selectedFarmers) {

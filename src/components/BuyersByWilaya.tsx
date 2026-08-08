@@ -19,6 +19,8 @@ interface BuyerPost {
   deliveryArea: string;
   buyingDetails: string;
   verified: boolean;
+  isBotGenerated?: boolean;
+  is_bot_generated?: boolean;
 }
 
 interface BuyersByWilayaProps {
@@ -284,9 +286,12 @@ export default function BuyersByWilaya({ buyers, currentUser, onOpenSubscribeMod
                               const canDelete =
                                 currentUser?.role === 'admin' ||
                                 (currentUser?.phone && buyer.phone && (buyer.phone === currentUser.phone || buyer.phone.includes(currentUser.phone)));
+                              const displayPhone = (buyer.isBotGenerated || buyer.is_bot_generated || buyer.phone?.includes('مخفي') || buyer.phone?.includes('غير معلن'))
+                                ? '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر'
+                                : buyer.phone;
                               return (
                                 <div className="pt-1 flex items-center justify-between text-[11px]">
-                                  <span className="font-bold text-slate-700">{buyer.phone}</span>
+                                  <span className="font-bold text-slate-700">{displayPhone}</span>
                                   {canDelete && (
                                     <button
                                       onClick={async (e) => {

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { marketOffers } from '@/db/schema';
@@ -45,17 +45,16 @@ export async function GET(request: Request) {
   try {
     await ensureTables();
 
-    // Auto-Cleanup: Delete expired offers published more than 24 hours ago (اختفاء العروض في اليوم التالي تلقائياً)
+    // Auto-Cleanup: Delete expired offers from previous calendar days (تختفي العروض تلقائياً عند حلول اليوم التالي)
     try {
-      await pool.query(`DELETE FROM "market_offers" WHERE "created_at" < NOW() - INTERVAL '24 hours'`);
+      await pool.query(`DELETE FROM "market_offers" WHERE "created_at" < CURRENT_DATE`);
     } catch (e) {}
 
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const { searchParams } = new URL(request.url);
     const offerType = searchParams.get('offerType');
     const wilayaCode = searchParams.get('wilayaCode');
 
-    const conditions = [gte(marketOffers.createdAt, twentyFourHoursAgo)];
+    const conditions = [gte(marketOffers.createdAt, sql`CURRENT_DATE`)];
     if (offerType && offerType !== 'all') {
       conditions.push(eq(marketOffers.offerType, offerType));
     }
@@ -91,24 +90,18 @@ export async function POST(request: Request) {
 
     const isBotPost = isBotGenerated === true || isBot === true;
 
-    // Rate Limit for Real Users: Max 3 posts per 24 hours per phone number
+    // Rate Limit for Real Users: Max 3 posts per calendar day (اليوم نفسه)
     if (!isBotPost) {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const userRecentOffers = await db
-        .select()
-        .from(marketOffers)
-        .where(
-          and(
-            eq(marketOffers.phone, phone),
-            gte(marketOffers.createdAt, twentyFourHoursAgo)
-          )
-        );
+      const userTodayOffersRes = await pool.query(
+        `SELECT id FROM "market_offers" WHERE "phone" = $1 AND "created_at" >= CURRENT_DATE`,
+        [phone]
+      );
 
-      if (userRecentOffers.length >= 3) {
+      if (userTodayOffersRes.rows.length >= 3) {
         return NextResponse.json(
           {
             status: 'error',
-            message: '⚠️ لقد بلغت الحد الأقصى للنشر اليومي (3 عروض خلال 24 ساعة). يرجى الانتظار أو التواصل مع إدارة البورصة.',
+            message: '🛑 لقد تجاوزت الحد اليومي المسموح به للنشر (3 عروض في اليوم نفسه). يرجى الانتظار لليوم التالي أو التواصل مع إدارة البورصة.',
           },
           { status: 400 }
         );
@@ -125,7 +118,7 @@ export async function POST(request: Request) {
         wilayaCode,
         wilayaName: wilaya?.nameAr || `الولاية ${wilayaCode}`,
         commune: commune || wilaya?.nameAr || '',
-        phone,
+        phone: isBotPost ? '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر' : phone,
         chickenCategories: chickenCategories || null,
         weightRange: weightRange || null,
         availableQuantity: availableQuantity || null,
