@@ -293,78 +293,40 @@ export default function Sidebar({
             </div>
 
             {/* Direct Actions */}
-            <div>
-              <div className="text-[11px] font-black text-amber-400 uppercase tracking-wider mb-2.5 px-2 flex items-center gap-1">
-                ⚡ إجراءات سريعة واختصارات
-              </div>
-              <div className="space-y-2">
-                {currentUser?.role === 'admin' && (
-                  <button
-                    onClick={() => {
-                      onOpenPriceModal();
-                      onClose();
-                    }}
-                    className="w-full bg-emerald-800 hover:bg-emerald-700 border border-emerald-600 text-white font-bold p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
-                  >
-                    <TrendingUp className="w-4 h-4 text-amber-400" />
-                    <span>📊 تحديث أسعار البورصة</span>
-                  </button>
-                )}
-
-                {/* Publish Action Buttons (Visible only for subscribed users) */}
-                {isSubscribed && (
-                  <>
+            {(currentUser?.role === 'admin' || (isSubscribed && currentUser?.role === 'worker')) && (
+              <div>
+                <div className="text-[11px] font-black text-amber-400 uppercase tracking-wider mb-2.5 px-2 flex items-center gap-1">
+                  ⚡ إجراءات سريعة واختصارات
+                </div>
+                <div className="space-y-2">
+                  {currentUser?.role === 'admin' && (
                     <button
                       onClick={() => {
-                        onOpenOfferModal();
+                        onOpenPriceModal();
                         onClose();
                       }}
-                      className="w-full bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
+                      className="w-full bg-emerald-800 hover:bg-emerald-700 border border-emerald-600 text-white font-bold p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
                     >
-                      <PlusCircle className="w-4 h-4" />
-                      <span>نشر عرض بيع أو شراء بضاعة</span>
+                      <TrendingUp className="w-4 h-4 text-amber-400" />
+                      <span>📊 تحديث أسعار البورصة</span>
                     </button>
+                  )}
 
+                  {isSubscribed && currentUser?.role === 'worker' && (
                     <button
                       onClick={() => {
-                        onOpenJobModal();
+                        onOpenWorkerModal();
                         onClose();
                       }}
                       className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
                     >
-                      <Briefcase className="w-4 h-4 text-amber-400" />
-                      <span>نشر عرض توظيف جديد</span>
+                      <Users className="w-4 h-4 text-amber-400" />
+                      <span>تسجيل بيانات عامل للتوظيف</span>
                     </button>
-
-                    {currentUser?.role === 'worker' && (
-                      <button
-                        onClick={() => {
-                          onOpenWorkerModal();
-                          onClose();
-                        }}
-                        className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                      >
-                        <Users className="w-4 h-4 text-amber-400" />
-                        <span>تسجيل بيانات عامل للتوظيف</span>
-                      </button>
-                    )}
-
-                    {currentUser?.role === 'b2b' && (
-                      <button
-                        onClick={() => {
-                          onOpenCompanyModal();
-                          onClose();
-                        }}
-                        className="w-full bg-emerald-900 hover:bg-emerald-850 border border-emerald-700 text-emerald-100 font-bold p-2.5 rounded-2xl text-xs flex items-center gap-2.5 transition cursor-pointer"
-                      >
-                        <Building2 className="w-4 h-4 text-amber-400" />
-                        <span>إضافة نشاط B2B جديد</span>
-                      </button>
-                    )}
-                  </>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Footer Info */}

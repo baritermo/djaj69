@@ -170,7 +170,16 @@ async function setup() {
       SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE(max(id), 1)) FROM users;
     `).catch(() => {});
 
-    // 3. Seed initial data
+    // 3. Wipe any legacy mock seed data (offers, jobs, workers, b2b companies, reports)
+    await pool.query(`
+      DELETE FROM "market_offers";
+      DELETE FROM "b2b_companies";
+      DELETE FROM "jobs";
+      DELETE FROM "workers";
+      DELETE FROM "price_reports";
+    `).catch(() => {});
+
+    // 4. Seed initial essential data
     console.log('🌱 Seeding initial database data...');
     await seedDatabase();
     console.log('🎉 Setup completed successfully!');

@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { seedDatabase } from '@/db/seed';
+import { pool } from '@/db/index';
 
-// The seed routine is idempotent: it fills every missing domain table without duplicating data.
 export async function GET() {
   try {
+    await pool.query(`
+      DELETE FROM "market_offers";
+      DELETE FROM "b2b_companies";
+      DELETE FROM "jobs";
+      DELETE FROM "workers";
+      DELETE FROM "price_reports";
+    `).catch(() => {});
     await seedDatabase();
     return NextResponse.json({ status: 'success', checked: true });
   } catch (error: any) {
@@ -14,6 +21,13 @@ export async function GET() {
 
 export async function POST() {
   try {
+    await pool.query(`
+      DELETE FROM "market_offers";
+      DELETE FROM "b2b_companies";
+      DELETE FROM "jobs";
+      DELETE FROM "workers";
+      DELETE FROM "price_reports";
+    `).catch(() => {});
     await seedDatabase();
     return NextResponse.json({ status: 'success', seeded: true });
   } catch (error: any) {
