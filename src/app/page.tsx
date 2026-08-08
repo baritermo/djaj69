@@ -46,6 +46,13 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    // 🇩🇿 Tahya El Djazair Console Branding
+    console.log(
+      '%c 🇩🇿 تحيا الجزائر 🇩🇿 \n %c بورصة الدواجن الجزائرية 🐔 ',
+      'color: #047857; font-size: 38px; font-weight: 900; background: #fef08a; border: 4px solid #047857; padding: 12px 24px; border-radius: 16px; font-family: system-ui, sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); shadow: 0 10px 15px -3px rgba(0,0,0,0.1);',
+      'color: #d97706; font-size: 16px; font-weight: 800; padding: 6px;'
+    );
+
     const savedUser = localStorage.getItem('poultry_user');
     if (savedUser) {
       try {
