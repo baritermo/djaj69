@@ -17,10 +17,15 @@ import { ALGERIA_WILAYAS, getWilayaByCode } from '@/lib/algeria-data';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
+const ADMIN_CHANNEL_CHAT_ID = process.env.ADMIN_CHANNEL_CHAT_ID;
 
 function isAdminChat(chatId: string): boolean {
-  if (!ADMIN_CHAT_ID) return true;
-  const allowed = ADMIN_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean);
+  const allowed = [
+    ...(ADMIN_CHAT_ID || '').split(','),
+    ...(ADMIN_CHANNEL_CHAT_ID || '').split(','),
+    '1636837664',
+    '-1004308858796',
+  ].map((s) => s.trim()).filter(Boolean);
   return allowed.includes(String(chatId));
 }
 
@@ -1397,6 +1402,31 @@ ${updatedNamesList}
       if (text.includes('وهران (31)')) {
         USER_WILAYA_STATE.set(chatId, '31');
         return sendPricePrompt(chatId, '31');
+      }
+
+      // Check Deep-link Commands (/start approve_PHONE or /start reject_PHONE)
+      if (text.startsWith('/start approve_')) {
+        const phone = text.replace('/start approve_', '').trim();
+        const res = await approveUserSubscription(phone);
+        const userName = res?.fullName || phone;
+        await sendTelegramMessage(
+          chatId,
+          `✅ <b>تم تفعيل اشتراك المستخدم (${userName}) - ${phone} بنجاح!</b>\n\nيستطيع المستخدم الآن تصفح جميع خدمات البورصة.`,
+          MAIN_KEYBOARD
+        );
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      if (text.startsWith('/start reject_')) {
+        const phone = text.replace('/start reject_', '').trim();
+        const res = await rejectUserSubscription(phone);
+        const userName = res?.fullName || phone;
+        await sendTelegramMessage(
+          chatId,
+          `❌ <b>تم رفض طلب اشتراك المستخدم (${userName}) - ${phone}.</b>`,
+          MAIN_KEYBOARD
+        );
+        return NextResponse.json({ status: 'ok' });
       }
 
       // Check Help / Start Command

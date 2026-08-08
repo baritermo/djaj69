@@ -94,8 +94,9 @@ export async function POST(request: Request) {
 
     // Instant Notification to Telegram Admin/Channel(s)
     const token = process.env.TELEGRAM_BOT_TOKEN || '8529857614:AAFqiz0Y_y-11gZSjgGAfcCbV3j42er720c';
-    const rawAdminIds = process.env.ADMIN_TELEGRAM_CHAT_ID || '-1004308858796,1636837664';
-    const targetChatIds = rawAdminIds.split(',').map((s) => s.trim()).filter(Boolean);
+    const channelId = process.env.ADMIN_CHANNEL_CHAT_ID || '-1004308858796';
+    const adminChatId = process.env.ADMIN_TELEGRAM_CHAT_ID || '1636837664';
+    const targetChatIds = Array.from(new Set([channelId, adminChatId])).filter(Boolean);
 
     for (const targetId of targetChatIds) {
       try {
@@ -110,17 +111,27 @@ export async function POST(request: Request) {
 • ⏳ الحالة: <b>قيد المراجعة (Pending)</b>
         `;
 
-        const inlineButtons = {
-          inline_keyboard: [
-            [
-              { text: '✅ تفعيل اشتراك الحساب', callback_data: `approve_sub_${user.phone}` },
-              { text: '❌ رفض الطلب', callback_data: `reject_sub_${user.phone}` },
-            ],
-          ],
-        };
+        const isChannel = String(targetId).startsWith('-');
+        const inlineButtons = isChannel
+          ? {
+              inline_keyboard: [
+                [
+                  { text: '✅ تفعيل اشتراك الحساب', url: `https://t.me/djajco_bot?start=approve_${user.phone}` },
+                  { text: '❌ رفض الطلب', url: `https://t.me/djajco_bot?start=reject_${user.phone}` },
+                ],
+              ],
+            }
+          : {
+              inline_keyboard: [
+                [
+                  { text: '✅ تفعيل اشتراك الحساب', callback_data: `approve_sub_${user.phone}` },
+                  { text: '❌ رفض الطلب', callback_data: `reject_sub_${user.phone}` },
+                ],
+              ],
+            };
 
         // Send Text Notification with Action Buttons
-        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -130,6 +141,21 @@ export async function POST(request: Request) {
             reply_markup: inlineButtons,
           }),
         });
+
+        const sendData = await sendRes.json();
+        if (!sendData.ok) {
+          console.warn(`Telegram sendMessage retry without buttons for target ${targetId}:`, sendData);
+          // Retry without reply_markup if channel rejected buttons
+          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: targetId,
+              text: textMsg,
+              parse_mode: 'HTML',
+            }),
+          });
+        }
 
         // Send Receipt Photo
         if (receiptUrl) {
