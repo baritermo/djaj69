@@ -39,6 +39,17 @@ async function ensureTables() {
 
 export async function GET(request: Request) {
   try {
+    await ensureTables();
+
+    // Auto-Cleanup: Reset prices from previous calendar days so prices expire on the next day (تختفي الأسعار تلقائياً عند حلول اليوم التالي)
+    try {
+      await pool.query(`
+        UPDATE "official_prices"
+        SET "farmer_price" = NULL, "slaughter_price" = NULL, "intermediary_price" = NULL, "trend" = 'stable', "trend_percent" = '0%'
+        WHERE "updated_at" < CURRENT_DATE
+      `);
+    } catch (e) {}
+
     let officialList: any[] = [];
     try {
       officialList = await db.select().from(officialPrices);
