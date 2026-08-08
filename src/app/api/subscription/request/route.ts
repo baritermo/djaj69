@@ -110,24 +110,14 @@ export async function POST(request: Request) {
 • ⏳ الحالة: <b>قيد المراجعة (Pending)</b>
         `;
 
-        const isChannel = String(targetId).startsWith('-');
-        const inlineButtons = isChannel
-          ? {
-              inline_keyboard: [
-                [
-                  { text: '✅ تفعيل اشتراك الحساب', url: `https://t.me/djajco_bot?start=approve_${user.phone}` },
-                  { text: '❌ رفض الطلب', url: `https://t.me/djajco_bot?start=reject_${user.phone}` },
-                ],
-              ],
-            }
-          : {
-              inline_keyboard: [
-                [
-                  { text: '✅ تفعيل اشتراك الحساب', callback_data: `approve_sub_${user.phone}` },
-                  { text: '❌ رفض الطلب', callback_data: `reject_sub_${user.phone}` },
-                ],
-              ],
-            };
+        const inlineButtons = {
+          inline_keyboard: [
+            [
+              { text: '✅ تفعيل اشتراك الحساب', callback_data: `approve_sub_${user.phone}` },
+              { text: '❌ رفض الطلب', callback_data: `reject_sub_${user.phone}` },
+            ],
+          ],
+        };
 
         // Send Text Notification with Action Buttons
         const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {

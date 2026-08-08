@@ -441,10 +441,11 @@ export async function POST(request: Request) {
     // 1. Handle Inline Keyboard Button Clicks (Callback Queries)
     if (body.callback_query) {
       const cb = body.callback_query;
-      const chatId = String(cb.message.chat.id);
+      const chatId = String(cb.message?.chat?.id || '');
+      const fromId = String(cb.from?.id || '');
       const dataStr = cb.data;
 
-      if (!isAdminChat(chatId)) {
+      if (!isAdminChat(chatId) && !isAdminChat(fromId)) {
         await answerCallbackQuery(cb.id, '⛔ غير مصرح بك.');
         return NextResponse.json({ status: 'unauthorized' });
       }
