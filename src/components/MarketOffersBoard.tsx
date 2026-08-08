@@ -53,14 +53,10 @@ export default function MarketOffersBoard({
       <div className="p-5 md:p-6 bg-gradient-to-l from-slate-950 via-emerald-950 to-emerald-900 text-white">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-emerald-950 mb-3">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-emerald-950">
               <Store className="w-3.5 h-3.5" />
               سوق الدواجن B2B المباشر — الفلاحين والمذابح والكورتية
             </div>
-            <h2 className="text-2xl font-black">العروض وطلبات الشراء والبيع حسب الفئة والولاية</h2>
-            <p className="text-sm text-emerald-100 mt-1 max-w-2xl">
-              اختر التبويب المطلوب أدناه، ثم اضغط على زر <b>المزيد 🔽</b> في أي ولاية أو عرض لعرض التفاصيل الكاملة.
-            </p>
           </div>
           {currentUser?.role !== 'worker' && (
             <div className="flex flex-wrap gap-2 shrink-0">

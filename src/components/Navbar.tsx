@@ -47,24 +47,10 @@ export default function Navbar({
   return (
     <header className="bg-emerald-900 text-white shadow-xl sticky top-0 z-40 border-b-4 border-amber-500">
       {/* Top Banner with Official Regulated Info */}
-      <div className="bg-emerald-950/80 border-b border-emerald-800/60 px-4 py-1.5 text-xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-4">
-              <span className="inline-flex items-center gap-1 bg-amber-500 text-emerald-950 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-950 animate-ping"></span>
-                محدث حياً
-              </span>
-              <p className="text-emerald-100 font-bold truncate">
-                بورصة أسعار الدواجن والتوظيف في كافة الولايات (58 ولاية)
-              </p>
-            </div>
-          <div className="flex items-center gap-4 text-emerald-200">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              متابعة حية للأسعار: مزرعة - مذبح - تجزئة
-            </span>
-            <span className="hidden sm:inline text-emerald-400">|</span>
-            <span className="hidden sm:inline">العملة: الدينار الجزائري (د.ج)</span>
+      <div className="bg-emerald-950/80 border-b border-emerald-800/60 px-4 py-1 text-xs">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-emerald-100 font-bold">
+            <span>بورصة الدواجن الجزائرية</span>
           </div>
         </div>
       </div>

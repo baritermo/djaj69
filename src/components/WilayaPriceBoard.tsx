@@ -119,11 +119,8 @@ export default function WilayaPriceBoard({
               📊 التحديث اليومي لـ 58 ولاية
             </div>
             <h2 className="text-xl font-black text-white">
-              بورصة أسعار الدواجن لـ 58 ولاية جزائرية
+              أسعار الدواجن
             </h2>
-            <p className="text-xs text-emerald-100">
-              أسعار الأسواق المجمعة حياً من البورصة الميدانية والتجار والصفحات المباشرة.
-            </p>
           </div>
         </div>
         {currentUser?.role === 'admin' && (
