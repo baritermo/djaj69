@@ -92,11 +92,10 @@ export async function POST(request: Request) {
       .where(eq(users.phone, cleanPhone))
       .returning();
 
-    // Instant Notification to Telegram Admin/Channel(s)
+    // Instant Notification to Telegram Admin Channel ONLY
     const token = process.env.TELEGRAM_BOT_TOKEN || '8529857614:AAFqiz0Y_y-11gZSjgGAfcCbV3j42er720c';
     const channelId = process.env.ADMIN_CHANNEL_CHAT_ID || '-1004308858796';
-    const adminChatId = process.env.ADMIN_TELEGRAM_CHAT_ID || '1636837664';
-    const targetChatIds = Array.from(new Set([channelId, adminChatId])).filter(Boolean);
+    const targetChatIds = [channelId];
 
     for (const targetId of targetChatIds) {
       try {
