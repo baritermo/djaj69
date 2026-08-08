@@ -8,12 +8,21 @@ import {
   updateMultipleOfficialPrices,
   deleteOfficialPriceForWilaya,
   deleteAllOfficialPrices,
+  deleteAllOffers,
+  approveUserSubscription,
+  rejectUserSubscription,
   getOfficialPriceForWilaya,
 } from '@/lib/bot-seeder';
 import { ALGERIA_WILAYAS, getWilayaByCode } from '@/lib/algeria-data';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
+
+function isAdminChat(chatId: string): boolean {
+  if (!ADMIN_CHAT_ID) return true;
+  const allowed = ADMIN_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean);
+  return allowed.includes(String(chatId));
+}
 
 // In-memory state maps for step-by-step wizards
 const USER_WILAYA_STATE = new Map<string, string>(); // For single wilaya B2B offer seeder
@@ -148,7 +157,7 @@ const MAIN_KEYBOARD = {
     [{ text: '📊 تحديث أسعار بورصة ولاية واحدة' }, { text: '🌐 تحديث كلي لـ 58 ولاية' }],
     [{ text: '📢 ضخ عروض في ولاية واحدة' }],
     [{ text: '📍 سطيف (19)' }, { text: '📍 الجزائر (16)' }, { text: '📍 البليدة (09)' }, { text: '📍 وهران (31)' }],
-    [{ text: '🗑️ حذف كلي لجميع أسعار البورصة' }],
+    [{ text: '🗑️ حذف كافة عروض السوق' }, { text: '🗑️ حذف كلي لأسعار البورصة' }],
     [{ text: '❓ مساعدة ودليل الأوامر' }],
   ],
   resize_keyboard: true,
@@ -347,6 +356,28 @@ async function sendTelegramMessage(chatId: number | string, text: string, replyM
   }
 }
 
+async function editTelegramMessageText(chatId: number | string, messageId: number, text: string, replyMarkup?: any) {
+  if (!TELEGRAM_BOT_TOKEN) return;
+  try {
+    const payload: Record<string, any> = {
+      chat_id: chatId,
+      message_id: messageId,
+      text,
+      parse_mode: 'HTML',
+    };
+    if (replyMarkup) {
+      payload.reply_markup = replyMarkup;
+    }
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    console.error('Telegram edit message text error:', e);
+  }
+}
+
 async function answerCallbackQuery(callbackQueryId: string, text: string) {
   if (!TELEGRAM_BOT_TOKEN) return;
   try {
@@ -408,9 +439,71 @@ export async function POST(request: Request) {
       const chatId = String(cb.message.chat.id);
       const dataStr = cb.data;
 
-      if (ADMIN_CHAT_ID && String(chatId) !== String(ADMIN_CHAT_ID)) {
+      if (!isAdminChat(chatId)) {
         await answerCallbackQuery(cb.id, '⛔ غير مصرح بك.');
         return NextResponse.json({ status: 'unauthorized' });
+      }
+
+      // Action: Admin clicked APPROVE USER SUBSCRIPTION from Telegram
+      if (dataStr.startsWith('approve_sub_')) {
+        const targetPhone = dataStr.replace('approve_sub_', '');
+        await answerCallbackQuery(cb.id, `⏳ جاري تفعيل اشتراك ${targetPhone}...`);
+
+        const res = await approveUserSubscription(targetPhone);
+        const userName = res?.fullName || targetPhone;
+
+        const updatedKeyboard = {
+          inline_keyboard: [
+            [{ text: `✅ تم تفعيل اشتراك (${userName}) بنجاح`, callback_data: 'noop' }],
+          ],
+        };
+
+        const alertText = `
+✅ <b>تم تفعيل اشتراك الحساب بنجاح من تليجرام!</b>
+
+• 📝 الاسم واللقب: <b>${userName}</b>
+• 📱 رقم الهاتف: <code>${targetPhone}</code>
+• 🟢 الحالة الحالية: <b>مفعل (Active)</b>
+
+✨ يستطيع المستخدم الآن الدخول وتصفح جميع أقسام البورصة.
+        `;
+
+        if (cb.message?.message_id) {
+          await editTelegramMessageText(chatId, cb.message.message_id, alertText, updatedKeyboard);
+        } else {
+          await sendTelegramMessage(chatId, alertText, MAIN_KEYBOARD);
+        }
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action: Admin clicked REJECT USER SUBSCRIPTION from Telegram
+      if (dataStr.startsWith('reject_sub_')) {
+        const targetPhone = dataStr.replace('reject_sub_', '');
+        await answerCallbackQuery(cb.id, `⏳ جاري رفض طلب ${targetPhone}...`);
+
+        const res = await rejectUserSubscription(targetPhone);
+        const userName = res?.fullName || targetPhone;
+
+        const updatedKeyboard = {
+          inline_keyboard: [
+            [{ text: `❌ تم رفض طلب (${userName})`, callback_data: 'noop' }],
+          ],
+        };
+
+        const alertText = `
+❌ <b>تم رفض طلب اشتراك الحساب من تليجرام.</b>
+
+• 📝 الاسم واللقب: <b>${userName}</b>
+• 📱 رقم الهاتف: <code>${targetPhone}</code>
+• 🔴 الحالة الحالية: <b>مرفوض (Rejected)</b>
+        `;
+
+        if (cb.message?.message_id) {
+          await editTelegramMessageText(chatId, cb.message.message_id, alertText, updatedKeyboard);
+        } else {
+          await sendTelegramMessage(chatId, alertText, MAIN_KEYBOARD);
+        }
+        return NextResponse.json({ status: 'ok' });
       }
 
       // Multi-Select Wilayas Pagination (Prices)
@@ -736,6 +829,19 @@ ${currentPriceText}
         return NextResponse.json({ status: 'ok' });
       }
 
+      // Action: User clicked BULK Delete OFFERS Confirm (✅ موافق وتأكيد حذف كافة عروض السوق)
+      if (dataStr === 'delete_all_offers_confirm') {
+        await deleteAllOffers();
+        await answerCallbackQuery(cb.id, 'تم حذف جميع العروض بنجاح');
+
+        const successMsg = `
+🗑️ <b>تم حذف وتفريغ جميع عروض سوق البورصة بنجاح!</b>
+أصبح سوق العروض والطلبات المباشرة فارغاً تماماً في الموقع لجميع الفئات والولايات.
+        `;
+        await sendTelegramMessage(chatId, successMsg, MAIN_KEYBOARD);
+        return NextResponse.json({ status: 'ok' });
+      }
+
       // Action: Save single board wilaya price confirmation
       if (dataStr.startsWith('save_board_confirm_')) {
         const parts = dataStr.replace('save_board_confirm_', '').split('_');
@@ -797,7 +903,7 @@ ${currentPriceText}
       const text = body.message.text.trim();
 
       // Security check: Only allow admin chat ID
-      if (ADMIN_CHAT_ID && String(chatId) !== String(ADMIN_CHAT_ID)) {
+      if (!isAdminChat(chatId)) {
         await sendTelegramMessage(chatId, '⛔ <b>عذراً، هذا البوت مخصص لمشرف البورصة فقط.</b>');
         return NextResponse.json({ status: 'unauthorized' });
       }
@@ -888,10 +994,9 @@ ${updatedNamesList}
 
       // Action 1: BULK DELETE ALL OFFICIAL PRICES FOR ALL 58 WILAYAS
       if (
-        text.includes('حذف كلي لجميع') ||
-        text.includes('حذف كلي') ||
-        text === '/delete_all' ||
-        text === 'حذف الكل'
+        text.includes('حذف كلي لأسعار') ||
+        text.includes('حذف كلي لجميع أسعار') ||
+        text === '/delete_all'
       ) {
         USER_WILAYA_STATE.delete(chatId);
         USER_BOARD_STATE.delete(chatId);
@@ -910,6 +1015,36 @@ ${updatedNamesList}
 ⚠️ <b>تأكيد الحذف الجماعي الكلي:</b>
 
 هل أنت تأكد من تفريغ وحذف جميع أسعار بورصة الـ 58 ولاية وإزالتها تماماً من الجدول الرسمي بالموقع؟
+        `;
+        await sendTelegramMessage(chatId, promptText, confirmKeyboard);
+        return NextResponse.json({ status: 'ok' });
+      }
+
+      // Action 1B: BULK DELETE ALL MARKET OFFERS FOR ALL WILAYAS (🗑️ حذف كافة عروض السوق)
+      if (
+        text.includes('حذف كافة عروض') ||
+        text.includes('حذف جميع عروض') ||
+        text.includes('تفريغ عروض') ||
+        text.includes('حذف كل العروض') ||
+        text === '/delete_all_offers'
+      ) {
+        USER_WILAYA_STATE.delete(chatId);
+        USER_BOARD_STATE.delete(chatId);
+        USER_ALL_BOARD_STATE.delete(chatId);
+        USER_MULTI_WAITING_PRICE.delete(chatId);
+        USER_OFFER_MULTI_WAITING_PRICE.delete(chatId);
+
+        const confirmKeyboard = {
+          inline_keyboard: [
+            [{ text: '✅ موافق وتأكيد حذف كافة عروض السوق', callback_data: 'delete_all_offers_confirm' }],
+            [{ text: '❌ إلغاء', callback_data: 'cancel_board' }],
+          ],
+        };
+
+        const promptText = `
+⚠️ <b>تأكيد تفريغ وحذف جميع عروض السوق:</b>
+
+هل أنت تأكد من حذف وتفريغ كافة عروض وطلبات الشراء والبيع المسجلة في البورصة لجميع الولايات؟
         `;
         await sendTelegramMessage(chatId, promptText, confirmKeyboard);
         return NextResponse.json({ status: 'ok' });

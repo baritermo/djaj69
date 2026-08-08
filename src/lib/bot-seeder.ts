@@ -640,3 +640,53 @@ export async function deleteAllOfficialPrices() {
     success: true,
   };
 }
+
+/**
+ * Delete ALL market offers from "market_offers" table across all Wilayas.
+ */
+export async function deleteAllOffers() {
+  await ensureTables();
+  await pool.query(`DELETE FROM "market_offers"`);
+  return {
+    success: true,
+  };
+}
+
+/**
+ * Approve User Subscription directly by phone number.
+ */
+export async function approveUserSubscription(phone: string) {
+  await ensureTables();
+  const res = await pool.query(
+    `
+    UPDATE "users"
+    SET "subscription_status" = 'active',
+        "subscription_date" = NOW(),
+        "rejection_reason" = NULL
+    WHERE LOWER(TRIM("phone")) = LOWER(TRIM($1))
+    RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus";
+  `,
+    [phone.trim()]
+  );
+
+  return res.rows[0] || null;
+}
+
+/**
+ * Reject User Subscription directly by phone number.
+ */
+export async function rejectUserSubscription(phone: string, reason: string = 'تم الرفض بواسطة المشرف') {
+  await ensureTables();
+  const res = await pool.query(
+    `
+    UPDATE "users"
+    SET "subscription_status" = 'rejected',
+        "rejection_reason" = $2
+    WHERE LOWER(TRIM("phone")) = LOWER(TRIM($1))
+    RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus";
+  `,
+    [phone.trim(), reason]
+  );
+
+  return res.rows[0] || null;
+}

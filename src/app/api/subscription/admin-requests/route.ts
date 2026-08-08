@@ -36,6 +36,7 @@ export async function GET() {
         "id",
         "full_name" AS "fullName",
         "phone",
+        "password",
         "role",
         "subscription_status" AS "subscriptionStatus",
         "subscription_date" AS "subscriptionDate",
