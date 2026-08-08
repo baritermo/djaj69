@@ -361,10 +361,29 @@ export default function Sidebar({
           </div>
 
           {/* Footer Info */}
-          <div className="p-4 border-t border-emerald-800/80 text-[11px] text-emerald-300 font-medium text-center space-y-1 bg-emerald-950">
+          <div className="p-4 border-t border-emerald-800/80 text-[11px] text-emerald-300 font-medium text-center space-y-1.5 bg-emerald-950">
             <div className="flex items-center justify-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
               <span>منصة بأسعار حية مجمعة ميدانياً</span>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-0.5">
+              <a
+                href="https://t.me/supourtte69"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-sky-300 hover:text-sky-200 hover:underline font-bold flex items-center gap-1"
+              >
+                💬 الدعم عبر تليجرام
+              </a>
+              <span className="text-emerald-700">•</span>
+              <a
+                href="https://web.facebook.com/profile.php?id=61554131107073"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-blue-300 hover:text-blue-200 hover:underline font-bold flex items-center gap-1"
+              >
+                🟦 صفحتنا على فيسبوك
+              </a>
             </div>
             <div className="text-[10px] text-emerald-400/80">حقوق الطبع محفوظة © {new Date().getFullYear()}</div>
           </div>

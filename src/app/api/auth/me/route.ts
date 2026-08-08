@@ -42,6 +42,7 @@ export async function GET(request: Request) {
           commune: user.commune,
           subscriptionStatus: user.subscriptionStatus,
           rejectionReason: user.rejectionReason,
+          password: user.password,
         },
       });
     }

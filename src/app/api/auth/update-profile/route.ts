@@ -70,6 +70,7 @@ export async function POST(request: Request) {
         phone: updatedUser.phone,
         role: updatedUser.role,
         wilayaCode: updatedUser.wilayaCode,
+        password: updatedUser.password,
       },
     });
   } catch (error: any) {

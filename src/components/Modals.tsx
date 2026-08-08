@@ -1281,14 +1281,23 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
   const [fullName, setFullName] = useState(currentUser?.fullName || '');
   const [wilayaCode, setWilayaCode] = useState(currentUser?.wilayaCode || '16');
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState(currentUser?.password || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(true);
   const [showNewPassword, setShowNewPassword] = useState(true);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    if (currentUser) {
+      setFullName(currentUser.fullName || '');
+      setWilayaCode(currentUser.wilayaCode || '16');
+      setCurrentPassword(currentUser.password || '');
+    }
+  }, [currentUser, isOpen]);
 
   if (!isOpen || !currentUser) return null;
 
@@ -1346,7 +1355,7 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
       if (data.status === 'success') {
         onUpdateUser(data.user);
         setMessage('تم تغيير كلمة السر بنجاح');
-        setCurrentPassword('');
+        setCurrentPassword(data.user?.password || newPassword);
         setNewPassword('');
         setConfirmNewPassword('');
       } else {
@@ -1372,7 +1381,7 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
               <p className="text-xs text-slate-500">تعديل البيانات وتغيير كلمة السر</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -1410,7 +1419,7 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2 border border-rose-200">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
@@ -1474,15 +1483,27 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
         ) : (
           <form onSubmit={handleChangePassword} className="space-y-4 text-xs font-bold">
             <div>
-              <label className="block text-slate-700 mb-1">كلمة السر الحالية</label>
-              <input
-                type="password"
-                required
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600"
-                placeholder="أدخل كلمة السر الحالية للتأكيد..."
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-slate-700">كلمة السر الحالية</label>
+                <span className="text-[10px] text-emerald-700 font-bold">👁️ كلمة السر الحالية</span>
+              </div>
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 pr-3 pl-10 focus:ring-2 focus:ring-emerald-600 bg-amber-50/30"
+                  placeholder="كلمة السر الحالية..."
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
@@ -1502,7 +1523,7 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-700"
+                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -1523,7 +1544,7 @@ export function AccountSettingsModal({ isOpen, onClose, currentUser, onUpdateUse
                 <button
                   type="button"
                   onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-700"
+                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -1699,13 +1720,37 @@ export function SubscriptionModal({ isOpen, onClose, currentUser, onSuccess }: S
                 {currentUser?.fullName ? `أهلاً بك (${currentUser.fullName})` : 'أهلاً بك في منصة البورصة'}
               </h4>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs font-bold text-amber-950 space-y-2 leading-relaxed">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs font-bold text-amber-950 space-y-3 leading-relaxed">
                 <p className="text-sm font-black text-amber-900 flex items-center justify-center gap-1">
-                  <span>حسابك تحت المراجعة وسيتم تفعيله في غضون 48 ساعة</span>
+                  <span>حسابك تحت المراجعة وسيتم الرد في أقل من 48 ساعة</span>
                 </p>
                 <p className="text-[11px] text-slate-600">
-                  لقد استلم فريق إدارة البورصة الوثائق الخاصة بك (وصل الإيداع ووثيقة التوثيق) وجاري التدقيق ليتم منحك التفعيل الشامل للوصول لكافة بيانات المتعاملين والعروض.
+                  لقد استلم فريق إدارة البورصة الوثائق الخاصة بك (وصل الإيداع ووثيقة التوثيق) وجاري التدقيق ليتم تفعيل الوصول الكامل لكافة البيانات والعروض.
                 </p>
+
+                <div className="pt-2 border-t border-amber-200/80 space-y-2">
+                  <p className="text-[11px] text-amber-950 font-bold">
+                    إذا تأخر الرد، تواصل معنا أو تابع صفحتنا الرسمية:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <a
+                      href="https://t.me/supourtte69"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-black shadow-md transition cursor-pointer"
+                    >
+                      <span>💬 تليجرام (@supourtte69)</span>
+                    </a>
+                    <a
+                      href="https://web.facebook.com/profile.php?id=61554131107073"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md transition cursor-pointer"
+                    >
+                      <span>🟦 صفحتنا على فيسبوك</span>
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
 

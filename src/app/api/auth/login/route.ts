@@ -91,6 +91,7 @@ export async function POST(request: Request) {
         commune: user.commune,
         subscriptionStatus: user.subscriptionStatus,
         rejectionReason: user.rejectionReason,
+        password: user.password,
       },
     });
   } catch (error: any) {

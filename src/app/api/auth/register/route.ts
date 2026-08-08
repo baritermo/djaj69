@@ -48,6 +48,7 @@ export async function POST(request: Request) {
         phone: newUser.phone,
         role: newUser.role,
         wilayaCode: newUser.wilayaCode,
+        password: newUser.password,
       },
     });
   } catch (error: any) {
