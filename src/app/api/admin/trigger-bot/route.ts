@@ -56,10 +56,12 @@ async function handleBotTrigger(params: {
   }
 
   // Mode 2: Multiple Selected Wilayas
-  if (mode === 'multiple' || (wilayaCodes && Array.isArray(wilayaCodes) && wilayaCodes.length > 0)) {
-    const codes = Array.isArray(wilayaCodes)
-      ? wilayaCodes
-      : String(wilayaCodes).split(',').map((c) => c.trim()).filter(Boolean);
+  if (mode === 'multiple' || (wilayaCodes && ((Array.isArray(wilayaCodes) && wilayaCodes.length > 0) || String(wilayaCodes).trim()))) {
+    const rawCodes = Array.isArray(wilayaCodes) ? wilayaCodes.join(',') : String(wilayaCodes || '');
+    const codes = rawCodes
+      .split(',')
+      .map((c) => String(c).trim().padStart(2, '0'))
+      .filter((c) => c && c !== '00');
     
     if (pumpOffers) {
       const res = await seedOffersForMultipleWilayas(codes, farmerPrice, minP, maxP);

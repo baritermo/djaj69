@@ -120,51 +120,42 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   const maxPrice = options.maxFarmerPrice ?? options.farmerPrice ?? minPrice;
   const baseFarmerPrice = Math.round((minPrice + maxPrice) / 2);
 
-  const wilaya = getWilayaByCode(wilayaCode);
+  const paddedCode = String(wilayaCode).padStart(2, '0');
+  const wilaya = getWilayaByCode(paddedCode);
   if (!wilaya) {
     throw new Error(`الولاية ذات الرمز ${wilayaCode} غير موجودة.`);
   }
 
   const hiddenPhone = '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
 
-  // 1. Calculate Prices according to Pricing Hierarchy Rule:
-  // Farmer Price = Random within [minPrice, maxPrice] for each farmer
-  // Broker Buying Price = BaseFarmerPrice - (5 to 10 DA) (Always lower than farmer)
-  // Slaughterhouse Buying Price = BaseFarmerPrice - (12 to 18 DA) (Always lower than farmer and broker)
+  // 1. Deterministic account selection based on Wilaya code (prevents account name collisions across wilayas)
+  const codeNum = parseInt(wilaya.code, 10);
+  const startIdx = isNaN(codeNum) ? 0 : ((codeNum - 1) * 5) % FARMER_NAMES.length;
+  const selectedFarmers = FARMER_NAMES.slice(startIdx, startIdx + 5);
+  const selectedBrokers = BROKER_NAMES.slice(startIdx, startIdx + 5);
+  const selectedSlaughters = SLAUGHTERHOUSE_NAMES.slice(startIdx, startIdx + 5);
 
-  // 2. Select 5 unique Farmers, 5 unique Brokers, 5 unique Slaughterhouses
-  const shuffledFarmers = [...FARMER_NAMES].sort(() => Math.random() - 0.5).slice(0, 5);
-  const shuffledBrokers = [...BROKER_NAMES].sort(() => Math.random() - 0.5).slice(0, 5);
-  const shuffledSlaughters = [...SLAUGHTERHOUSE_NAMES].sort(() => Math.random() - 0.5).slice(0, 5);
-
-  const selectedAccountNames = [...shuffledFarmers, ...shuffledBrokers, ...shuffledSlaughters];
-
-  // 3. Auto-Cleanup: Remove previous bot-generated offers for these account names across all wilayas
+  // 2. Auto-Cleanup: Remove previous bot-generated offers ONLY for this specific wilaya
   try {
-    for (const accName of selectedAccountNames) {
-      await db
-        .delete(marketOffers)
-        .where(
-          and(
-            eq(marketOffers.name, accName),
-            eq(marketOffers.isBotGenerated, true)
-          )
-        );
-    }
+    await db
+      .delete(marketOffers)
+      .where(
+        and(
+          eq(marketOffers.wilayaCode, wilaya.code),
+          eq(marketOffers.isBotGenerated, true)
+        )
+      );
   } catch (e) {
-    console.warn('Auto-cleanup previous offers warning:', e);
+    console.warn('Auto-cleanup previous offers warning for wilaya:', e);
   }
 
   const generatedOffers: any[] = [];
-
-  // A. Generate 5 Farmer Offers (🌾)
-  // Quantities: 3,000 to 15,000 kg
   const breedOptions = ['Ross 308', 'Cobb 500', 'محلي', 'محلي محسّن'];
   const categoryOptions = ['خشنة', 'متوسطة', 'رقيقة', 'خشنة، متوسطة'];
 
-  for (let i = 0; i < shuffledFarmers.length; i++) {
-    const name = shuffledFarmers[i];
-    // Distribute farmer prices across the minPrice to maxPrice range if range given
+  // A. Generate 5 Farmer Offers (🌾)
+  for (let i = 0; i < selectedFarmers.length; i++) {
+    const name = selectedFarmers[i];
     const pFarmer = minPrice === maxPrice
       ? minPrice + getRandomInt(-2, 2)
       : getRandomInt(minPrice, maxPrice);
@@ -194,10 +185,8 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   }
 
   // B. Generate 5 Broker Offers (🤝)
-  // Quantities: 1,000 to 1,300 kg (Smallest)
-  // Prices: P_farmer - (5 to 10 DA)
-  for (let i = 0; i < shuffledBrokers.length; i++) {
-    const name = shuffledBrokers[i];
+  for (let i = 0; i < selectedBrokers.length; i++) {
+    const name = selectedBrokers[i];
     const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
     const pKhashna = pMotawassita + getRandomInt(5, 10);
     const pRaqiqa = pMotawassita - getRandomInt(5, 10);
@@ -224,10 +213,8 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   }
 
   // C. Generate 5 Slaughterhouse Offers (🔪)
-  // Quantities: 6,000 to 24,000 kg (Largest)
-  // Prices: P_farmer - (12 to 18 DA) (Always lower than farmer and broker)
-  for (let i = 0; i < shuffledSlaughters.length; i++) {
-    const name = shuffledSlaughters[i];
+  for (let i = 0; i < selectedSlaughters.length; i++) {
+    const name = selectedSlaughters[i];
     const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
     const pKhashna = pMotawassita + getRandomInt(5, 10);
     const pRaqiqa = pMotawassita - getRandomInt(5, 10);
@@ -588,27 +575,187 @@ export async function seedOffersForMultipleWilayas(
   maxFarmerPrice?: number
 ) {
   await ensureTables();
-  const results: any[] = [];
+  const minP = minFarmerPrice ?? farmerPrice ?? 280;
+  const maxP = maxFarmerPrice ?? farmerPrice ?? minP;
 
-  for (const code of wilayaCodes) {
-    const padded = String(code).padStart(2, '0');
-    try {
-      const res = await seedOffersForWilaya({
-        wilayaCode: padded,
-        farmerPrice,
-        minFarmerPrice,
-        maxFarmerPrice,
-      });
-      results.push(res);
-    } catch (e) {
-      console.warn(`Error seeding offers for wilaya ${padded}:`, e);
+  // Normalize & filter valid wilaya codes
+  const validCodes = Array.from(
+    new Set(
+      wilayaCodes
+        .map((c) => String(c).trim().padStart(2, '0'))
+        .filter((c) => c && getWilayaByCode(c))
+    )
+  );
+
+  if (validCodes.length === 0) {
+    return {
+      success: false,
+      count: 0,
+      seededWilayas: [],
+      message: 'لم يتم العثور على أي ولايات صالحة.',
+    };
+  }
+
+  // Bulk cleanup of old bot offers for targeted wilayas
+  try {
+    for (const code of validCodes) {
+      await db
+        .delete(marketOffers)
+        .where(
+          and(
+            eq(marketOffers.wilayaCode, code),
+            eq(marketOffers.isBotGenerated, true)
+          )
+        );
     }
+  } catch (e) {
+    console.warn('Bulk cleanup error in seedOffersForMultipleWilayas:', e);
+  }
+
+  const allOffers: any[] = [];
+  const results: any[] = [];
+  const breedOptions = ['Ross 308', 'Cobb 500', 'محلي', 'محلي محسّن'];
+  const categoryOptions = ['خشنة', 'متوسطة', 'رقيقة', 'خشنة، متوسطة'];
+  const hiddenPhone = '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
+
+  for (const code of validCodes) {
+    const wilaya = getWilayaByCode(code)!;
+    const baseFarmerPrice = Math.round((minP + maxP) / 2);
+
+    const codeNum = parseInt(wilaya.code, 10);
+    const startIdx = isNaN(codeNum) ? 0 : ((codeNum - 1) * 5) % FARMER_NAMES.length;
+    const selectedFarmers = FARMER_NAMES.slice(startIdx, startIdx + 5);
+    const selectedBrokers = BROKER_NAMES.slice(startIdx, startIdx + 5);
+    const selectedSlaughters = SLAUGHTERHOUSE_NAMES.slice(startIdx, startIdx + 5);
+
+    const wilayaOffers: any[] = [];
+
+    // Farmers (5)
+    for (let i = 0; i < selectedFarmers.length; i++) {
+      const name = selectedFarmers[i];
+      const pFarmer = minP === maxP ? minP + getRandomInt(-2, 2) : getRandomInt(minP, maxP);
+      const qtyNum = getRandomInt(3000, 15000);
+      const weightNum = (getRandomInt(20, 27) / 10).toFixed(1);
+
+      const offer = {
+        offerType: 'farmer',
+        name,
+        wilayaCode: wilaya.code,
+        wilayaName: wilaya.nameAr,
+        commune: wilaya.nameAr,
+        phone: hiddenPhone,
+        farmerPrice: pFarmer,
+        chickenCategories: categoryOptions[i % categoryOptions.length],
+        weightRange: `${weightNum} - ${(parseFloat(weightNum) + 0.4).toFixed(1)} كغ`,
+        availableQuantity: formatQuantity(qtyNum),
+        breedType: breedOptions[i % breedOptions.length],
+        farmAcreage: `${getRandomInt(2, 6)} عنابر × ${getRandomInt(3000, 8000)} م²`,
+        chickenAge: `${getRandomInt(38, 46)} يوم`,
+        details: `دواجن تسمين ذات صحة ممتازة، ملقحة ومجهزة للاستلام المباشر من المزرعة في ${wilaya.nameAr}.`,
+        verified: true,
+        isBotGenerated: true,
+      };
+      wilayaOffers.push(offer);
+      allOffers.push(offer);
+    }
+
+    // Brokers (5)
+    for (let i = 0; i < selectedBrokers.length; i++) {
+      const name = selectedBrokers[i];
+      const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
+      const pKhashna = pMotawassita + getRandomInt(5, 10);
+      const pRaqiqa = pMotawassita - getRandomInt(5, 10);
+      const qtyNum = getRandomInt(1000, 1300);
+
+      const offer = {
+        offerType: 'broker',
+        name,
+        wilayaCode: wilaya.code,
+        wilayaName: wilaya.nameAr,
+        commune: wilaya.nameAr,
+        phone: hiddenPhone,
+        buyKhashna: pKhashna,
+        buyMotawassita: pMotawassita,
+        buyRaqiqa: pRaqiqa,
+        maxPurchaseKg: `${qtyNum.toLocaleString('ar-DZ')} كغ يومياً`,
+        deliveryArea: `ولايات ${wilaya.nameAr} والولايات المجاورة`,
+        buyingDetails: `شراء وتوزيع كورتي فوري بنقد الاستلام والدفع الحين لحساب المذابح والتجار.`,
+        verified: true,
+        isBotGenerated: true,
+      };
+      wilayaOffers.push(offer);
+      allOffers.push(offer);
+    }
+
+    // Slaughterhouses (5)
+    for (let i = 0; i < selectedSlaughters.length; i++) {
+      const name = selectedSlaughters[i];
+      const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
+      const pKhashna = pMotawassita + getRandomInt(5, 10);
+      const pRaqiqa = pMotawassita - getRandomInt(5, 10);
+      const qtyNum = getRandomInt(6000, 24000);
+
+      const offer = {
+        offerType: 'slaughterhouse',
+        name,
+        wilayaCode: wilaya.code,
+        wilayaName: wilaya.nameAr,
+        commune: wilaya.nameAr,
+        phone: hiddenPhone,
+        buyKhashna: pKhashna,
+        buyMotawassita: pMotawassita,
+        buyRaqiqa: pRaqiqa,
+        maxPurchaseKg: `${qtyNum.toLocaleString('ar-DZ')} كغ يومياً`,
+        deliveryArea: `كافة بلديات ولاية ${wilaya.nameAr}`,
+        buyingDetails: `ذبح حلال معتمد ومعاينة بيطرية كاملة، دفع سريع عند وزن الحمولات.`,
+        verified: true,
+        isBotGenerated: true,
+      };
+      wilayaOffers.push(offer);
+      allOffers.push(offer);
+    }
+
+    results.push({
+      wilayaCode: wilaya.code,
+      wilayaName: wilaya.nameAr,
+      farmerPrice: baseFarmerPrice,
+      minFarmerPrice: minP,
+      maxFarmerPrice: maxP,
+      generatedOffersCount: wilayaOffers.length,
+    });
+
+    // Update Official Price Board for this Wilaya
+    try {
+      const brokerAvg = baseFarmerPrice - 7;
+      const slaughterAvg = baseFarmerPrice - 15;
+      await pool.query(
+        `
+        INSERT INTO "official_prices" ("wilaya_code", "name_ar", "name_fr", "region", "farmer_price", "slaughter_price", "intermediary_price", "trend", "trend_percent", "updated_at")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'stable', '0%', NOW())
+        ON CONFLICT ("wilaya_code")
+        DO UPDATE SET
+          "farmer_price" = EXCLUDED.farmer_price,
+          "slaughter_price" = EXCLUDED.slaughter_price,
+          "intermediary_price" = EXCLUDED.intermediary_price,
+          "updated_at" = NOW();
+      `,
+        [wilaya.code, wilaya.nameAr, wilaya.nameFr, wilaya.region, baseFarmerPrice, slaughterAvg, brokerAvg]
+      );
+    } catch (e) {
+      console.warn('Official price update warning:', e);
+    }
+  }
+
+  // Ultra-fast Bulk Insert of all generated offers
+  if (allOffers.length > 0) {
+    await db.insert(marketOffers).values(allOffers);
   }
 
   return {
     success: true,
     count: results.length,
     seededWilayas: results,
+    totalOffersGenerated: allOffers.length,
   };
 }
 
