@@ -45,16 +45,16 @@ export async function GET(request: Request) {
   try {
     await ensureTables();
 
-    // Auto-Cleanup: Delete expired offers from previous calendar days (تختفي العروض تلقائياً عند حلول اليوم التالي)
+    // Auto-Cleanup: Delete expired offers older than 48 hours to preserve active daily offers safely
     try {
-      await pool.query(`DELETE FROM "market_offers" WHERE "created_at" < CURRENT_DATE`);
+      await pool.query(`DELETE FROM "market_offers" WHERE "created_at" < NOW() - INTERVAL '48 hours'`);
     } catch (e) {}
 
     const { searchParams } = new URL(request.url);
     const offerType = searchParams.get('offerType');
     const wilayaCode = searchParams.get('wilayaCode');
 
-    const conditions = [gte(marketOffers.createdAt, sql`CURRENT_DATE`)];
+    const conditions: any[] = [];
     if (offerType && offerType !== 'all') {
       conditions.push(eq(marketOffers.offerType, offerType));
     }

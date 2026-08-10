@@ -135,9 +135,6 @@ export default function HomePage() {
   const fetchAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Trigger seed first if needed
-      await fetch('/api/seed');
-
       // Fetch all endpoints in parallel
       const [resPrices, resReports, resJobs, resWorkers, resCompanies, resOffers] =
         await Promise.all([
