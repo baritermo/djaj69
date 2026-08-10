@@ -45,30 +45,67 @@ export async function GET(request: Request) {
   try {
     await ensureTables();
 
-    // Auto-Cleanup: Delete expired offers older than 48 hours to preserve active daily offers safely
+    // Auto-Cleanup: Delete expired offers from previous calendar days in Algeria time (تختفي العروض تلقائياً عند حلول اليوم التالي)
     try {
-      await pool.query(`DELETE FROM "market_offers" WHERE "created_at" < NOW() - INTERVAL '48 hours'`);
-    } catch (e) {}
+      await pool.query(`
+        DELETE FROM "market_offers" 
+        WHERE ("created_at" AT TIME ZONE 'Africa/Algiers')::date < (NOW() AT TIME ZONE 'Africa/Algiers')::date
+      `);
+    } catch (e) {
+      console.warn('Auto-cleanup daily offers error:', e);
+    }
 
     const { searchParams } = new URL(request.url);
     const offerType = searchParams.get('offerType');
     const wilayaCode = searchParams.get('wilayaCode');
 
-    const conditions: any[] = [];
+    let sqlQuery = `
+      SELECT 
+        "id",
+        "offer_type" AS "offerType",
+        "name",
+        "wilaya_code" AS "wilayaCode",
+        "wilaya_name" AS "wilayaName",
+        "commune",
+        "phone",
+        "chicken_categories" AS "chickenCategories",
+        "weight_range" AS "weightRange",
+        "available_quantity" AS "availableQuantity",
+        "breed_type" AS "breedType",
+        "farm_acreage" AS "farmAcreage",
+        "chicken_age" AS "chickenAge",
+        "farmer_price" AS "farmerPrice",
+        "details",
+        "buy_khashna" AS "buyKhashna",
+        "buy_motawassita" AS "buyMotawassita",
+        "buy_raqiqa" AS "buyRaqiqa",
+        "max_purchase_kg" AS "maxPurchaseKg",
+        "delivery_area" AS "deliveryArea",
+        "buying_details" AS "buyingDetails",
+        "verified",
+        COALESCE("is_bot_generated", false) AS "isBotGenerated",
+        "created_at" AS "createdAt"
+      FROM "market_offers"
+      WHERE ("created_at" AT TIME ZONE 'Africa/Algiers')::date >= (NOW() AT TIME ZONE 'Africa/Algiers')::date
+    `;
+
+    const params: any[] = [];
+
     if (offerType && offerType !== 'all') {
-      conditions.push(eq(marketOffers.offerType, offerType));
+      params.push(offerType);
+      sqlQuery += ` AND "offer_type" = $${params.length}`;
     }
+
     if (wilayaCode && wilayaCode !== 'all') {
-      conditions.push(eq(marketOffers.wilayaCode, wilayaCode));
+      const padded = String(wilayaCode).padStart(2, '0');
+      params.push(padded);
+      sqlQuery += ` AND "wilaya_code" = $${params.length}`;
     }
 
-    const offers = await db
-      .select()
-      .from(marketOffers)
-      .where(and(...conditions))
-      .orderBy(desc(marketOffers.createdAt));
+    sqlQuery += ` ORDER BY "id" DESC`;
 
-    return NextResponse.json({ status: 'success', offers });
+    const res = await pool.query(sqlQuery, params);
+    return NextResponse.json({ status: 'success', offers: res.rows });
   } catch (error: any) {
     console.warn('Offers fetch error:', error.message);
     return NextResponse.json({ status: 'success', offers: [] });

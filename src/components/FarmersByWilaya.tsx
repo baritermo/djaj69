@@ -94,8 +94,8 @@ export default function FarmersByWilaya({ farmers, currentUser, onOpenSubscribeM
         const wilaya = ALGERIA_WILAYAS.find((w) => w.code === code);
         const items = grouped.get(code)!;
         
-        // Auto-expand wilaya if user searched or selected specific wilaya
-        const isWilayaOpen = (wilayaCode !== 'all' || query.trim() !== '') ? (openWilayas[code] ?? true) : Boolean(openWilayas[code]);
+        // Wilaya cards are open by default so offers are immediately visible
+        const isWilayaOpen = openWilayas[code] ?? true;
 
         return (
           <div key={code} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition">

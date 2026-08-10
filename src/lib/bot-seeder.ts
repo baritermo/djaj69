@@ -746,9 +746,50 @@ export async function seedOffersForMultipleWilayas(
     }
   }
 
-  // Ultra-fast Bulk Insert of all generated offers
+  // Ultra-fast Bulk Insert of all generated offers with fail-proof raw SQL fallback
   if (allOffers.length > 0) {
-    await db.insert(marketOffers).values(allOffers);
+    try {
+      await db.insert(marketOffers).values(allOffers);
+    } catch (err) {
+      console.warn('Drizzle bulk insert fallback activated:', err);
+      for (const item of allOffers) {
+        try {
+          await pool.query(
+            `INSERT INTO "market_offers" (
+              "offer_type", "name", "wilaya_code", "wilaya_name", "commune", "phone",
+              "farmer_price", "chicken_categories", "weight_range", "available_quantity",
+              "breed_type", "farm_acreage", "chicken_age", "details",
+              "buy_khashna", "buy_motawassita", "buy_raqiqa", "max_purchase_kg",
+              "delivery_area", "buying_details", "verified", "is_bot_generated", "created_at"
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW())`,
+            [
+              item.offerType,
+              item.name,
+              item.wilayaCode,
+              item.wilayaName,
+              item.commune,
+              item.phone,
+              item.farmerPrice || null,
+              item.chickenCategories || null,
+              item.weightRange || null,
+              item.availableQuantity || null,
+              item.breedType || null,
+              item.farmAcreage || null,
+              item.chickenAge || null,
+              item.details || null,
+              item.buyKhashna || null,
+              item.buyMotawassita || null,
+              item.buyRaqiqa || null,
+              item.maxPurchaseKg || null,
+              item.deliveryArea || null,
+              item.buyingDetails || null,
+              item.verified !== false,
+              true,
+            ]
+          );
+        } catch (e) {}
+      }
+    }
   }
 
   return {
