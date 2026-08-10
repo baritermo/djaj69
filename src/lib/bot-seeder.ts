@@ -165,7 +165,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   for (let i = 0; i < shuffledFarmers.length; i++) {
     const name = shuffledFarmers[i];
     // Distribute farmer prices across the minPrice to maxPrice range if range given
-    const pFarmer = minPrice === maxPrice 
+    const pFarmer = minPrice === maxPrice
       ? minPrice + getRandomInt(-2, 2)
       : getRandomInt(minPrice, maxPrice);
     const qtyNum = getRandomInt(3000, 15000);
@@ -303,8 +303,18 @@ export async function seedAllWilayas(
   const minP = minFarmerPrice ?? baseFarmerPrice;
   const maxP = maxFarmerPrice ?? baseFarmerPrice;
 
+  // Cleanup old bot-generated offers across all wilayas
+  try {
+    await db.delete(marketOffers).where(eq(marketOffers.isBotGenerated, true));
+  } catch (e) {
+    console.warn('Auto-cleanup previous offers warning in seedAllWilayas:', e);
+  }
+
   const allOffers: any[] = [];
   const officialValues: any[] = [];
+
+  const breedOptions = ['Ross 308', 'Cobb 500', 'محلي', 'محلي محسّن'];
+  const categoryOptions = ['خشنة', 'متوسطة', 'رقيقة', 'خشنة، متوسطة'];
 
   for (const wilaya of ALGERIA_WILAYAS) {
     let regionOffset = 0;
@@ -323,10 +333,12 @@ export async function seedAllWilayas(
     const selectedSlaughters = SLAUGHTERHOUSE_NAMES.slice(startIdx, startIdx + 5);
     const hiddenPhone = '🔒 رقم الهاتف مخفي بناءً على رغبة الناشر';
 
-    // Farmers
-    for (const name of selectedFarmers) {
+    // Farmers (🌾)
+    for (let i = 0; i < selectedFarmers.length; i++) {
+      const name = selectedFarmers[i];
       const pFarmer = getRandomInt(wMin, wMax);
       const qtyNum = getRandomInt(3000, 15000);
+      const weightNum = (getRandomInt(20, 27) / 10).toFixed(1);
       allOffers.push({
         offerType: 'farmer',
         name,
@@ -334,18 +346,20 @@ export async function seedAllWilayas(
         wilayaName: wilaya.nameAr,
         commune: wilaya.nameAr,
         phone: hiddenPhone,
-        sellKhashna: pFarmer,
-        sellMotawassita: pFarmer,
-        sellRaqiqa: pFarmer,
-        weightKg: `${qtyNum.toLocaleString('ar-DZ')} كغ (${qtyNum.toLocaleString('ar-DZ')} طير)`,
-        chickenType: 'دجاج لاحم ممتاز',
-        notes: `عنبر تسمين ريف بمتابعة ببيطرية كاملة، الحجز والتسليم فوري.`,
+        farmerPrice: pFarmer,
+        chickenCategories: categoryOptions[i % categoryOptions.length],
+        weightRange: `${weightNum} - ${(parseFloat(weightNum) + 0.4).toFixed(1)} كغ`,
+        availableQuantity: formatQuantity(qtyNum),
+        breedType: breedOptions[i % breedOptions.length],
+        farmAcreage: `${getRandomInt(2, 6)} عنابر × ${getRandomInt(3000, 8000)} م²`,
+        chickenAge: `${getRandomInt(38, 46)} يوم`,
+        details: `دواجن تسمين ذات صحة ممتازة، ملقحة ومجهزة للاستلام المباشر من المزرعة في ${wilaya.nameAr}.`,
         verified: true,
         isBotGenerated: true,
       });
     }
 
-    // Brokers
+    // Brokers (🤝)
     for (const name of selectedBrokers) {
       const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
       const qtyNum = getRandomInt(1000, 1300);
@@ -356,7 +370,7 @@ export async function seedAllWilayas(
         wilayaName: wilaya.nameAr,
         commune: wilaya.nameAr,
         phone: hiddenPhone,
-        buyKhashna: pMotawassita +getRandomInt(5, 10),
+        buyKhashna: pMotawassita + getRandomInt(5, 10),
         buyMotawassita: pMotawassita,
         buyRaqiqa: pMotawassita - getRandomInt(5, 10),
         maxPurchaseKg: `${qtyNum.toLocaleString('ar-DZ')} كغ يومياً`,
@@ -367,7 +381,7 @@ export async function seedAllWilayas(
       });
     }
 
-    // Slaughterhouses
+    // Slaughterhouses (🔪)
     for (const name of selectedSlaughters) {
       const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
       const qtyNum = getRandomInt(6000, 24000);
@@ -569,6 +583,7 @@ export async function updateMultipleOfficialPrices(
  */
 export async function seedOffersForMultipleWilayas(
   wilayaCodes: string[],
+  farmerPrice?: number,
   minFarmerPrice?: number,
   maxFarmerPrice?: number
 ) {
@@ -580,6 +595,7 @@ export async function seedOffersForMultipleWilayas(
     try {
       const res = await seedOffersForWilaya({
         wilayaCode: padded,
+        farmerPrice,
         minFarmerPrice,
         maxFarmerPrice,
       });

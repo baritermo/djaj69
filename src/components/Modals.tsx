@@ -34,48 +34,90 @@ interface ModalProps {
   defaultWilaya?: string;
 }
 
-// 1. PRICE REPORT MODAL
+// 1. PRICE REPORT & BOT SEEDER MODAL
 export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: ModalProps) {
+  const [targetMode, setTargetMode] = useState<'single' | 'multiple' | 'all'>('single');
   const [wilayaCode, setWilayaCode] = useState(defaultWilaya || '16');
-  const [trend, setTrend] = useState('stable');
-  const [farmerPrice, setFarmerPrice] = useState('');
+  const [selectedWilayas, setSelectedWilayas] = useState<string[]>([defaultWilaya || '16']);
+  const [farmerPrice, setFarmerPrice] = useState('280');
   const [slaughterPrice, setSlaughterPrice] = useState('');
   const [intermediaryPrice, setIntermediaryPrice] = useState('');
+  const [pumpOffers, setPumpOffers] = useState(true);
   const [notes, setNotes] = useState('التحديث اليومي لبورصة الجزائر');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   if (!isOpen) return null;
+
+  const toggleWilaya = (code: string) => {
+    if (selectedWilayas.includes(code)) {
+      setSelectedWilayas(selectedWilayas.filter((c) => c !== code));
+    } else {
+      setSelectedWilayas([...selectedWilayas, code]);
+    }
+  };
+
+  const selectRegion = (regionName: string) => {
+    if (regionName === 'all') {
+      setSelectedWilayas(ALGERIA_WILAYAS.map((w) => w.code));
+    } else if (regionName === 'none') {
+      setSelectedWilayas([]);
+    } else {
+      const regionCodes = ALGERIA_WILAYAS.filter((w) => w.region === regionName).map((w) => w.code);
+      const combined = Array.from(new Set([...selectedWilayas, ...regionCodes]));
+      setSelectedWilayas(combined);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    try {
-      const formattedCode = String(wilayaCode).padStart(2, '0');
-      const parseOptNum = (val: string) => (val === '' || val === null || val === undefined ? null : Number(val));
+    setSuccessMessage('');
 
-      const payload = {
-        wilayaCode: formattedCode,
-        farmerPrice: parseOptNum(farmerPrice),
-        slaughterPrice: parseOptNum(slaughterPrice),
-        intermediaryPrice: parseOptNum(intermediaryPrice),
-        trend,
-        notesAr: notes,
-        reportedBy: 'إدارة البورصة',
+    try {
+      const priceNum = Number(farmerPrice) || 280;
+      const parseOpt = (v: string) => (v ? Number(v) : undefined);
+
+      let payload: any = {
+        farmerPrice: priceNum,
+        pumpOffers,
       };
 
-      const res = await fetch('/api/prices', {
+      if (targetMode === 'single') {
+        payload.mode = 'single';
+        payload.wilayaCode = String(wilayaCode).padStart(2, '0');
+        payload.slaughterPrice = parseOpt(slaughterPrice);
+        payload.intermediaryPrice = parseOpt(intermediaryPrice);
+      } else if (targetMode === 'multiple') {
+        if (selectedWilayas.length === 0) {
+          setError('يرجى اختيار ولاية واحدة على الأقل');
+          setLoading(false);
+          return;
+        }
+        payload.mode = 'multiple';
+        payload.wilayaCodes = selectedWilayas;
+      } else if (targetMode === 'all') {
+        payload.mode = 'all';
+        payload.action = 'all';
+      }
+
+      const res = await fetch('/api/admin/trigger-bot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
       const data = await res.json();
       if (data.status === 'success') {
-        onSuccess();
-        onClose();
+        setSuccessMessage(data.message || 'تمت العملية بنجاح');
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1200);
       } else {
-        setError(data.message || 'حدث خطأ أثناء حفظ الأسعار');
+        setError(data.message || 'حدث خطأ أثناء التنفيذ');
       }
     } catch {
       setError('خطأ في الاتصال بالسيرفر');
@@ -85,120 +127,308 @@ export function PriceReportModal({ isOpen, onClose, onSuccess, defaultWilaya }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 text-right">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-amber-400 text-emerald-950 rounded-xl shadow-xs">
-              <TrendingUp className="w-5 h-5 font-black" />
+    <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 text-right space-y-4">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-amber-400 text-emerald-950 rounded-xl shadow-xs font-black">
+              🤖
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-900">
-                🏛️ تحديث أسعار البورصة
+                🏛️ ضخ عروض الحسابات الوهمية وتحديث الأسعار
               </h3>
-              <p className="text-xs text-slate-500">
-                أدخل أسعار الولاية لمستويات التعامل الحية (فلاح / مذبح / وسيط)
+              <p className="text-xs text-slate-500 font-bold">
+                توليد 15 عرضاً بالحسابات الوهمية (فلاح/مذبح/كورتي) لولايات فردية، متعددة، أو لجميع الـ 58 ولاية
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
+          <div className="p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2 border border-rose-200">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
         )}
 
-        <form noValidate onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
-          <div>
-            <label htmlFor="price_wilaya_code" className="block text-slate-700 mb-1">اختر الولاية لتحديث أسعارها</label>
-            <select
-              id="price_wilaya_code"
-              name="wilayaCode"
-              value={wilayaCode}
-              onChange={(e) => setWilayaCode(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-emerald-600 font-black text-emerald-950 bg-emerald-50/50 rounded-xl text-sm"
-            >
-              {ALGERIA_WILAYAS.map((w) => (
-                <option key={w.code} value={w.code}>
-                  {w.code} - ولاية {w.nameAr} ({w.region})
-                </option>
-              ))}
-            </select>
+        {successMessage && (
+          <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-black flex items-center gap-2 border border-emerald-300 shadow-sm">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            {successMessage}
           </div>
+        )}
 
-          {/* 3 حقول مباشرة وأنيقة للأسعار: فلاح / مذبح / وسيط */}
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
-            <div className="text-center text-xs font-black text-slate-800 mb-2 flex items-center justify-center gap-2">
-              <span>📊 أدخل أسعار التعامل للولاية (د.ج / كغ):</span>
+        {/* TARGET MODE SELECTOR TABS */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-black text-slate-700">اختر نطاق التطبيق والضخ:</label>
+          <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setTargetMode('single')}
+              className={`py-2 px-3 rounded-xl text-xs font-black transition cursor-pointer ${
+                targetMode === 'single'
+                  ? 'bg-emerald-800 text-white shadow-md'
+                  : 'text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              📍 ولاية واحدة
+            </button>
+            <button
+              type="button"
+              onClick={() => setTargetMode('multiple')}
+              className={`py-2 px-3 rounded-xl text-xs font-black transition cursor-pointer ${
+                targetMode === 'multiple'
+                  ? 'bg-emerald-800 text-white shadow-md'
+                  : 'text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              🗺️ ولايات متعددة ({selectedWilayas.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTargetMode('all')}
+              className={`py-2 px-3 rounded-xl text-xs font-black transition cursor-pointer ${
+                targetMode === 'all'
+                  ? 'bg-emerald-800 text-white shadow-md'
+                  : 'text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              📊 كافة الـ 58 ولاية
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
+          {/* MODE 1: SINGLE WILAYA */}
+          {targetMode === 'single' && (
+            <div>
+              <label htmlFor="price_wilaya_code" className="block text-slate-700 mb-1 font-black">
+                اختر الولاية لتحديث أسعارها وضخ عروضها:
+              </label>
+              <select
+                id="price_wilaya_code"
+                value={wilayaCode}
+                onChange={(e) => setWilayaCode(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-emerald-600 font-black text-emerald-950 bg-emerald-50/50 rounded-xl text-sm"
+              >
+                {ALGERIA_WILAYAS.map((w) => (
+                  <option key={w.code} value={w.code}>
+                    {w.code} - ولاية {w.nameAr} ({w.region})
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          )}
+
+          {/* MODE 2: MULTIPLE SELECTED WILAYAS */}
+          {targetMode === 'multiple' && (
+            <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-900 text-xs">
+                  اختر الولايات المطلوبة لضخ العروض فيها: ({selectedWilayas.length} ولاية محددة)
+                </span>
+                <div className="flex flex-wrap gap-1 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => selectRegion('all')}
+                    className="px-2 py-0.5 bg-emerald-800 text-white rounded-md font-bold hover:bg-emerald-700 cursor-pointer"
+                  >
+                    الكل (58)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectRegion('none')}
+                    className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded-md font-bold hover:bg-slate-300 cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectRegion('الشمال الأوسط')}
+                    className="px-2 py-0.5 bg-amber-100 text-amber-950 rounded-md font-bold hover:bg-amber-200 cursor-pointer"
+                  >
+                    الوسط
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectRegion('الشرق')}
+                    className="px-2 py-0.5 bg-indigo-100 text-indigo-950 rounded-md font-bold hover:bg-indigo-200 cursor-pointer"
+                  >
+                    الشرق
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectRegion('الغرب')}
+                    className="px-2 py-0.5 bg-teal-100 text-teal-950 rounded-md font-bold hover:bg-teal-200 cursor-pointer"
+                  >
+                    الغرب
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectRegion('الجنوب')}
+                    className="px-2 py-0.5 bg-orange-100 text-orange-950 rounded-md font-bold hover:bg-orange-200 cursor-pointer"
+                  >
+                    الجنوب
+                  </button>
+                </div>
+              </div>
+
+              {/* Grid of 58 Wilaya Checkboxes */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-2 bg-white rounded-xl border border-slate-300">
+                {ALGERIA_WILAYAS.map((w) => {
+                  const isChecked = selectedWilayas.includes(w.code);
+                  return (
+                    <label
+                      key={w.code}
+                      className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[11px] cursor-pointer transition select-none ${
+                        isChecked
+                          ? 'bg-emerald-50 border-emerald-500 font-black text-emerald-950 shadow-2xs'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleWilaya(w.code)}
+                        className="w-3.5 h-3.5 text-emerald-600 rounded cursor-pointer"
+                      />
+                      <span>
+                        <span className="font-mono text-slate-500">[{w.code}]</span> {w.nameAr}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* MODE 3: ALL WILAYAS */}
+          {targetMode === 'all' && (
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-amber-950 text-xs font-bold space-y-1">
+              <div className="flex items-center gap-1.5 font-black text-amber-900">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>سيتم الشمول لكافة الـ 58 ولاية جزائرية دفعة واحدة:</span>
+              </div>
+              <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                سيقوم النظام بضبط وتوليد 15 عرضاً لكل ولاية (إجمالي 870 عرضاً حياً عبر حسابات وهمية بأسماء فلاحين ومذابح وكورتية معتمدة مع مراعاة الفروق الإقليمية بين الشمال والجنوب والهضاب).
+              </p>
+            </div>
+          )}
+
+          {/* PRICES INPUT SECTION */}
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+            <div className="text-xs font-black text-slate-800 flex items-center justify-between">
+              <span>📊 أسعار التعامل الأساسية (د.ج / كغ):</span>
+              {targetMode !== 'single' && (
+                <span className="text-[10px] text-slate-500 font-normal">
+                  (سيقوم البوت باحتساب أسعار المذابح والكورتية تلقائياً بفوارق مدروسة)
+                </span>
+              )}
+            </div>
+
+            {targetMode === 'single' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label htmlFor="farmer_price" className="block text-emerald-900 font-extrabold mb-1">
+                    🌾 سعر الفلاح (د.ج)
+                  </label>
+                  <input
+                    id="farmer_price"
+                    type="number"
+                    required
+                    placeholder="مثال: 280"
+                    value={farmerPrice}
+                    onChange={(e) => setFarmerPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-emerald-400 rounded-xl text-center font-black text-sm text-emerald-950 bg-white shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="slaughter_price" className="block text-indigo-900 font-extrabold mb-1">
+                    🔪 سعر المذبح (اختياري)
+                  </label>
+                  <input
+                    id="slaughter_price"
+                    type="number"
+                    placeholder="مثال: 265 (تلقائي)"
+                    value={slaughterPrice}
+                    onChange={(e) => setSlaughterPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-indigo-300 rounded-xl text-center font-black text-sm text-indigo-950 bg-white shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="intermediary_price" className="block text-amber-900 font-extrabold mb-1">
+                    🤝 سعر الوسيط (اختياري)
+                  </label>
+                  <input
+                    id="intermediary_price"
+                    type="number"
+                    placeholder="مثال: 273 (تلقائي)"
+                    value={intermediaryPrice}
+                    onChange={(e) => setIntermediaryPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-xl text-center font-black text-sm text-amber-950 bg-white shadow-2xs"
+                  />
+                </div>
+              </div>
+            ) : (
               <div>
-                <label htmlFor="farmer_price" className="block text-emerald-900 font-extrabold mb-1">🌾 سعر الفلاح</label>
+                <label htmlFor="farmer_price_base" className="block text-emerald-900 font-black mb-1">
+                  🌾 سعر الفلاح المرجعي (د.ج / كغ):
+                </label>
                 <input
-                  id="farmer_price"
-                  name="farmerPrice"
+                  id="farmer_price_base"
                   type="number"
-                  placeholder="مثال: 320"
+                  required
+                  placeholder="مثال: 280"
                   value={farmerPrice}
                   onChange={(e) => setFarmerPrice(e.target.value)}
-                  className="w-full px-3 py-2 border border-emerald-300 rounded-xl text-center font-black text-sm text-emerald-950 bg-white"
+                  className="w-full sm:w-1/2 px-4 py-2.5 border border-emerald-500 rounded-xl text-right font-black text-base text-emerald-950 bg-white shadow-sm"
                 />
               </div>
-              <div>
-                <label htmlFor="slaughter_price" className="block text-indigo-900 font-extrabold mb-1">🔪 سعر المذبح</label>
-                <input
-                  id="slaughter_price"
-                  name="slaughterPrice"
-                  type="number"
-                  placeholder="مثال: 310"
-                  value={slaughterPrice}
-                  onChange={(e) => setSlaughterPrice(e.target.value)}
-                  className="w-full px-3 py-2 border border-indigo-300 rounded-xl text-center font-black text-sm text-indigo-950 bg-white"
-                />
-              </div>
-              <div>
-                <label htmlFor="intermediary_price" className="block text-amber-900 font-extrabold mb-1">🤝 سعر الوسيط</label>
-                <input
-                  id="intermediary_price"
-                  name="intermediaryPrice"
-                  type="number"
-                  placeholder="مثال: 330"
-                  value={intermediaryPrice}
-                  onChange={(e) => setIntermediaryPrice(e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-300 rounded-xl text-center font-black text-sm text-amber-950 bg-white"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="price_notes" className="block text-slate-700 mb-1">مصدر التحديث / ملاحظات الإدارة</label>
-            <input
-              id="price_notes"
-              name="notes"
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="مثال: تجميع من صفحة الغرفة الفلاحية وسطيف دواجن..."
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50"
-            />
+          {/* BOT PUMPING CHECKBOX (THE KEY FIX) */}
+          <div className="p-3.5 bg-gradient-to-r from-emerald-900 to-slate-900 text-white rounded-2xl border border-emerald-600 shadow-md space-y-2">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={pumpOffers}
+                onChange={(e) => setPumpOffers(e.target.checked)}
+                className="w-5 h-5 text-amber-400 rounded mt-0.5 cursor-pointer accent-amber-500"
+              />
+              <div>
+                <span className="text-sm font-black text-amber-300 block">
+                  🤖 ضخ 15 عرضاً بالحسابات الوهمية (5 فلاح، 5 مذبح، 5 كورتي مع أرقام هواتف مخفية)
+                </span>
+                <span className="text-[11px] text-slate-200 block font-normal leading-relaxed mt-0.5">
+                  عند تحديد هذا الخيار، سيتكفل البوت بإنشاء وضخ 15 عرضاً حياً بأرقام كميات وأوزان واقعية في قائمة العروض المباشرة (market_offers) لكل ولاية مختارة بالإضافة لتحديث جدول الأسعار.
+                </span>
+              </div>
+            </label>
           </div>
 
+          {/* ACTION BUTTONS */}
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl cursor-pointer">
               إلغاء
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black rounded-xl shadow-lg transition disabled:opacity-50"
+              className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black rounded-xl shadow-lg transition disabled:opacity-50 flex items-center gap-2 cursor-pointer text-xs"
             >
-              {loading ? 'جاري تحديث البورصة...' : '👑 حفظ ونشر التحديث'}
+              {loading ? (
+                <span>⏳ جاري تنفيذ ضخ العروض والبورصة...</span>
+              ) : (
+                <span>
+                  {pumpOffers ? '🤖 ضخ العروض وتحديث أسعار البورصة' : '📊 تحديث أرقام الأسعار الرسمية فقط'}
+                </span>
+              )}
             </button>
           </div>
         </form>

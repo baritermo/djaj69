@@ -129,7 +129,7 @@ export default function WilayaPriceBoard({
             className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            📊 تحديث أسعار ولاية
+            🤖 ضخ عروض البوت وتحديث الأسعار
           </button>
         )}
       </div>
