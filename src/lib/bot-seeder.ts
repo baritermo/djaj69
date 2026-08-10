@@ -187,7 +187,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   // B. Generate 5 Broker Offers (🤝)
   for (let i = 0; i < selectedBrokers.length; i++) {
     const name = selectedBrokers[i];
-    const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
+    const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
     const pKhashna = pMotawassita + getRandomInt(5, 10);
     const pRaqiqa = pMotawassita - getRandomInt(5, 10);
     const qtyNum = getRandomInt(1000, 1300);
@@ -215,7 +215,7 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
   // C. Generate 5 Slaughterhouse Offers (🔪)
   for (let i = 0; i < selectedSlaughters.length; i++) {
     const name = selectedSlaughters[i];
-    const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
+    const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
     const pKhashna = pMotawassita + getRandomInt(5, 10);
     const pRaqiqa = pMotawassita - getRandomInt(5, 10);
     const qtyNum = getRandomInt(6000, 24000);
@@ -247,8 +247,8 @@ export async function seedOffersForWilaya(options: SeedWilayaOptions) {
 
   // 5. Update Official Price Board for this Wilaya (1 SQL Query)
   try {
-    const brokerAvg = baseFarmerPrice - 7;
-    const slaughterAvg = baseFarmerPrice - 15;
+    const slaughterAvg = baseFarmerPrice - 7;
+    const brokerAvg = baseFarmerPrice - 15;
 
     await pool.query(
       `
@@ -348,7 +348,7 @@ export async function seedAllWilayas(
 
     // Brokers (🤝)
     for (const name of selectedBrokers) {
-      const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
+      const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
       const qtyNum = getRandomInt(1000, 1300);
       allOffers.push({
         offerType: 'broker',
@@ -370,7 +370,7 @@ export async function seedAllWilayas(
 
     // Slaughterhouses (🔪)
     for (const name of selectedSlaughters) {
-      const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
+      const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
       const qtyNum = getRandomInt(6000, 24000);
       allOffers.push({
         offerType: 'slaughterhouse',
@@ -396,8 +396,8 @@ export async function seedAllWilayas(
       nameFr: wilaya.nameFr,
       region: wilaya.region,
       farmerPrice: baseFarmerPrice,
-      slaughterPrice: baseFarmerPrice - 15,
-      intermediaryPrice: baseFarmerPrice - 7,
+      slaughterPrice: baseFarmerPrice - 7,
+      intermediaryPrice: baseFarmerPrice - 15,
     });
   }
 
@@ -493,8 +493,8 @@ export async function updateAllOfficialPrices(
     const wMax = minP === maxP ? maxP + regionOffset : maxP + Math.ceil(regionOffset / 2);
     const farmerPrice = Math.round((wMin + wMax) / 2);
 
-    const brokerPrice = farmerPrice - 7;
-    const slaughterPrice = farmerPrice - 15;
+    const slaughterPrice = farmerPrice - 7;
+    const brokerPrice = farmerPrice - 15;
 
     await pool.query(
       `
@@ -531,8 +531,8 @@ export async function updateMultipleOfficialPrices(
   await ensureTables();
   const validWilayas: any[] = [];
 
-  const bPrice = brokerPrice ?? Math.max(0, farmerPrice - 7);
-  const sPrice = slaughterPrice ?? Math.max(0, farmerPrice - 15);
+  const sPrice = slaughterPrice ?? Math.max(0, farmerPrice - 7);
+  const bPrice = brokerPrice ?? Math.max(0, farmerPrice - 15);
 
   for (const code of wilayaCodes) {
     const padded = String(code).padStart(2, '0');
@@ -662,7 +662,7 @@ export async function seedOffersForMultipleWilayas(
     // Brokers (5)
     for (let i = 0; i < selectedBrokers.length; i++) {
       const name = selectedBrokers[i];
-      const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
+      const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
       const pKhashna = pMotawassita + getRandomInt(5, 10);
       const pRaqiqa = pMotawassita - getRandomInt(5, 10);
       const qtyNum = getRandomInt(1000, 1300);
@@ -690,7 +690,7 @@ export async function seedOffersForMultipleWilayas(
     // Slaughterhouses (5)
     for (let i = 0; i < selectedSlaughters.length; i++) {
       const name = selectedSlaughters[i];
-      const pMotawassita = baseFarmerPrice - getRandomInt(12, 18);
+      const pMotawassita = baseFarmerPrice - getRandomInt(5, 10);
       const pKhashna = pMotawassita + getRandomInt(5, 10);
       const pRaqiqa = pMotawassita - getRandomInt(5, 10);
       const qtyNum = getRandomInt(6000, 24000);
@@ -726,8 +726,8 @@ export async function seedOffersForMultipleWilayas(
 
     // Update Official Price Board for this Wilaya
     try {
-      const brokerAvg = baseFarmerPrice - 7;
-      const slaughterAvg = baseFarmerPrice - 15;
+      const slaughterAvg = baseFarmerPrice - 7;
+      const brokerAvg = baseFarmerPrice - 15;
       await pool.query(
         `
         INSERT INTO "official_prices" ("wilaya_code", "name_ar", "name_fr", "region", "farmer_price", "slaughter_price", "intermediary_price", "trend", "trend_percent", "updated_at")
