@@ -137,6 +137,23 @@ export default function UnifiedB2BMarketplace({
     }
   };
 
+  const getFallbackImageForCategory = (cat: string) => {
+    switch (cat) {
+      case 'poultry':
+        return 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&auto=format&fit=crop&q=80';
+      case 'livestock':
+        return 'https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=600&auto=format&fit=crop&q=80';
+      case 'equipment':
+        return 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80';
+      case 'feed':
+        return 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&auto=format&fit=crop&q=80';
+      case 'services':
+        return 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=80';
+      default:
+        return 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&auto=format&fit=crop&q=80';
+    }
+  };
+
   const getCategoryColor = (cat: string) => {
     switch (cat) {
       case 'poultry':
@@ -272,7 +289,9 @@ export default function UnifiedB2BMarketplace({
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
           {offers.map((offer) => {
             const hasMultipleImages = offer.imagesList && offer.imagesList.length > 1;
-            const primaryImage = offer.imagesList && offer.imagesList.length > 0 ? offer.imagesList[0] : null;
+            const primaryImage = (offer.imagesList && offer.imagesList.length > 0 && offer.imagesList[0])
+              ? offer.imagesList[0]
+              : getFallbackImageForCategory(offer.offerCategory);
 
             return (
               <div
@@ -285,19 +304,15 @@ export default function UnifiedB2BMarketplace({
               >
                 {/* Product Thumbnail Box */}
                 <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                  {primaryImage ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={primaryImage}
-                      alt={offer.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
-                      <Store className="w-10 h-10 opacity-40 mb-1" />
-                      <span className="text-[11px] font-bold text-slate-400">بدون صورة</span>
-                    </div>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={primaryImage}
+                    alt={offer.title}
+                    onError={(e) => {
+                      e.currentTarget.src = getFallbackImageForCategory(offer.offerCategory);
+                    }}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
 
                   {/* Badge: Category & Intent */}
                   <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
@@ -421,19 +436,19 @@ export default function UnifiedB2BMarketplace({
             <div className="w-full md:w-1/2 bg-slate-950 flex flex-col justify-between relative min-h-[300px] md:min-h-[500px]">
               {/* Main Displayed Image */}
               <div className="relative flex-1 flex items-center justify-center p-2 min-h-[260px]">
-                {selectedOffer.imagesList && selectedOffer.imagesList.length > 0 ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={selectedOffer.imagesList[activeImageIndex]}
-                    alt={selectedOffer.title}
-                    className="max-h-[420px] w-full object-contain rounded-2xl"
-                  />
-                ) : (
-                  <div className="text-center text-slate-500 space-y-2">
-                    <Store className="w-16 h-16 mx-auto opacity-30" />
-                    <p className="text-xs font-semibold">لا توجد صورة مرفقة لهذا العرض</p>
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    (selectedOffer.imagesList && selectedOffer.imagesList.length > 0 && selectedOffer.imagesList[activeImageIndex])
+                      ? selectedOffer.imagesList[activeImageIndex]
+                      : getFallbackImageForCategory(selectedOffer.offerCategory)
+                  }
+                  alt={selectedOffer.title}
+                  onError={(e) => {
+                    e.currentTarget.src = getFallbackImageForCategory(selectedOffer.offerCategory);
+                  }}
+                  className="max-h-[420px] w-full object-contain rounded-2xl"
+                />
 
                 {/* Carousel Navigation Arrows */}
                 {selectedOffer.imagesList && selectedOffer.imagesList.length > 1 && (

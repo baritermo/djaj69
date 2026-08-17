@@ -33,9 +33,32 @@ async function ensureTable() {
       ALTER TABLE "unified_b2b_offers" ADD COLUMN IF NOT EXISTS "hide_phone" boolean DEFAULT false;
     `);
 
-    // Check if table is empty to insert diverse mock listings with some hidden phones
+    // Fix any existing offers that have empty or missing images
+    await pool.query(`
+      UPDATE "unified_b2b_offers"
+      SET "images" = '["https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&auto=format&fit=crop&q=80"]'
+      WHERE ("images" IS NULL OR "images" = '[]' OR "images" = '' OR "images" = '[""]') AND "offer_category" = 'poultry';
+
+      UPDATE "unified_b2b_offers"
+      SET "images" = '["https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=600&auto=format&fit=crop&q=80"]'
+      WHERE ("images" IS NULL OR "images" = '[]' OR "images" = '' OR "images" = '[""]') AND "offer_category" = 'livestock';
+
+      UPDATE "unified_b2b_offers"
+      SET "images" = '["https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80"]'
+      WHERE ("images" IS NULL OR "images" = '[]' OR "images" = '' OR "images" = '[""]') AND "offer_category" = 'equipment';
+
+      UPDATE "unified_b2b_offers"
+      SET "images" = '["https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&auto=format&fit=crop&q=80"]'
+      WHERE ("images" IS NULL OR "images" = '[]' OR "images" = '' OR "images" = '[""]') AND "offer_category" = 'feed';
+
+      UPDATE "unified_b2b_offers"
+      SET "images" = '["https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=80"]'
+      WHERE ("images" IS NULL OR "images" = '[]' OR "images" = '' OR "images" = '[""]') AND ("offer_category" = 'services' OR "offer_category" IS NULL);
+    `);
+
+    // Check if table has fewer than 6 offers to insert the full rich set
     const checkCount = await pool.query('SELECT COUNT(*) FROM "unified_b2b_offers"');
-    if (parseInt(checkCount.rows[0].count, 10) === 0) {
+    if (parseInt(checkCount.rows[0].count, 10) < 6) {
       await pool.query(`
         INSERT INTO "unified_b2b_offers" 
         ("offer_category", "intent_type", "title", "item_type", "brand_or_breed", "item_condition", "quantity", "price", "price_unit", "wilaya_code", "wilaya_name", "commune", "publisher_name", "phone", "hide_phone", "images", "details", "delivery_available", "verified")
@@ -71,7 +94,7 @@ async function ensureTable() {
         (
           'poultry', 'sell', 'صوص دجاج بياض عمر يوم واحد سلالة لوهمان براون Lohmann Brown', 'صوص بياض', 'Lohmann', 'live', '5000', 185, 'كتكوت',
           '26', 'المدية', 'البرواقية', 'مفرخة الأطلس النموذجية', '0555332211', false,
-          '["https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&auto=format&fit=crop&q=80"]',
+          '["https://images.unsplash.com/photo-1563281577-a7be47e20db9?w=600&auto=format&fit=crop&q=80"]',
           'كتاكيت بيضاء وبنية سلالة أصلية عالية الإنتاجية للبيض، ملقحة بالماريك والنيوكاسل، تسليم أسبوعي منتظم.',
           false, true
         ),
