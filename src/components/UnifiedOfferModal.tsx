@@ -38,6 +38,7 @@ export default function UnifiedOfferModal({
   const [phone, setPhone] = useState(currentUser?.phone || '');
   const [publisherName, setPublisherName] = useState(currentUser?.fullName || currentUser?.name || '');
   const [wilayaCode, setWilayaCode] = useState(currentUser?.wilayaCode || '16');
+  const [hidePhone, setHidePhone] = useState(false);
 
   // صور اختيارية
   const [images, setImages] = useState<string[]>([]);
@@ -109,6 +110,7 @@ export default function UnifiedOfferModal({
           images,
           publisherName: publisherName.trim() || 'فلاح / تاجر',
           phone: phone.trim() || currentUser?.phone || '0550000000',
+          hidePhone,
           wilayaCode: wilayaCode || '16',
         }),
       });
@@ -333,6 +335,19 @@ export default function UnifiedOfferModal({
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* خيار إخفاء رقم الهاتف */}
+            <div className="mt-2.5 p-3 bg-amber-50/90 rounded-2xl border border-amber-200">
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-amber-950">
+                <input
+                  type="checkbox"
+                  checked={hidePhone}
+                  onChange={(e) => setHidePhone(e.target.checked)}
+                  className="w-4 h-4 rounded border-amber-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                />
+                <span>🔒 إخفاء رقم هاتفي من الإعلان (المعاملة والطلب حصراً عبر وسيط المنصة الآمن لحماية الخصوصية)</span>
+              </label>
             </div>
           </div>
 

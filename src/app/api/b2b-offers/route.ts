@@ -23,13 +23,67 @@ async function ensureTable() {
         "commune" text,
         "publisher_name" text NOT NULL,
         "phone" text NOT NULL,
+        "hide_phone" boolean DEFAULT false,
         "images" text,
         "details" text,
         "delivery_available" boolean DEFAULT false,
         "verified" boolean DEFAULT true,
         "created_at" timestamp DEFAULT now()
       );
+      ALTER TABLE "unified_b2b_offers" ADD COLUMN IF NOT EXISTS "hide_phone" boolean DEFAULT false;
     `);
+
+    // Check if table is empty to insert diverse mock listings with some hidden phones
+    const checkCount = await pool.query('SELECT COUNT(*) FROM "unified_b2b_offers"');
+    if (parseInt(checkCount.rows[0].count, 10) === 0) {
+      await pool.query(`
+        INSERT INTO "unified_b2b_offers" 
+        ("offer_category", "intent_type", "title", "item_type", "brand_or_breed", "item_condition", "quantity", "price", "price_unit", "wilaya_code", "wilaya_name", "commune", "publisher_name", "phone", "hide_phone", "images", "details", "delivery_available", "verified")
+        VALUES 
+        (
+          'poultry', 'sell', 'دجاج لحم حي سلالة كب 500 وزن متوسط 2.5 كغ — دفعة 2500 دجاجة', 'دجاج لحم', 'Cobb 500', 'live', '2500', 380, 'كغ',
+          '19', 'سطيف', 'العلمة', 'مزرعة الهضاب لتربية الدواجن', '0550112233', true,
+          '["https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&auto=format&fit=crop&q=80"]',
+          'دجاج لحم بصحة ممتازة ورعاية بيطرية كاملة. الوزن بين 2.3 إلى 2.7 كغ. جاهز للتحميل والبيع المباشر. تم إخفاء الرقم، المعاملة حصراً عبر وسيط المنصة الآمن لحماية حقوق الطرفين.',
+          true, true
+        ),
+        (
+          'livestock', 'sell', 'خرفان وحولي سلالة أولاد جلال حرة للعيد والتسمين', 'حولي', 'أولاد جلال', 'live', '45', 59000, 'رأس',
+          '17', 'الجلفة', 'عين وسارة', 'حاج بلقاسم مربي مواشي السهوب', '0661445566', true,
+          '["https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=600&auto=format&fit=crop&q=80"]',
+          'دفعة ممتازة من كباش وحولي أولاد جلال أصيلة عمر 6 إلى 8 أشهر، معلوفة شعير وتبن، خالية من كافة الأمراض. الشراء والمعاينة متوفرة عبر وسيط المنصة (بريدي موب).',
+          true, true
+        ),
+        (
+          'equipment', 'sell', 'مفقسة أوتوماتيكية ذكية سعة 5,280 بيضة بنظام تقليب وتحكم رقمي', 'مفقسة', 'Smart Hatch', 'new', '3', 320000, 'قطعة',
+          '16', 'الجزائر', 'الرويبة', 'الشركة الوطنية لعتاد الدواجن', '0770889900', true,
+          '["https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80"]',
+          'حاضنة ومفقسة جديدة كلياً بنظام تحكم ذكي في الرطوبة والحرارة مع إنذار أوتوماتيكي ومولد طاقة احتياطي. التوصيل متوفر لـ 58 ولاية، الطلب حصراً عبر وسيط المنصة.',
+          true, true
+        ),
+        (
+          'feed', 'sell', 'ذرة صفراء مجروشة مستوردة نوعية ممتازة + كسبة صويا 48%', 'ذرة وصويا', 'مستورد', 'fresh', '20 طن', 7400, 'قنطار',
+          '31', 'وهران', 'السانية', 'مستودعات الغرب لتجارة الأعلاف', '0540667788', true,
+          '["https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&auto=format&fit=crop&q=80"]',
+          'أعلاف ومواد خام مستوردة خالية من الرطوبة والشوائب، معبأة في أكياس 50 كغ. متوفر كميات كبيرة لشاحنات نصف مقطورة. الدفع الآمن محمي عبر بريدي موب.',
+          true, true
+        ),
+        (
+          'poultry', 'sell', 'صوص دجاج بياض عمر يوم واحد سلالة لوهمان براون Lohmann Brown', 'صوص بياض', 'Lohmann', 'live', '5000', 185, 'كتكوت',
+          '26', 'المدية', 'البرواقية', 'مفرخة الأطلس النموذجية', '0555332211', false,
+          '["https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&auto=format&fit=crop&q=80"]',
+          'كتاكيت بيضاء وبنية سلالة أصلية عالية الإنتاجية للبيض، ملقحة بالماريك والنيوكاسل، تسليم أسبوعي منتظم.',
+          false, true
+        ),
+        (
+          'services', 'sell', 'شاحنة نقل كبرى مجهزة لنقل الدواجن الحية بين الولايات 58 ولاية', 'نقل دواجن', 'ISUZU', 'used', '1', 18000, 'رحلة',
+          '28', 'المسيلة', 'بوسعادة', 'مؤسسة النقل الفلاحي السريع', '0660113355', true,
+          '["https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=80"]',
+          'خدمة نقل الدواجن والبيض على مدار 24 ساعة بتهوية كاملة وأقفاص معقمة لتقليل نسبة النفوق أثناء السفر. التواصل وحجز الرحلة عبر وسيط المنصة.',
+          true, true
+        );
+      `);
+    }
   } catch (e) {
     console.error('ensureTable error:', e);
   }
@@ -62,6 +116,7 @@ export async function GET(request: Request) {
         "commune",
         "publisher_name" AS "publisherName",
         "phone",
+        "hide_phone" AS "hidePhone",
         "images",
         "details",
         "delivery_available" AS "deliveryAvailable",
@@ -140,6 +195,7 @@ export async function POST(request: Request) {
       commune,
       publisherName,
       phone,
+      hidePhone,
       images, // array of image base64 strings or URLs (up to 20)
       details,
       deliveryAvailable,
@@ -184,6 +240,7 @@ export async function POST(request: Request) {
         commune: commune || wilayaName,
         publisherName: finalPublisherName,
         phone: finalPhone,
+        hidePhone: Boolean(hidePhone),
         images: imagesJsonString,
         details: details || null,
         deliveryAvailable: Boolean(deliveryAvailable),

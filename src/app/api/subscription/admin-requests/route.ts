@@ -51,13 +51,17 @@ export async function GET() {
     `);
 
     const allUsers = res.rows || [];
-    const requests = allUsers.filter(
-      (u) => u.subscriptionStatus === 'pending' || u.subscriptionStatus === 'active' || u.subscriptionStatus === 'rejected'
+
+    // Also get platform mode
+    const modeRes = await pool.query(
+      `SELECT "value" FROM "platform_settings" WHERE "key" = 'platform_access_mode' LIMIT 1`
     );
+    const platformMode = modeRes.rows?.[0]?.value || 'free';
 
     return NextResponse.json({
       status: 'success',
-      requests,
+      requests: allUsers,
+      platformMode,
     });
   } catch (error: any) {
     console.error('Fetch admin subscription requests error:', error);

@@ -195,6 +195,7 @@ export const unifiedB2bOffers = pgTable('unified_b2b_offers', {
   commune: text('commune'),
   publisherName: text('publisher_name').notNull(),
   phone: text('phone').notNull(),
+  hidePhone: boolean('hide_phone').default(false),
   images: text('images'), // JSON array of base64/image URLs (up to 20 images)
   details: text('details'), // Bold description
   deliveryAvailable: boolean('delivery_available').default(false),

@@ -2171,9 +2171,11 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [platformMode, setPlatformMode] = useState<'free' | 'subscription'>('free');
+  const [modeLoading, setModeLoading] = useState(false);
 
-  // Status tab filter: 'pending' (default) | 'active' (المقبولين) | 'rejected' | 'all'
-  const [statusTab, setStatusTab] = useState<'pending' | 'active' | 'rejected' | 'all'>('pending');
+  // Status tab filter: 'all' (default) | 'pending' | 'active' | 'rejected'
+  const [statusTab, setStatusTab] = useState<'all' | 'pending' | 'active' | 'rejected'>('all');
   // Search query (fullName or phone)
   const [searchQuery, setSearchQuery] = useState('');
   // Wilaya filter
@@ -2187,6 +2189,9 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
       const data = await res.json();
       if (data.status === 'success') {
         setRequests(data.requests || []);
+        if (data.platformMode) {
+          setPlatformMode(data.platformMode);
+        }
       } else {
         setError(data.message || 'خطأ أثناء جلب الطلبات');
       }
@@ -2203,7 +2208,53 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
     }
   }, [isOpen]);
 
-  const handleAction = async (targetPhone: string, action: 'approve' | 'reject') => {
+  const handleSetPlatformMode = async (newMode: 'free' | 'subscription') => {
+    const confirmMsg =
+      newMode === 'free'
+        ? 'هل أنت متأكد من تحويل المنصة إلى مجانية بالكامل وتفعيل كافة الحسابات تلقائياً دون طلب اشتراك؟'
+        : 'هل أنت متأكد من تفعيل إلزامية الاشتراك على المنصة وإلزام الحسابات بالدفع والتأكيد؟';
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setModeLoading(true);
+    try {
+      // 1. Update Platform Mode setting
+      const res = await fetch('/api/subscription/platform-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: newMode }),
+      });
+      const data = await res.json();
+
+      // 2. Bulk apply to existing accounts
+      await fetch('/api/subscription/admin-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminPhone: 'BARIHDANAJMA',
+          targetPhone: 'ALL',
+          action: newMode === 'free' ? 'make_all_free' : 'make_all_require',
+        }),
+      });
+
+      if (data.status === 'success') {
+        setPlatformMode(newMode);
+        await fetchRequests();
+        onRefresh();
+        alert(
+          newMode === 'free'
+            ? '🎉 تم تحويل المنصة بنجاح إلى وضع مجاني 100% لجميع المستخدمين!'
+            : '🔒 تم تفعيل وضع الاشتراك الإلزامي على المنصة بنجاح!'
+        );
+      }
+    } catch {
+      alert('خطأ في تحديث وضع المنصة');
+    } finally {
+      setModeLoading(false);
+    }
+  };
+
+  const handleAction = async (targetPhone: string, action: 'approve' | 'reject' | 'require_subscription') => {
     setActionLoading(targetPhone);
     try {
       const res = await fetch('/api/subscription/admin-approve', {
@@ -2229,8 +2280,19 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
     }
   };
 
+  const openWhatsApp = (phone: string, name: string) => {
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '213' + cleanPhone.slice(1);
+    if (!cleanPhone.startsWith('213')) cleanPhone = '213' + cleanPhone;
+
+    const msg = encodeURIComponent(
+      `مرحباً ${name}، نتواصل معك من إدارة منصة بورصة الجزائر بخصوص حسابك والاشتراك.`
+    );
+    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+  };
+
   // Counts per tab
-  const pendingCount = requests.filter((r) => r.subscriptionStatus === 'pending').length;
+  const pendingCount = requests.filter((r) => r.subscriptionStatus === 'pending' || r.subscriptionStatus === 'none').length;
   const activeCount = requests.filter((r) => r.subscriptionStatus === 'active').length;
   const rejectedCount = requests.filter((r) => r.subscriptionStatus === 'rejected').length;
   const allCount = requests.length;
@@ -2238,7 +2300,13 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
   // Filter requests
   const filteredRequests = requests.filter((req) => {
     // 1. Status tab filter
-    if (statusTab !== 'all' && req.subscriptionStatus !== statusTab) {
+    if (statusTab === 'pending' && req.subscriptionStatus !== 'pending' && req.subscriptionStatus !== 'none') {
+      return false;
+    }
+    if (statusTab === 'active' && req.subscriptionStatus !== 'active') {
+      return false;
+    }
+    if (statusTab === 'rejected' && req.subscriptionStatus !== 'rejected') {
       return false;
     }
 
@@ -2261,20 +2329,20 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 text-right space-y-4">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 md:p-5 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-4xl w-full p-5 md:p-6 shadow-2xl border border-slate-200 text-right space-y-4 max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-amber-400 text-emerald-950 rounded-xl font-black">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-amber-400 text-emerald-950 rounded-2xl font-black shadow">
               📋
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">إدارة طلبات الاشتراك والمشتركين</h3>
-              <p className="text-xs text-slate-500">معاينة وصل الدفع وتفعيل الاشتراكات والبحث وتصنيف الولايات</p>
+              <h3 className="text-base md:text-lg font-black text-slate-900">إدارة طلبات الاشتراك والحسابات</h3>
+              <p className="text-xs text-slate-500">التحكم في مجانية المنصة أو إلزامية الاشتراكات وإدارة كل حساب</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -2299,18 +2367,67 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
           </div>
         )}
 
+        {/* 🌟 GLOBAL PLATFORM MODE CONTROLS (أزرار تحويل المنصة لمجانية أو اشتراك إلزامي) */}
+        <div className="p-4 bg-gradient-to-r from-slate-900 via-emerald-950 to-teal-950 rounded-2xl text-white shadow-md space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-300">الوضع التشغيلي العام للمنصة:</span>
+              {platformMode === 'free' ? (
+                <span className="bg-emerald-500 text-white font-black text-xs px-3 py-1 rounded-full shadow border border-emerald-400 flex items-center gap-1">
+                  🟢 وضع مجاني 100% (مفتوح للجميع)
+                </span>
+              ) : (
+                <span className="bg-amber-400 text-slate-950 font-black text-xs px-3 py-1 rounded-full shadow border border-amber-300 flex items-center gap-1">
+                  🔒 وضع الاشتراك الإلزامي
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-slate-300">التحكم الفوري بنقرة واحدة لجميع المستخدمين</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* 1. Button: Make Platform 100% Free */}
+            <button
+              onClick={() => handleSetPlatformMode('free')}
+              disabled={modeLoading || platformMode === 'free'}
+              className={`py-3 px-4 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 shadow cursor-pointer ${
+                platformMode === 'free'
+                  ? 'bg-emerald-600/50 text-emerald-200 border border-emerald-500/50 cursor-default'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 hover:scale-[1.01] active:scale-95'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>🎁 تحويل المنصة إلى مجانية بالكامل (Free Mode)</span>
+            </button>
+
+            {/* 2. Button: Enforce Mandatory Subscription */}
+            <button
+              onClick={() => handleSetPlatformMode('subscription')}
+              disabled={modeLoading || platformMode === 'subscription'}
+              className={`py-3 px-4 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 shadow cursor-pointer ${
+                platformMode === 'subscription'
+                  ? 'bg-amber-500/50 text-amber-200 border border-amber-400/50 cursor-default'
+                  : 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 hover:scale-[1.01] active:scale-95'
+              }`}
+            >
+              <Lock className="w-4 h-4" />
+              <span>🔒 تفعيل إلزامية الاشتراك للجميع (Subscription Mode)</span>
+            </button>
+          </div>
+        </div>
+
         {/* STATUS TABS BAR */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-100">
           <button
-            onClick={() => setStatusTab('pending')}
+            onClick={() => setStatusTab('all')}
             className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              statusTab === 'pending'
-                ? 'bg-amber-400 text-emerald-950 shadow-md'
+              statusTab === 'all'
+                ? 'bg-slate-900 text-white shadow-md'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
             }`}
           >
-            <span>⏳ قيد المراجعة</span>
-            <span className="px-1.5 py-0.5 bg-white/60 rounded-full text-[10px] font-bold">{pendingCount}</span>
+            <span>📂 جميع الحسابات</span>
+            <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-[10px] font-bold">{allCount}</span>
           </button>
 
           <button
@@ -2321,8 +2438,20 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
             }`}
           >
-            <span>✅ قائمة المقبولين</span>
+            <span>✅ المفعلين / المجانيين</span>
             <span className="px-1.5 py-0.5 bg-emerald-900/40 rounded-full text-[10px] font-bold">{activeCount}</span>
+          </button>
+
+          <button
+            onClick={() => setStatusTab('pending')}
+            className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              statusTab === 'pending'
+                ? 'bg-amber-400 text-emerald-950 shadow-md'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <span>⏳ مطالب باشتراك / قيد المراجعة</span>
+            <span className="px-1.5 py-0.5 bg-white/60 rounded-full text-[10px] font-bold">{pendingCount}</span>
           </button>
 
           <button
@@ -2336,18 +2465,6 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
             <span>❌ المرفوضين</span>
             <span className="px-1.5 py-0.5 bg-rose-900/40 rounded-full text-[10px] font-bold">{rejectedCount}</span>
           </button>
-
-          <button
-            onClick={() => setStatusTab('all')}
-            className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              statusTab === 'all'
-                ? 'bg-slate-900 text-white shadow-md'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            <span>📂 جميع الحسابات</span>
-            <span className="px-1.5 py-0.5 bg-white/20 rounded-full text-[10px] font-bold">{allCount}</span>
-          </button>
         </div>
 
         {/* SEARCH AND WILAYA FILTER BAR */}
@@ -2358,7 +2475,7 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="البحث بالاسم واللقب أو رقم الهاتف..."
+              placeholder="البحث بالاسم أو رقم الهاتف..."
               className="w-full pl-3 pr-9 py-2 border border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600 bg-white"
             />
             <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
@@ -2387,18 +2504,19 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
           <div className="py-12 text-center text-slate-500 text-xs font-bold">جاري تحميل المشتركين والطلبات...</div>
         ) : filteredRequests.length === 0 ? (
           <div className="py-12 text-center text-slate-500 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-            لا توجد حسابات أو طلبات اشتراك تطابق الفلتر المختار حالياً.
+            لا توجد حسابات تطابق الفلتر المختار حالياً.
           </div>
         ) : (
-          <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 flex-1">
             {filteredRequests.map((req) => {
               const wilayaObj = ALGERIA_WILAYAS.find((w) => String(w.code) === String(req.wilayaCode));
-              const wilayaName = wilayaObj ? `ولاية ${wilayaObj.nameAr}` : `ولاية ${req.wilayaCode || 'غير حددة'}`;
+              const wilayaName = wilayaObj ? `ولاية ${wilayaObj.nameAr}` : `ولاية ${req.wilayaCode || 'غير محددة'}`;
+              const isActive = req.subscriptionStatus === 'active';
 
               return (
                 <div
                   key={req.id}
-                  className="bg-slate-50 hover:bg-slate-100/80 transition rounded-2xl p-3.5 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+                  className="bg-slate-50 hover:bg-slate-100/90 transition rounded-2xl p-3.5 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm"
                 >
                   <div className="space-y-1.5 text-xs">
                     <div className="flex items-center flex-wrap gap-2">
@@ -2414,65 +2532,86 @@ export function AdminSubscriptionManagerModal({ isOpen, onClose, onRefresh }: Ad
                       </span>
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                          req.subscriptionStatus === 'active'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : req.subscriptionStatus === 'pending'
-                            ? 'bg-amber-100 text-amber-900 animate-pulse'
-                            : 'bg-rose-100 text-rose-800'
+                          isActive
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : req.subscriptionStatus === 'rejected'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                            : 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse'
                         }`}
                       >
-                        {req.subscriptionStatus === 'active'
-                          ? '✅ مشترك مفعّل'
-                          : req.subscriptionStatus === 'pending'
-                          ? '⏳ قيد المراجعة'
-                          : '❌ مرفوض'}
+                        {isActive
+                          ? '✅ مفعّل / مجاني'
+                          : req.subscriptionStatus === 'rejected'
+                          ? '❌ مرفوض / موقوف'
+                          : '⏳ مطالب بدفع الاشتراك'}
                       </span>
                     </div>
 
-                    {/* Document Links */}
+                    {/* Document Links & WhatsApp Button */}
                     <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => openWhatsApp(req.phone, req.fullName)}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        title="مراسلة المستخدم عبر واتساب"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        <span>واتساب</span>
+                      </button>
+
                       {req.receiptUrl ? (
                         <button
                           onClick={() => setPreviewImage(req.receiptUrl)}
                           className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-emerald-300 cursor-pointer"
                         >
-                          🧾 معاينة وصل الدفع
+                          🧾 وصل الدفع
                         </button>
                       ) : (
-                        <span className="text-[10px] text-slate-400 italic">لا يوجد وصل دفع مرفق</span>
+                        <span className="text-[10px] text-slate-400 italic">بدون وصل دفع</span>
                       )}
 
-                      {req.idCardUrl ? (
+                      {req.idCardUrl && (
                         <button
                           onClick={() => setPreviewImage(req.idCardUrl)}
                           className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-amber-300 cursor-pointer"
                         >
-                          🆔 معاينة وثيقة الهوية
+                          🆔 صورة الهوية
                         </button>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 italic">لا توجد صورة هوية مرفقة</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-                    {req.subscriptionStatus !== 'active' && (
+                  {/* Per-Account Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0 self-end md:self-center flex-wrap">
+                    {/* If account is active: Option to enforce subscription on this specific user */}
+                    {isActive ? (
+                      <button
+                        onClick={() => handleAction(req.phone, 'require_subscription')}
+                        disabled={actionLoading === req.phone}
+                        className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-black rounded-xl text-xs border border-amber-300 shadow-sm cursor-pointer disabled:opacity-50 transition flex items-center gap-1"
+                        title="إلزام هذا الحساب تحديداً بدفع وتأكيد الاشتراك"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>طلب اشتراك</span>
+                      </button>
+                    ) : (
                       <button
                         onClick={() => handleAction(req.phone, 'approve')}
                         disabled={actionLoading === req.phone}
-                        className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md cursor-pointer disabled:opacity-50 transition"
+                        className="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md cursor-pointer disabled:opacity-50 transition flex items-center gap-1"
                       >
-                        {actionLoading === req.phone ? 'جاري...' : '✅ تفعيل الاشتراك'}
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{actionLoading === req.phone ? 'جاري...' : '✅ تفعيل واعتماد'}</span>
                       </button>
                     )}
+
                     {req.subscriptionStatus !== 'rejected' && (
                       <button
                         onClick={() => handleAction(req.phone, 'reject')}
                         disabled={actionLoading === req.phone}
-                        className="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50 transition"
+                        className="px-2.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50 transition"
+                        title="إيقاف أو رفض الحساب"
                       >
-                        ❌ رفض
+                        ❌ إيقاف
                       </button>
                     )}
                   </div>

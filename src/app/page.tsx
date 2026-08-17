@@ -171,6 +171,25 @@ export default function HomePage() {
       if (resOffers.status === 'success') {
         setOffersList(resOffers.offers || []);
       }
+
+      // Refresh currentUser profile if logged in
+      const savedUser = localStorage.getItem('poultry_user');
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed.phone) {
+            fetch(`/api/auth/me?phone=${encodeURIComponent(parsed.phone)}`)
+              .then((r) => r.json())
+              .then((data) => {
+                if (data.status === 'success' && data.user) {
+                  setCurrentUser(data.user);
+                  localStorage.setItem('poultry_user', JSON.stringify(data.user));
+                }
+              })
+              .catch(() => {});
+          }
+        } catch {}
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

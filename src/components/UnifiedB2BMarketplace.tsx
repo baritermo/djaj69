@@ -20,6 +20,7 @@ import {
   Calendar,
   Layers,
   Building,
+  Lock,
 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 import PlatformEscrowModal from './PlatformEscrowModal';
@@ -344,23 +345,46 @@ export default function UnifiedB2BMarketplace({
 
                   {/* Action Buttons inside Card */}
                   <div className="pt-2 border-t border-slate-100 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    {/* WhatsApp Button */}
-                    <button
-                      onClick={() => handleOpenWhatsApp(offer.phone, offer.title)}
-                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>واتساب</span>
-                    </button>
+                    {offer.hidePhone ? (
+                      <>
+                        <div className="flex-1 py-1.5 px-2 bg-amber-50 border border-amber-200 text-amber-950 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-sm">
+                          <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span>الرقم مخفي من البائع</span>
+                        </div>
 
-                    {/* Phone Number Reveal */}
-                    <button
-                      onClick={() => setRevealedPhoneId(revealedPhoneId === offer.id ? null : offer.id)}
-                      className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all"
-                    >
-                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{revealedPhoneId === offer.id ? offer.phone : 'الهاتف'}</span>
-                    </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEscrowClick(offer);
+                          }}
+                          className="py-1.5 px-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+                          title="طلب شراء آمن عبر وسيط المنصة"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>وسيط</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {/* WhatsApp Button */}
+                        <button
+                          onClick={() => handleOpenWhatsApp(offer.phone, offer.title)}
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>واتساب</span>
+                        </button>
+
+                        {/* Phone Number Reveal */}
+                        <button
+                          onClick={() => setRevealedPhoneId(revealedPhoneId === offer.id ? null : offer.id)}
+                          className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{revealedPhoneId === offer.id ? offer.phone : 'الهاتف'}</span>
+                        </button>
+                      </>
+                    )}
 
                     {/* Details view modal trigger */}
                     <button
@@ -510,10 +534,24 @@ export default function UnifiedB2BMarketplace({
                     <span className="text-slate-500 font-semibold">اسم الناشر / المزرعة:</span>
                     <strong className="text-slate-900 text-sm font-extrabold">{selectedOffer.publisherName}</strong>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500 font-semibold">رقم الهاتف التواصل:</span>
-                    <strong className="text-emerald-700 font-extrabold text-sm dir-ltr">{selectedOffer.phone}</strong>
-                  </div>
+
+                  {selectedOffer.hidePhone ? (
+                    <div className="flex justify-between items-center bg-amber-100/70 p-2.5 rounded-xl border border-amber-300/80">
+                      <span className="text-amber-900 font-bold text-xs flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>رقم هاتف التواصل:</span>
+                      </span>
+                      <span className="text-amber-950 font-black text-xs bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-400/60">
+                        🔒 تم إخفاء الرقم من طرف البائع
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-semibold">رقم الهاتف التواصل:</span>
+                      <strong className="text-emerald-700 font-extrabold text-sm dir-ltr">{selectedOffer.phone}</strong>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500 font-semibold">الموقع الجغرافي:</span>
                     <strong className="text-slate-800 font-bold">
@@ -536,33 +574,52 @@ export default function UnifiedB2BMarketplace({
 
               {/* ACTION BUTTONS (تواصل مع البائع + شراء عبر وسيط المنصة) */}
               <div className="space-y-3 pt-4 border-t border-slate-200">
-                {/* 1. Contact Seller WhatsApp & Direct Phone */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleOpenWhatsApp(selectedOffer.phone, selectedOffer.title)}
-                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>تواصل عبر الواتساب</span>
-                  </button>
+                {selectedOffer.hidePhone ? (
+                  <div className="space-y-2.5">
+                    <div className="p-3 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-300 rounded-2xl text-xs text-amber-950 font-bold flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
+                      <span>قام البائع بإخفاء رقم هاتفه لحماية خصوصيته؛ طلب الشراء متاح حصراً عبر <strong>وسيط المنصة المعتمد (بريدي موب)</strong> لضمان حماية حقوق الطرفين.</span>
+                    </div>
 
-                  <a
-                    href={`tel:${selectedOffer.phone}`}
-                    className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Phone className="w-4 h-4 text-emerald-400" />
-                    <span>اتصل مباشرة ({selectedOffer.phone})</span>
-                  </a>
-                </div>
+                    <button
+                      onClick={() => handleEscrowClick(selectedOffer)}
+                      className="w-full py-4 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-sm border-2 border-amber-300 cursor-pointer"
+                    >
+                      <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+                      <span>طلب شراء عبر وسيط المنصة الآمن (بريدي موب) 🛡️</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* 1. Contact Seller WhatsApp & Direct Phone */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleOpenWhatsApp(selectedOffer.phone, selectedOffer.title)}
+                        className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>تواصل عبر الواتساب</span>
+                      </button>
 
-                {/* 2. Buy via Platform Escrow/Broker Button */}
-                <button
-                  onClick={() => handleEscrowClick(selectedOffer)}
-                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-sm border border-amber-300 cursor-pointer"
-                >
-                  <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
-                  <span>طلب شراء عبر وسيط المنصة الآمن 🛡️</span>
-                </button>
+                      <a
+                        href={`tel:${selectedOffer.phone}`}
+                        className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                      >
+                        <Phone className="w-4 h-4 text-emerald-400" />
+                        <span>اتصل مباشرة ({selectedOffer.phone})</span>
+                      </a>
+                    </div>
+
+                    {/* 2. Buy via Platform Escrow/Broker Button */}
+                    <button
+                      onClick={() => handleEscrowClick(selectedOffer)}
+                      className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-sm border border-amber-300 cursor-pointer"
+                    >
+                      <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+                      <span>طلب شراء عبر وسيط المنصة الآمن 🛡️</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

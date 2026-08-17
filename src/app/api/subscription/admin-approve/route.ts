@@ -43,6 +43,22 @@ export async function POST(request: Request) {
 
     const cleanTargetPhone = String(targetPhone).trim();
 
+    if (action === 'make_all_free') {
+      await pool.query(`UPDATE "users" SET "subscription_status" = 'active', "subscription_date" = NOW(), "rejection_reason" = NULL WHERE "role" != 'admin'`);
+      return NextResponse.json({
+        status: 'success',
+        message: 'تم تحويل جميع الحسابات إلى مجانية ومفعلة بنجاح ✅',
+      });
+    }
+
+    if (action === 'make_all_require') {
+      await pool.query(`UPDATE "users" SET "subscription_status" = 'pending' WHERE "role" != 'admin'`);
+      return NextResponse.json({
+        status: 'success',
+        message: 'تم تفعيل إلزامية الاشتراك على جميع الحسابات بنجاح 🔒',
+      });
+    }
+
     if (action === 'approve') {
       const res = await pool.query(
         `
@@ -60,7 +76,26 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         status: 'success',
-        message: `تم قبول وتفعيل اشتراك المستخدم (${updatedUser.fullName}) بنجاح`,
+        message: `تم تفعيل واعتماد الحساب (${updatedUser.fullName}) بنجاح ✅`,
+        user: updatedUser,
+      });
+    } else if (action === 'require_subscription') {
+      const res = await pool.query(
+        `
+        UPDATE "users" 
+        SET "subscription_status" = 'pending', 
+            "rejection_reason" = 'مطالب بدفع وتأكيد الاشتراك' 
+        WHERE LOWER(TRIM("phone")) = LOWER(TRIM($1))
+        RETURNING "id", "full_name" AS "fullName", "phone", "subscription_status" AS "subscriptionStatus"
+      `,
+        [cleanTargetPhone]
+      );
+
+      const updatedUser = (res.rows && res.rows[0]) ? res.rows[0] : { fullName: cleanTargetPhone, phone: cleanTargetPhone };
+
+      return NextResponse.json({
+        status: 'success',
+        message: `تم إلزام الحساب (${updatedUser.fullName}) بالاشتراك 🔒`,
         user: updatedUser,
       });
     } else if (action === 'reject') {
@@ -79,7 +114,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         status: 'success',
-        message: `تم رفض طلب الحساب للمستخدم (${updatedUser.fullName})`,
+        message: `تم رفض/إيقاف الحساب للمستخدم (${updatedUser.fullName}) ❌`,
         user: updatedUser,
       });
     }
