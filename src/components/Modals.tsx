@@ -24,6 +24,7 @@ import {
   Clock,
   Sparkles,
   Filter,
+  MessageSquare,
 } from 'lucide-react';
 import { ALGERIA_WILAYAS } from '@/lib/algeria-data';
 

@@ -3,6 +3,9 @@ import { db, pool } from '@/db';
 import { b2bEscrowRequests } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function ensureTable() {
   try {
     await pool.query(`
