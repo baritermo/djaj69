@@ -158,7 +158,7 @@ export default function UnifiedB2BMarketplace({
       {/* 🌟 Compact Header Bar */}
       <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 px-4 py-3 text-white shadow-md border border-emerald-900/30 flex items-center justify-between gap-3">
         <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
-          سوق B2B الشامل — البورصة الجزائرية 🇩🇿
+          السوق العام — البورصة الجزائرية 🇩🇿
         </h2>
 
         <button

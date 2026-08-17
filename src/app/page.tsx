@@ -242,7 +242,7 @@ export default function HomePage() {
           />
         ) : (
           <>
-            {/* TAB 0: Unified Free B2B Marketplace (سوق B2B الشامل المجاني) */}
+            {/* TAB 0: السوق العام (General Market) */}
             {activeTab === 'b2b_marketplace' && (
               <UnifiedB2BMarketplace
                 currentUser={currentUser}
@@ -273,7 +273,7 @@ export default function HomePage() {
               />
             )}
 
-            {/* TAB 2: Direct Market Offers (سوق العروض والطلبات المباشرة) */}
+            {/* TAB 2: العروض والطلبات (Offers & Requests) */}
             {activeTab === 'offers' && (
               <MarketOffersBoard
                 offersList={offersList}

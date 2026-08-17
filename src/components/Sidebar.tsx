@@ -280,9 +280,7 @@ export default function Sidebar({
                   <span className="text-[10px] text-emerald-200 block">الطلبات الواردة على إعلاناتك</span>
                 </div>
               </div>
-              <span className="bg-amber-400 text-slate-950 text-[10px] px-2 py-0.5 rounded-full font-black">
-                بريدي موب 🛡️
-              </span>
+              <ChevronLeft className="w-4 h-4 opacity-60" />
             </button>
 
             {/* Main Tabs Navigation */}
@@ -316,11 +314,9 @@ export default function Sidebar({
                 >
                   <div className="flex items-center gap-2.5">
                     <ShoppingBag className="w-4 h-4 text-amber-300" />
-                    <span>ماركت بلايس B2B الشامل</span>
+                    <span>السوق العام</span>
                   </div>
-                  <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
-                    مجاني 100% 🟢
-                  </span>
+                  <ChevronLeft className="w-4 h-4 opacity-60" />
                 </button>
 
                 <button
@@ -333,11 +329,9 @@ export default function Sidebar({
                 >
                   <div className="flex items-center gap-2.5">
                     <ShoppingBag className="w-4 h-4 text-amber-300" />
-                    <span>سوق العروض والطلبات المباشرة</span>
+                    <span>العروض والطلبات</span>
                   </div>
-                  <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
-                    عروض البيع
-                  </span>
+                  <ChevronLeft className="w-4 h-4 opacity-60" />
                 </button>
 
                 <button
@@ -352,9 +346,7 @@ export default function Sidebar({
                     <Briefcase className="w-4 h-4" />
                     <span>التوظيف والبحث عن عمال</span>
                   </div>
-                  <span className="bg-amber-400 text-emerald-950 text-[10px] px-1.5 py-0.5 rounded-full font-black">
-                    نشط
-                  </span>
+                  <ChevronLeft className="w-4 h-4 opacity-60" />
                 </button>
 
                 <button

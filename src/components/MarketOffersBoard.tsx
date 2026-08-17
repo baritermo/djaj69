@@ -53,7 +53,7 @@ export default function MarketOffersBoard({
       <div className="px-4 py-3 bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 text-white border-b border-emerald-900/30">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
-            سوق الدواجن المباشر — الفلاحين والمذابح والكورتية 🇩🇿
+            العروض والطلبات — الفلاحين والمذابح والكورتية 🇩🇿
           </h2>
           {currentUser?.role !== 'worker' && (
             <div className="flex flex-wrap gap-1.5 shrink-0">
