@@ -145,15 +145,18 @@ export async function POST(request: Request) {
       deliveryAvailable,
     } = body;
 
-    if (!title || !price || !publisherName || !phone || !wilayaCode || !offerCategory) {
+    if (!title || price === undefined || price === null || !offerCategory) {
       return NextResponse.json(
-        { status: 'error', message: 'يرجى ملء جميع الحقول الإجبارية (العنوان، السعر، الفئة، الاسم، الهاتف، والولاية).' },
+        { status: 'error', message: 'يرجى تحديد الفئة، اسم الإعلان، والسعر على الأقل.' },
         { status: 400 }
       );
     }
 
-    const wilaya = getWilayaByCode(wilayaCode);
-    const wilayaName = wilaya?.nameAr || `الولاية ${wilayaCode}`;
+    const finalWilayaCode = wilayaCode ? String(wilayaCode).padStart(2, '0') : '16';
+    const wilaya = getWilayaByCode(finalWilayaCode);
+    const wilayaName = wilaya?.nameAr || `الولاية ${finalWilayaCode}`;
+    const finalPublisherName = publisherName?.trim() || 'فلاح / تاجر';
+    const finalPhone = phone?.trim() || '0550000000';
 
     let imagesJsonString = '[]';
     if (Array.isArray(images)) {
@@ -174,13 +177,13 @@ export async function POST(request: Request) {
         brandOrBreed: brandOrBreed || null,
         itemCondition: itemCondition || 'live',
         quantity: quantity || null,
-        price: Number(price),
-        priceUnit: priceUnit || 'رأس',
-        wilayaCode: String(wilayaCode).padStart(2, '0'),
+        price: Number(price) || 0,
+        priceUnit: priceUnit || 'د.ج',
+        wilayaCode: finalWilayaCode,
         wilayaName,
         commune: commune || wilayaName,
-        publisherName: publisherName.trim(),
-        phone: phone.trim(),
+        publisherName: finalPublisherName,
+        phone: finalPhone,
         images: imagesJsonString,
         details: details || null,
         deliveryAvailable: Boolean(deliveryAvailable),
