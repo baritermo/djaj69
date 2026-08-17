@@ -44,6 +44,7 @@ export default function UnifiedB2BMarketplace({
   const [selectedIntent, setSelectedIntent] = useState<string>('all');
   const [selectedWilaya, setSelectedWilaya] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState<boolean>(false);
 
   // Selected item modal state (Facebook Marketplace style modal view)
   const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
@@ -151,30 +152,11 @@ export default function UnifiedB2BMarketplace({
         </div>
       </div>
 
-      {/* 🔍 Search & Organized Category Filters Bar */}
-      <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border border-slate-200 space-y-4">
-        {/* Top Header Label */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
-              <Filter className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900">محرك البحث وفلتر الفئات المنظّم</h3>
-              <p className="text-[11px] text-slate-500 font-medium">حدد الفئة، الولاية، أو ابحث عن المنتجات مباشرة</p>
-            </div>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500">
-            <span>العروض المتاحة:</span>
-            <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-lg font-black">{offers.length}</span>
-          </div>
-        </div>
-
-        {/* Search Bar & Dropdown Selects */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5">
-          {/* Keyword Search */}
-          <div className="lg:col-span-5 relative">
+      {/* 🔍 Sleek Search & Filter Trigger Bar */}
+      <div className="bg-white rounded-3xl p-4 shadow-lg border border-slate-200 space-y-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Quick Search Bar */}
+          <div className="relative w-full sm:flex-1">
             <Search className="w-4 h-4 absolute right-3.5 top-3 text-slate-400" />
             <input
               type="text"
@@ -185,89 +167,65 @@ export default function UnifiedB2BMarketplace({
             />
           </div>
 
-          {/* Category Dropdown */}
-          <div className="lg:col-span-3">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">📁 جميع الفئات (الكل)</option>
-              <option value="poultry">🐔 1. الدواجن والبيض والكتكوت</option>
-              <option value="livestock">🐄 2. المواشي والحيوانات (أغنام/أبقار)</option>
-              <option value="equipment">🚜 3. العتاد والمعدات الفلاحية</option>
-              <option value="feed">🌾 4. الأعلاف والمستلزمات البيطرية</option>
-              <option value="services">🚚 5. خدمات فلاحية ونقل وتجهيز</option>
-            </select>
-          </div>
-
-          {/* Wilaya Select */}
-          <div className="lg:col-span-2">
-            <select
-              value={selectedWilaya}
-              onChange={(e) => setSelectedWilaya(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">📍 كل الولايات (58)</option>
-              {ALGERIA_WILAYAS.map((w) => (
-                <option key={w.code} value={w.code}>
-                  {w.code} - {w.nameAr}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Offer Type Switcher */}
-          <div className="lg:col-span-2">
-            <select
-              value={selectedIntent}
-              onChange={(e) => setSelectedIntent(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">كل الإعلانات</option>
-              <option value="sell">🟢 عروض بيع</option>
-              <option value="buy">🔵 طلبات شراء</option>
-            </select>
-          </div>
+          {/* Filter Modal Trigger Button */}
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className="w-full sm:w-auto px-5 py-2.5 bg-emerald-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-2xl shadow-md border border-emerald-800 transition-all flex items-center justify-center gap-2.5 shrink-0 cursor-pointer"
+          >
+            <Filter className="w-4 h-4 text-amber-400" />
+            <span>تصفية وبحث متقدم 🎛️</span>
+            {(selectedCategory !== 'all' || selectedWilaya !== 'all' || selectedIntent !== 'all' || searchQuery !== '') && (
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            )}
+          </button>
         </div>
 
-        {/* Structured Category Interactive Cards */}
-        <div className="pt-2 border-t border-slate-100">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-            {[
-              { id: 'all', label: 'جميع الفئات', sub: 'كل المنتجات', icon: '🛍️', color: 'from-slate-800 to-slate-950 text-white' },
-              { id: 'poultry', label: 'الدواجن والبيض', sub: 'دجاج، صوص، بيض', icon: '🐔', color: 'from-amber-500 to-amber-600 text-slate-950' },
-              { id: 'livestock', label: 'المواشي والحيوانات', sub: 'أغنام، أبقار، ماعز', icon: '🐄', color: 'from-emerald-600 to-emerald-700 text-white' },
-              { id: 'equipment', label: 'العتاد والمعدات', sub: 'جرارات، مفقسات', icon: '🚜', color: 'from-blue-600 to-blue-700 text-white' },
-              { id: 'feed', label: 'الأعلاف والبيطرة', sub: 'ذرة، أعلاف مركبة', icon: '🌾', color: 'from-lime-600 to-lime-700 text-white' },
-              { id: 'services', label: 'الخدمات والنقل', sub: 'شحن، صيانة، حفر', icon: '🚚', color: 'from-purple-600 to-purple-700 text-white' },
-            ].map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`p-3 rounded-2xl text-right transition-all flex flex-col justify-between border cursor-pointer ${
-                    isSelected
-                      ? `bg-gradient-to-r ${cat.color} border-slate-900 shadow-lg ring-2 ring-emerald-500 scale-[1.03]`
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xl">{cat.icon}</span>
-                    {isSelected && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>}
-                  </div>
-                  <div>
-                    <div className={`text-xs font-black truncate ${isSelected ? '' : 'text-slate-900'}`}>{cat.label}</div>
-                    <div className={`text-[10px] font-medium truncate mt-0.5 ${isSelected ? 'opacity-90' : 'text-slate-500'}`}>
-                      {cat.sub}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+        {/* Active Filter Pills Bar (Shows active selections & quick reset) */}
+        {(selectedCategory !== 'all' || selectedWilaya !== 'all' || selectedIntent !== 'all' || searchQuery !== '') && (
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+            <span className="text-slate-500 font-bold">الفلاتر النشطة:</span>
+
+            {selectedCategory !== 'all' && (
+              <span className="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-xl font-bold flex items-center gap-1 border border-emerald-300">
+                {getCategoryLabel(selectedCategory)}
+                <button onClick={() => setSelectedCategory('all')} className="hover:text-red-600 font-black mr-1">×</button>
+              </span>
+            )}
+
+            {selectedWilaya !== 'all' && (
+              <span className="bg-blue-100 text-blue-900 px-2.5 py-1 rounded-xl font-bold flex items-center gap-1 border border-blue-300">
+                📍 ولاية {selectedWilaya}
+                <button onClick={() => setSelectedWilaya('all')} className="hover:text-red-600 font-black mr-1">×</button>
+              </span>
+            )}
+
+            {selectedIntent !== 'all' && (
+              <span className="bg-purple-100 text-purple-900 px-2.5 py-1 rounded-xl font-bold flex items-center gap-1 border border-purple-300">
+                {selectedIntent === 'sell' ? '🟢 عروض بيع' : '🔵 طلبات شراء'}
+                <button onClick={() => setSelectedIntent('all')} className="hover:text-red-600 font-black mr-1">×</button>
+              </span>
+            )}
+
+            {searchQuery && (
+              <span className="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-xl font-bold flex items-center gap-1 border border-amber-300">
+                🔍 "{searchQuery}"
+                <button onClick={() => setSearchQuery('')} className="hover:text-red-600 font-black mr-1">×</button>
+              </span>
+            )}
+
+            <button
+              onClick={() => {
+                setSelectedCategory('all');
+                setSelectedWilaya('all');
+                setSelectedIntent('all');
+                setSearchQuery('');
+              }}
+              className="text-[11px] font-extrabold text-red-600 hover:underline mr-auto"
+            >
+              إلغاء جميع الفلاتر ↺
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 🛍️ PRODUCT GRID (Facebook Marketplace Mobile Layout) */}
@@ -591,6 +549,147 @@ export default function UnifiedB2BMarketplace({
                   <span>طلب شراء عبر وسيط المنصة الآمن 🛡️</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎛️ FILTER & SEARCH MODAL POPUP (نافذة التصفية والبحث المتقدم) */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 md:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-right font-sans my-auto max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 p-5 text-white flex items-center justify-between sticky top-0 z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-amber-400 text-slate-950 rounded-2xl font-bold shadow-md">
+                  <Filter className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black">نافذة التصفية والبحث المتقدم 🎛️</h3>
+                  <p className="text-xs text-slate-300">اختر الفئة والولاية ونوع الإعلان لتصفية النتائج</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                className="p-2 text-slate-300 hover:text-white rounded-full bg-white/10 hover:bg-white/20 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-5 md:p-6 overflow-y-auto space-y-5 flex-1 text-slate-900">
+              {/* 1. Keyword Search */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">البحث بالكلمات المفتاحية</label>
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute right-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="مثال: حولي، جرار، مفقسة، دجاج، أعلاف..."
+                    className="w-full pr-10 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* 2. Structured Category Cards Grid */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-2">اختر الفئة الرئيسية *</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'all', label: 'جميع الفئات', sub: 'كل الإعلانات', icon: '🛍️', color: 'from-slate-800 to-slate-950 text-white' },
+                    { id: 'poultry', label: 'الدواجن والبيض', sub: 'دجاج، صوص، بيض', icon: '🐔', color: 'from-amber-500 to-amber-600 text-slate-950' },
+                    { id: 'livestock', label: 'المواشي والحيوانات', sub: 'أغنام، أبقار، ماعز', icon: '🐄', color: 'from-emerald-600 to-emerald-700 text-white' },
+                    { id: 'equipment', label: 'العتاد والمعدات', sub: 'جرارات، مفقسات', icon: '🚜', color: 'from-blue-600 to-blue-700 text-white' },
+                    { id: 'feed', label: 'الأعلاف والبيطرة', sub: 'ذرة، أعلاف مركبة', icon: '🌾', color: 'from-lime-600 to-lime-700 text-white' },
+                    { id: 'services', label: 'الخدمات والنقل', sub: 'شحن، صيانة، حفر', icon: '🚚', color: 'from-purple-600 to-purple-700 text-white' },
+                  ].map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`p-3 rounded-2xl text-right transition-all flex flex-col justify-between border cursor-pointer ${
+                          isSelected
+                            ? `bg-gradient-to-r ${cat.color} border-slate-900 shadow-md ring-2 ring-emerald-500 scale-[1.02]`
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xl">{cat.icon}</span>
+                          {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>}
+                        </div>
+                        <div>
+                          <div className={`text-xs font-black truncate ${isSelected ? '' : 'text-slate-900'}`}>{cat.label}</div>
+                          <div className={`text-[10px] font-medium truncate mt-0.5 ${isSelected ? 'opacity-90' : 'text-slate-500'}`}>
+                            {cat.sub}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. Wilaya Selection & Intent Switcher */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">الولاية (58 ولاية)</label>
+                  <select
+                    value={selectedWilaya}
+                    onChange={(e) => setSelectedWilaya(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="all">📍 كل الولايات (58 ولاية)</option>
+                    {ALGERIA_WILAYAS.map((w) => (
+                      <option key={w.code} value={w.code}>
+                        {w.code} - {w.nameAr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">نوع الإعلان</label>
+                  <select
+                    value={selectedIntent}
+                    onChange={(e) => setSelectedIntent(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="all">كل الإعلانات (عروض وطلبات)</option>
+                    <option value="sell">🟢 عروض بيع فقط</option>
+                    <option value="buy">🔵 طلبات شراء فقط</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedWilaya('all');
+                  setSelectedIntent('all');
+                  setSearchQuery('');
+                }}
+                className="px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+              >
+                إلغاء وتفريغ الفلاتر ↺
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsFilterModalOpen(false)}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
+              >
+                <span>تطبيق الفلترة وشاهد النتائج</span>
+                <span className="bg-emerald-800 px-2 py-0.5 rounded-md text-[10px]">{offers.length}</span>
+              </button>
             </div>
           </div>
         </div>
