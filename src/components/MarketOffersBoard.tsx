@@ -49,50 +49,45 @@ export default function MarketOffersBoard({
 
   return (
     <section className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden mb-6">
-      {/* Main Header */}
-      <div className="p-5 md:p-6 bg-gradient-to-l from-slate-950 via-emerald-950 to-emerald-900 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-emerald-950">
-              <Store className="w-3.5 h-3.5" />
-              سوق الدواجن B2B المباشر — الفلاحين والمذابح والكورتية
-            </div>
-          </div>
+      {/* 🌟 Compact Main Header */}
+      <div className="px-4 py-3 bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 text-white border-b border-emerald-900/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
+            سوق الدواجن المباشر — الفلاحين والمذابح والكورتية 🇩🇿
+          </h2>
           {currentUser?.role !== 'worker' && (
-            <div className="flex flex-wrap gap-2 shrink-0">
+            <div className="flex flex-wrap gap-1.5 shrink-0">
               {(currentUser?.role === 'farmer' || currentUser?.role === 'admin' || !currentUser) && (
                 <button
                   onClick={() => handlePublishOffer('farmer')}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-black text-white shadow-lg transition cursor-pointer"
+                  className="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-xl text-xs font-black text-white shadow transition cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" /> نشر عرض فلاح (بيع)
+                  + عرض فلاح (بيع)
                 </button>
               )}
               {(currentUser?.role === 'slaughterhouse' || currentUser?.role === 'admin' || !currentUser) && (
                 <button
                   onClick={() => handlePublishOffer('slaughterhouse')}
-                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs font-black text-white shadow-lg transition cursor-pointer"
+                  className="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-xl text-xs font-black text-white shadow transition cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" /> نشر عرض مذبح (شراء)
+                  + طلب مذبح (شراء)
                 </button>
               )}
               {(currentUser?.role === 'broker' || currentUser?.role === 'admin' || !currentUser) && (
                 <button
                   onClick={() => handlePublishOffer('broker')}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-xs font-black text-emerald-950 shadow-lg transition cursor-pointer"
+                  className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3 py-1.5 rounded-xl shadow transition cursor-pointer text-xs"
                 >
-                  <Plus className="w-4 h-4" /> نشر عرض كورتي (شراء)
+                  + طلب كورتي (شراء)
                 </button>
               )}
             </div>
           )}
         </div>
 
-        {/* Dynamic Category Navigation Tabs (Removed "عرض الكل") */}
-        <div className="mt-6 pt-4 border-t border-emerald-800/60 flex flex-wrap items-center gap-2">
-          <div className="text-xs font-bold text-emerald-200 flex items-center gap-1 ml-2">
-            <Filter className="w-3.5 h-3.5" /> اختر القسم التفاعلي:
-          </div>
+        {/* Dynamic Category Navigation Tabs */}
+        <div className="mt-3 pt-2.5 border-t border-emerald-800/40 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-[11px] font-bold text-emerald-300 ml-1">القسم:</span>
 
           <button
             onClick={() => setActiveTab('farmer')}

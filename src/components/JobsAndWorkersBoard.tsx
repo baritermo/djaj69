@@ -105,21 +105,13 @@ export default function JobsAndWorkersBoard({
 
   return (
     <div className="space-y-6 select-none">
-      {/* Banner & Intro */}
-      <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-2xl p-6 shadow-xl border border-emerald-700 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-emerald-950 font-black text-xs rounded-full mb-3">
-            <Users className="w-4 h-4" />
-            سوق التوظيف والعمال في قطاع الدواجن في الجزائر
-          </div>
-          <h2 className="text-2xl font-black mb-1">
-            البحث عن عمال وفرص توظيف في المزارع والمذابح وشركات الأعلاف
-          </h2>
-          <p className="text-sm text-emerald-100 max-w-2xl">
-            نوفر صلة وصل مباشرة بين أصحاب مزارع الدواجن والمذابح والشركات مع العمال المؤهلين مع مراعاة توفير المبيت والإعاشة في ولايات العمل.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+      {/* 🌟 Compact Header Bar */}
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 px-4 py-3 text-white shadow-md border border-emerald-900/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
+          سوق التوظيف والعمال في قطاع الدواجن 🇩🇿
+        </h2>
+
+        <div className="flex items-center gap-2 shrink-0">
           {currentUser?.role !== 'worker' && (
             <button
               onClick={() => {
@@ -130,10 +122,9 @@ export default function JobsAndWorkersBoard({
                 }
                 onOpenJobModal();
               }}
-              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow transition text-xs shrink-0 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              نشر عرض توظيف جديد
+              + نشر عرض توظيف
             </button>
           )}
 
@@ -147,10 +138,9 @@ export default function JobsAndWorkersBoard({
                 }
                 onOpenWorkerModal();
               }}
-              className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 border border-emerald-500 shadow-lg transition cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3.5 py-1.5 rounded-xl shadow transition text-xs shrink-0 cursor-pointer"
             >
-              <UserCheck className="w-4 h-4 text-amber-400" />
-              تسجيل باحث عن عمل
+              + تسجيل كعامل
             </button>
           )}
         </div>

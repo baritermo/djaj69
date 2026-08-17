@@ -26,18 +26,11 @@ export default function PriceAnalyticsCard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-2xl p-6 shadow-xl border border-emerald-700">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-emerald-950 font-black text-xs rounded-full mb-3">
-            <ShieldCheck className="w-4 h-4" /> أدوات ضبط الأسعار
-          </div>
-          <h2 className="text-2xl font-black mb-2">كيف يتم تحديد أسعار الدجاج حسب الفئة والبائع؟</h2>
-          <p className="text-sm text-emerald-100 leading-relaxed">
-            الأسعار تختلف حسب فئة الدجاج (خشنة/متوسطة/رقيقة) ونوع البائع (فلاح/مذبح/وسيط).
-            الفلاح يبيع بسعر المزرعة، المذبح يبيع بعد الذبح بسعر الجملة، والوسيط يضيف هامش التوزيع.
-          </p>
-        </div>
+      {/* 🌟 Compact Header Bar */}
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 px-4 py-3 text-white shadow-md border border-emerald-900/30">
+        <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
+          كيفية تحديد أسعار الدجاج حسب الفئة والبائع (فلاح / مذبح / وسيط) 🇩🇿
+        </h2>
       </div>
 
       {/* Explanation Table */}

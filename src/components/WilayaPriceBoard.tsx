@@ -108,28 +108,18 @@ export default function WilayaPriceBoard({
 
   return (
     <div className="space-y-6">
-      {/* Official Exchange Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-2xl p-5 shadow-xl border border-emerald-700/80 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-amber-400 text-emerald-950 font-black flex items-center justify-center text-2xl shadow-lg shrink-0">
-            🏛️
-          </div>
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500 text-emerald-950 font-black text-[11px] rounded-md mb-1">
-              📊 التحديث اليومي لـ 58 ولاية
-            </div>
-            <h2 className="text-xl font-black text-white">
-              أسعار الدواجن
-            </h2>
-          </div>
-        </div>
+      {/* 🌟 Compact Header Bar */}
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 px-4 py-3 text-white shadow-md border border-emerald-900/30 flex items-center justify-between gap-3">
+        <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
+          أسعار الدواجن — التحديث اليومي لـ 58 ولاية 🇩🇿
+        </h2>
+
         {currentUser?.role === 'admin' && (
           <button
             onClick={() => onReportForWilaya('16')}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+            className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow transition text-xs shrink-0 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            🤖 ضخ عروض البوت وتحديث الأسعار
+            + تحديث الأسعار
           </button>
         )}
       </div>

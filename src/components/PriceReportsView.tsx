@@ -40,17 +40,17 @@ export default function PriceReportsView({
 
   return (
     <div className="space-y-6">
-      {/* Banner */}
-      <div className="bg-gradient-to-r from-amber-900 to-emerald-900 text-white rounded-2xl p-6 shadow-xl border border-amber-700 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-emerald-950 font-black text-xs rounded-full mb-3">
-            <MessageSquarePlus className="w-4 h-4" /> ضبط شفاف للأسعار
-          </div>
-          <h2 className="text-2xl font-black mb-1">بلاغات وتحديثات الأسعار من المربين والمذابح</h2>
-          <p className="text-sm text-amber-100 max-w-2xl">شارك سعر البيع في ولايتك لمكافحة الشائعات والمضاربة.</p>
-        </div>
-        <button onClick={onOpenReportModal} className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold rounded-xl text-sm flex items-center gap-2 shadow-lg transition shrink-0">
-          <Plus className="w-4 h-4" /> إبلاغ عن سعر
+      {/* 🌟 Compact Header Bar */}
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 px-4 py-3 text-white shadow-md border border-emerald-900/30 flex items-center justify-between gap-3">
+        <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
+          بلاغات وتحديثات الأسعار من المربين والمذابح 🇩🇿
+        </h2>
+
+        <button
+          onClick={onOpenReportModal}
+          className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow transition text-xs shrink-0 cursor-pointer"
+        >
+          + إبلاغ عن سعر
         </button>
       </div>
 
