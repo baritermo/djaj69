@@ -16,7 +16,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  Sparkles,
   Share2,
   Calendar,
   Layers,
@@ -128,28 +127,22 @@ export default function UnifiedB2BMarketplace({
 
   return (
     <div className="space-y-6 font-sans">
-      {/* 🌟 Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 p-6 text-white shadow-2xl border border-emerald-900/40">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-3.5 py-1 rounded-full text-xs shadow-md">
-              <Sparkles className="w-4 h-4" />
-              سوق B2B الشامل — البورصة الجزائرية 🇩🇿
-            </div>
-          </div>
+      {/* 🌟 Compact Header Bar */}
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 px-4 py-3 text-white shadow-md border border-emerald-900/30 flex items-center justify-between gap-3">
+        <h2 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-wide">
+          سوق B2B الشامل — البورصة الجزائرية 🇩🇿
+        </h2>
 
-          <button
-            onClick={() => {
-              if (onOpenOfferModal) {
-                onOpenOfferModal();
-              }
-            }}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-[1.02] text-sm shrink-0"
-          >
-            <Plus className="w-5 h-5 stroke-[3]" />
-            <span>+ أنشر إعلانك مجاناً الآن</span>
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            if (onOpenOfferModal) {
+              onOpenOfferModal();
+            }
+          }}
+          className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow transition-all hover:scale-[1.02] text-xs shrink-0 cursor-pointer"
+        >
+          + أنشر إعلانك مجاناً الآن
+        </button>
       </div>
 
       {/* 🔍 Sleek Search & Filter Trigger Bar */}
