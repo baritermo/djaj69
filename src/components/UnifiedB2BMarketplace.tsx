@@ -151,71 +151,122 @@ export default function UnifiedB2BMarketplace({
         </div>
       </div>
 
-      {/* 🔍 Search & Category Filters Bar (Facebook Marketplace Style) */}
-      <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200 space-y-4">
-        {/* Search Bar & Wilaya Dropdown */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-7 relative">
-            <Search className="w-5 h-5 absolute right-3.5 top-3 text-slate-400" />
+      {/* 🔍 Search & Organized Category Filters Bar */}
+      <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border border-slate-200 space-y-4">
+        {/* Top Header Label */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+              <Filter className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900">محرك البحث وفلتر الفئات المنظّم</h3>
+              <p className="text-[11px] text-slate-500 font-medium">حدد الفئة، الولاية، أو ابحث عن المنتجات مباشرة</p>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500">
+            <span>العروض المتاحة:</span>
+            <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-lg font-black">{offers.length}</span>
+          </div>
+        </div>
+
+        {/* Search Bar & Dropdown Selects */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5">
+          {/* Keyword Search */}
+          <div className="lg:col-span-5 relative">
+            <Search className="w-4 h-4 absolute right-3.5 top-3 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث عن منتج، حولي، جرار، مفقسة، دجاج، أعلاف..."
-              className="w-full pr-11 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+              placeholder="ابحث بالاسم: حولي، جرار، مفقسة، دجاج، أعلاف..."
+              className="w-full pr-10 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
             />
           </div>
 
-          <div className="md:col-span-5 flex gap-2">
+          {/* Category Dropdown */}
+          <div className="lg:col-span-3">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="all">📁 جميع الفئات (الكل)</option>
+              <option value="poultry">🐔 1. الدواجن والبيض والكتكوت</option>
+              <option value="livestock">🐄 2. المواشي والحيوانات (أغنام/أبقار)</option>
+              <option value="equipment">🚜 3. العتاد والمعدات الفلاحية</option>
+              <option value="feed">🌾 4. الأعلاف والمستلزمات البيطرية</option>
+              <option value="services">🚚 5. خدمات فلاحية ونقل وتجهيز</option>
+            </select>
+          </div>
+
+          {/* Wilaya Select */}
+          <div className="lg:col-span-2">
             <select
               value={selectedWilaya}
               onChange={(e) => setSelectedWilaya(e.target.value)}
-              className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="all">📍 كل الولايات (58 ولاية)</option>
+              <option value="all">📍 كل الولايات (58)</option>
               {ALGERIA_WILAYAS.map((w) => (
                 <option key={w.code} value={w.code}>
                   {w.code} - {w.nameAr}
                 </option>
               ))}
             </select>
+          </div>
 
-            {/* Intent Switcher: Sell vs Buy */}
+          {/* Offer Type Switcher */}
+          <div className="lg:col-span-2">
             <select
               value={selectedIntent}
               onChange={(e) => setSelectedIntent(e.target.value)}
-              className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="all">كل العروض والطلبات</option>
+              <option value="all">كل الإعلانات</option>
               <option value="sell">🟢 عروض بيع</option>
               <option value="buy">🔵 طلبات شراء</option>
             </select>
           </div>
         </div>
 
-        {/* Category Pills Slider */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            { id: 'all', label: 'الكل', icon: '🛍️' },
-            { id: 'poultry', label: 'دواجن وبيض', icon: '🐔' },
-            { id: 'livestock', label: 'مواشي وحيوانات', icon: '🐄' },
-            { id: 'equipment', label: 'عتاد ومعدات', icon: '🚜' },
-            { id: 'feed', label: 'أعلاف ومستلزمات', icon: '🌾' },
-            { id: 'services', label: 'خدمات ونقل', icon: '🚚' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${
-                selectedCategory === cat.id
-                  ? 'bg-emerald-950 text-white border-emerald-800 shadow-md scale-[1.02]'
-                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
+        {/* Structured Category Interactive Cards */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            {[
+              { id: 'all', label: 'جميع الفئات', sub: 'كل المنتجات', icon: '🛍️', color: 'from-slate-800 to-slate-950 text-white' },
+              { id: 'poultry', label: 'الدواجن والبيض', sub: 'دجاج، صوص، بيض', icon: '🐔', color: 'from-amber-500 to-amber-600 text-slate-950' },
+              { id: 'livestock', label: 'المواشي والحيوانات', sub: 'أغنام، أبقار، ماعز', icon: '🐄', color: 'from-emerald-600 to-emerald-700 text-white' },
+              { id: 'equipment', label: 'العتاد والمعدات', sub: 'جرارات، مفقسات', icon: '🚜', color: 'from-blue-600 to-blue-700 text-white' },
+              { id: 'feed', label: 'الأعلاف والبيطرة', sub: 'ذرة، أعلاف مركبة', icon: '🌾', color: 'from-lime-600 to-lime-700 text-white' },
+              { id: 'services', label: 'الخدمات والنقل', sub: 'شحن، صيانة، حفر', icon: '🚚', color: 'from-purple-600 to-purple-700 text-white' },
+            ].map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`p-3 rounded-2xl text-right transition-all flex flex-col justify-between border cursor-pointer ${
+                    isSelected
+                      ? `bg-gradient-to-r ${cat.color} border-slate-900 shadow-lg ring-2 ring-emerald-500 scale-[1.03]`
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xl">{cat.icon}</span>
+                    {isSelected && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>}
+                  </div>
+                  <div>
+                    <div className={`text-xs font-black truncate ${isSelected ? '' : 'text-slate-900'}`}>{cat.label}</div>
+                    <div className={`text-[10px] font-medium truncate mt-0.5 ${isSelected ? 'opacity-90' : 'text-slate-500'}`}>
+                      {cat.sub}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
