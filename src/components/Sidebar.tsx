@@ -242,6 +242,23 @@ export default function Sidebar({
                 </button>
 
                 <button
+                  onClick={() => handleTabClick('b2b_marketplace')}
+                  className={`w-full flex items-center justify-between p-3 rounded-2xl font-bold text-sm transition cursor-pointer ${
+                    activeTab === 'b2b_marketplace'
+                      ? 'bg-amber-500 text-emerald-950 shadow-md font-black'
+                      : 'text-emerald-100 hover:bg-emerald-900/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingBag className="w-4 h-4 text-amber-300" />
+                    <span>ماركت بلايس B2B الشامل</span>
+                  </div>
+                  <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                    مجاني 100% 🟢
+                  </span>
+                </button>
+
+                <button
                   onClick={() => handleTabClick('offers')}
                   className={`w-full flex items-center justify-between p-3 rounded-2xl font-bold text-sm transition cursor-pointer ${
                     activeTab === 'offers'

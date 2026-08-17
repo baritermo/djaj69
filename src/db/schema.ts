@@ -177,3 +177,43 @@ export const workers = pgTable('workers', {
   availableNow: boolean('available_now').default(true),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+// 8. Unified Free B2B Marketplace Offers (Facebook Marketplace Style)
+export const unifiedB2bOffers = pgTable('unified_b2b_offers', {
+  id: serial('id').primaryKey(),
+  offerCategory: text('offer_category').notNull(), // poultry | livestock | equipment | feed | services
+  intentType: text('intent_type').notNull().default('sell'), // sell | buy
+  title: text('title').notNull(),
+  itemType: text('item_type'), // e.g. حولي, جرار, دجاج ملون, صوص
+  brandOrBreed: text('brand_or_breed'), // السلالة أو الماركة
+  itemCondition: text('item_condition').default('live'), // live | new | used | fresh
+  quantity: text('quantity'),
+  price: integer('price').notNull(),
+  priceUnit: text('price_unit').default('رأس'), // رأس | كغ | قطعة | طن | إجمالي
+  wilayaCode: text('wilaya_code').notNull(),
+  wilayaName: text('wilaya_name').notNull(),
+  commune: text('commune'),
+  publisherName: text('publisher_name').notNull(),
+  phone: text('phone').notNull(),
+  images: text('images'), // JSON array of base64/image URLs (up to 20 images)
+  details: text('details'), // Bold description
+  deliveryAvailable: boolean('delivery_available').default(false),
+  verified: boolean('verified').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// 9. B2B Escrow Deals Requests (الشراء عبر وسيط المنصة)
+export const b2bEscrowRequests = pgTable('b2b_escrow_requests', {
+  id: serial('id').primaryKey(),
+  offerId: integer('offer_id').notNull(),
+  offerTitle: text('offer_title').notNull(),
+  buyerName: text('buyer_name').notNull(),
+  buyerPhone: text('buyer_phone').notNull(),
+  sellerName: text('seller_name').notNull(),
+  sellerPhone: text('seller_phone').notNull(),
+  agreedPrice: integer('agreed_price'),
+  notes: text('notes'),
+  status: text('status').default('pending'), // pending | in_progress | completed | cancelled
+  createdAt: timestamp('created_at').defaultNow(),
+});
+

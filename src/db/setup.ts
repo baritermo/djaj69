@@ -155,6 +155,43 @@ async function setup() {
         "available_now" boolean DEFAULT true,
         "created_at" timestamp DEFAULT now()
       );
+
+      CREATE TABLE IF NOT EXISTS "unified_b2b_offers" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "offer_category" text NOT NULL,
+        "intent_type" text DEFAULT 'sell' NOT NULL,
+        "title" text NOT NULL,
+        "item_type" text,
+        "brand_or_breed" text,
+        "item_condition" text DEFAULT 'live',
+        "quantity" text,
+        "price" integer NOT NULL,
+        "price_unit" text DEFAULT 'رأس',
+        "wilaya_code" text NOT NULL,
+        "wilaya_name" text NOT NULL,
+        "commune" text,
+        "publisher_name" text NOT NULL,
+        "phone" text NOT NULL,
+        "images" text,
+        "details" text,
+        "delivery_available" boolean DEFAULT false,
+        "verified" boolean DEFAULT true,
+        "created_at" timestamp DEFAULT now()
+      );
+
+      CREATE TABLE IF NOT EXISTS "b2b_escrow_requests" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "offer_id" integer NOT NULL,
+        "offer_title" text NOT NULL,
+        "buyer_name" text NOT NULL,
+        "buyer_phone" text NOT NULL,
+        "seller_name" text NOT NULL,
+        "seller_phone" text NOT NULL,
+        "agreed_price" integer,
+        "notes" text,
+        "status" text DEFAULT 'pending',
+        "created_at" timestamp DEFAULT now()
+      );
     `);
     console.log('✅ All 8 database tables checked/created successfully!');
 

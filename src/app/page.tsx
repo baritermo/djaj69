@@ -9,6 +9,8 @@ import JobsAndWorkersBoard from '@/components/JobsAndWorkersBoard';
 import B2BDirectory from '@/components/B2BDirectory';
 import MarketOffersBoard from '@/components/MarketOffersBoard';
 import FridayHolidayScreen from '@/components/FridayHolidayScreen';
+import UnifiedB2BMarketplace from '@/components/UnifiedB2BMarketplace';
+import UnifiedOfferModal from '@/components/UnifiedOfferModal';
 import {
   PriceReportModal,
   JobPostModal,
@@ -24,7 +26,7 @@ import {
 import { ShieldCheck, Phone, Mail, Award, CheckCircle2, Flame, RefreshCw } from 'lucide-react';
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<string>('prices');
+  const [activeTab, setActiveTab] = useState<string>('b2b_marketplace');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // User Auth State
@@ -34,6 +36,7 @@ export default function HomePage() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [isAdminSubModalOpen, setIsAdminSubModalOpen] = useState(false);
+  const [isUnifiedB2bModalOpen, setIsUnifiedB2bModalOpen] = useState(false);
   const [adminBypassFriday, setAdminBypassFriday] = useState(false);
 
   const isFriday = React.useMemo(() => {
@@ -233,6 +236,14 @@ export default function HomePage() {
           />
         ) : (
           <>
+            {/* TAB 0: Unified Free B2B Marketplace (سوق B2B الشامل المجاني) */}
+            {activeTab === 'b2b_marketplace' && (
+              <UnifiedB2BMarketplace
+                currentUser={currentUser}
+                onOpenOfferModal={() => setIsUnifiedB2bModalOpen(true)}
+              />
+            )}
+
             {/* TAB 1: Algerian Wilaya Poultry Price Exchange */}
             {activeTab === 'prices' && (
               <WilayaPriceBoard
@@ -504,6 +515,16 @@ export default function HomePage() {
         isOpen={isAdminSubModalOpen}
         onClose={() => setIsAdminSubModalOpen(false)}
         onRefresh={fetchAllData}
+      />
+
+      <UnifiedOfferModal
+        isOpen={isUnifiedB2bModalOpen}
+        onClose={() => setIsUnifiedB2bModalOpen(false)}
+        onSuccess={() => {
+          fetchAllData();
+          setActiveTab('b2b_marketplace');
+        }}
+        currentUser={currentUser}
       />
     </div>
   );
