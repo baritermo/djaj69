@@ -27,8 +27,16 @@ async function ensureTables() {
       ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "receipt_url" text;
       ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "id_card_url" text;
       ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "rejection_reason" text;
+
+      CREATE TABLE IF NOT EXISTS "platform_settings" (
+        "key" text PRIMARY KEY NOT NULL,
+        "value" text NOT NULL,
+        "updated_at" timestamp DEFAULT now()
+      );
     `);
-  } catch (e) {}
+  } catch (e) {
+    console.error('ensureTables error:', e);
+  }
 }
 
 export async function GET() {
@@ -55,11 +63,16 @@ export async function GET() {
 
     const allUsers = res.rows || [];
 
-    // Also get platform mode
-    const modeRes = await pool.query(
-      `SELECT "value" FROM "platform_settings" WHERE "key" = 'platform_access_mode' LIMIT 1`
-    );
-    const platformMode = modeRes.rows?.[0]?.value || 'free';
+    // Safely get platform mode
+    let platformMode = 'free';
+    try {
+      const modeRes = await pool.query(
+        `SELECT "value" FROM "platform_settings" WHERE "key" = 'platform_access_mode' LIMIT 1`
+      );
+      if (modeRes.rows && modeRes.rows.length > 0) {
+        platformMode = modeRes.rows[0].value;
+      }
+    } catch {}
 
     return NextResponse.json({
       status: 'success',
