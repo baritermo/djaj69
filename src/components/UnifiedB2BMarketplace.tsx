@@ -94,7 +94,15 @@ export default function UnifiedB2BMarketplace({
       const res = await fetch(`/api/b2b-offers?${params.toString()}`);
       const data = await res.json();
       if (data.status === 'success') {
-        setOffers(data.offers || []);
+        if ((!data.offers || data.offers.length === 0) && selectedCategory === 'all' && selectedWilaya === 'all' && searchQuery.trim() === '') {
+          // Auto-seed database permanently
+          await fetch('/api/b2b-offers/seed').catch(() => {});
+          const retryRes = await fetch('/api/b2b-offers');
+          const retryData = await retryRes.json();
+          setOffers(retryData.offers || []);
+        } else {
+          setOffers(data.offers || []);
+        }
       }
     } catch (err) {
       console.error('Fetch B2B offers error:', err);
