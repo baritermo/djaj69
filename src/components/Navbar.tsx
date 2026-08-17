@@ -24,6 +24,8 @@ interface NavbarProps {
   onOpenRegisterModal?: () => void;
   onOpenSettingsModal?: () => void;
   onOpenAdminSubModal?: () => void;
+  onOpenAdminEscrowModal?: () => void;
+  onOpenUserOrdersModal?: () => void;
   onLogout?: () => void;
 }
 
@@ -40,6 +42,8 @@ export default function Navbar({
   onOpenRegisterModal,
   onOpenSettingsModal,
   onOpenAdminSubModal,
+  onOpenAdminEscrowModal,
+  onOpenUserOrdersModal,
   onLogout,
 }: NavbarProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -112,14 +116,34 @@ export default function Navbar({
                   </span>
                 </div>
                 {currentUser?.role === 'admin' && (
-                  <button
-                    onClick={onOpenAdminSubModal}
-                    className="px-2 py-1 bg-amber-400 text-emerald-950 font-black text-xs rounded-lg shadow-sm hover:bg-amber-300 transition cursor-pointer"
-                    title="مراجعة وتفعيل طلبات الحسابات والاشتراكات"
-                  >
-                    📋 طلبات الحسابات
-                  </button>
+                  <>
+                    <button
+                      onClick={onOpenAdminEscrowModal}
+                      className="px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1"
+                      title="لوحة تحكم وسيط المنصة وصفقات بريدي موب"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
+                      <span>لوحة الوسيط (بريدي موب)</span>
+                    </button>
+
+                    <button
+                      onClick={onOpenAdminSubModal}
+                      className="px-2 py-1 bg-amber-400 text-emerald-950 font-black text-xs rounded-lg shadow-sm hover:bg-amber-300 transition cursor-pointer"
+                      title="مراجعة وتفعيل طلبات الحسابات والاشتراكات"
+                    >
+                      📋 طلبات الحسابات
+                    </button>
+                  </>
                 )}
+
+                <button
+                  onClick={onOpenUserOrdersModal}
+                  className="px-2.5 py-1 bg-amber-400 text-slate-950 font-black text-xs rounded-lg shadow-sm hover:bg-amber-300 transition cursor-pointer flex items-center gap-1"
+                  title="استعراض الطلبات الواردة على إعلاناتك والصفقات"
+                >
+                  <span>📦 طلباتي</span>
+                </button>
+
                 <button
                   onClick={onOpenSettingsModal}
                   className="mr-1 p-1 bg-emerald-800 hover:bg-emerald-700 text-amber-300 rounded-lg transition cursor-pointer"
@@ -173,6 +197,8 @@ export default function Navbar({
         onOpenRegisterModal={onOpenRegisterModal}
         onOpenSettingsModal={onOpenSettingsModal}
         onOpenAdminSubModal={onOpenAdminSubModal}
+        onOpenAdminEscrowModal={onOpenAdminEscrowModal}
+        onOpenUserOrdersModal={onOpenUserOrdersModal}
         onLogout={onLogout}
       />
     </header>

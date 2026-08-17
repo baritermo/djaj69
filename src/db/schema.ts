@@ -202,7 +202,7 @@ export const unifiedB2bOffers = pgTable('unified_b2b_offers', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// 9. B2B Escrow Deals Requests (الشراء عبر وسيط المنصة)
+// 9. B2B Escrow Deals Requests (الشراء عبر وسيط المنصة ودفع بريدي موب)
 export const b2bEscrowRequests = pgTable('b2b_escrow_requests', {
   id: serial('id').primaryKey(),
   offerId: integer('offer_id').notNull(),
@@ -213,7 +213,10 @@ export const b2bEscrowRequests = pgTable('b2b_escrow_requests', {
   sellerPhone: text('seller_phone').notNull(),
   agreedPrice: integer('agreed_price'),
   notes: text('notes'),
-  status: text('status').default('pending'), // pending | in_progress | completed | cancelled
+  status: text('status').default('pending'), // pending | payment_received | in_delivery | completed | cancelled
+  paymentReceipt: text('payment_receipt'),
+  transactionRef: text('transaction_ref'),
+  adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

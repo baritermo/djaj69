@@ -18,6 +18,7 @@ import {
   LogIn,
   UserPlus,
   Lock,
+  Package,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,6 +36,8 @@ interface SidebarProps {
   onOpenRegisterModal?: () => void;
   onOpenSettingsModal?: () => void;
   onOpenAdminSubModal?: () => void;
+  onOpenAdminEscrowModal?: () => void;
+  onOpenUserOrdersModal?: () => void;
   onOpenSubscribeModal?: () => void;
   onLogout?: () => void;
 }
@@ -54,6 +57,8 @@ export default function Sidebar({
   onOpenRegisterModal,
   onOpenSettingsModal,
   onOpenAdminSubModal,
+  onOpenAdminEscrowModal,
+  onOpenUserOrdersModal,
   onOpenSubscribeModal,
   onLogout,
 }: SidebarProps) {
@@ -131,21 +136,38 @@ export default function Sidebar({
                       <span className="text-[10px] text-emerald-300 block">{currentUser.phone}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     {currentUser?.role === 'admin' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onClose();
-                          setTimeout(() => {
-                            if (onOpenAdminSubModal) onOpenAdminSubModal();
-                          }, 100);
-                        }}
-                        className="px-2.5 py-1.5 bg-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-md hover:bg-amber-300 transition cursor-pointer flex items-center gap-1 active:scale-95"
-                        title="مراجعة وتفعيل طلبات الحسابات والاشتراكات"
-                      >
-                        📋 طلبات الحسابات
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClose();
+                            setTimeout(() => {
+                              if (onOpenAdminEscrowModal) onOpenAdminEscrowModal();
+                            }, 100);
+                          }}
+                          className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs rounded-xl shadow-md hover:from-emerald-600 hover:to-teal-700 transition cursor-pointer flex items-center gap-1 active:scale-95"
+                          title="لوحة تحكم صفقات الوسيط ودفعات بريدي موب"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
+                          <span>لوحة الوسيط</span>
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClose();
+                            setTimeout(() => {
+                              if (onOpenAdminSubModal) onOpenAdminSubModal();
+                            }, 100);
+                          }}
+                          className="px-2.5 py-1.5 bg-amber-400 text-emerald-950 font-black text-xs rounded-xl shadow-md hover:bg-amber-300 transition cursor-pointer flex items-center gap-1 active:scale-95"
+                          title="مراجعة وتفعيل طلبات الحسابات والاشتراكات"
+                        >
+                          📋 الحسابات
+                        </button>
+                      </>
                     )}
                     {currentUser?.role !== 'admin' && currentUser?.subscriptionStatus !== 'active' && (
                       <button
@@ -159,6 +181,21 @@ export default function Sidebar({
                         ⏳ قيد مراجعة الأدمن
                       </button>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                        setTimeout(() => {
+                          if (onOpenUserOrdersModal) onOpenUserOrdersModal();
+                        }, 100);
+                      }}
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center gap-1 active:scale-95"
+                      title="استعراض الطلبات الواردة على إعلاناتك والصفقات"
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      <span>طلباتي</span>
+                    </button>
+
                     <button
                       onClick={() => {
                         if (onOpenSettingsModal) onOpenSettingsModal();
@@ -219,6 +256,28 @@ export default function Sidebar({
 
           {/* Navigation & Actions */}
           <div className="p-4 space-y-5 flex-1">
+
+            {/* Direct Orders Button */}
+            <button
+              onClick={() => {
+                if (onOpenUserOrdersModal) onOpenUserOrdersModal();
+                onClose();
+              }}
+              className="w-full flex items-center justify-between p-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md border border-emerald-600 transition cursor-pointer group"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-amber-400 text-slate-950 rounded-xl font-bold shadow-sm">
+                  <Package className="w-4 h-4" />
+                </div>
+                <div className="text-right">
+                  <span className="font-black text-xs sm:text-sm block text-white">📦 طلباتي (الطلبات والصفقات)</span>
+                  <span className="text-[10px] text-emerald-200 block">الطلبات الواردة على إعلاناتك</span>
+                </div>
+              </div>
+              <span className="bg-amber-400 text-slate-950 text-[10px] px-2 py-0.5 rounded-full font-black">
+                بريدي موب 🛡️
+              </span>
+            </button>
 
             {/* Main Tabs Navigation */}
             <div>
@@ -317,16 +376,29 @@ export default function Sidebar({
                 </div>
                 <div className="space-y-2">
                   {currentUser?.role === 'admin' && (
-                    <button
-                      onClick={() => {
-                        onOpenPriceModal();
-                        onClose();
-                      }}
-                      className="w-full bg-emerald-800 hover:bg-emerald-700 border border-emerald-600 text-white font-bold p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
-                    >
-                      <TrendingUp className="w-4 h-4 text-amber-400" />
-                      <span>📊 تحديث أسعار البورصة</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          if (onOpenAdminEscrowModal) onOpenAdminEscrowModal();
+                          onClose();
+                        }}
+                        className="w-full bg-gradient-to-r from-emerald-800 to-teal-900 hover:from-emerald-700 hover:to-teal-800 border border-emerald-600 text-white font-bold p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-400" />
+                        <span>🛡️ لوحة تحكم وسيط المنصة (BaridiMob)</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          onOpenPriceModal();
+                          onClose();
+                        }}
+                        className="w-full bg-emerald-850 hover:bg-emerald-750 border border-emerald-700 text-white font-bold p-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md transition cursor-pointer"
+                      >
+                        <TrendingUp className="w-4 h-4 text-amber-400" />
+                        <span>📊 تحديث أسعار البورصة</span>
+                      </button>
+                    </>
                   )}
 
                   {isSubscribed && currentUser?.role === 'worker' && (

@@ -11,6 +11,8 @@ import MarketOffersBoard from '@/components/MarketOffersBoard';
 import FridayHolidayScreen from '@/components/FridayHolidayScreen';
 import UnifiedB2BMarketplace from '@/components/UnifiedB2BMarketplace';
 import UnifiedOfferModal from '@/components/UnifiedOfferModal';
+import AdminEscrowManagerModal from '@/components/AdminEscrowManagerModal';
+import UserOrdersModal from '@/components/UserOrdersModal';
 import {
   PriceReportModal,
   JobPostModal,
@@ -36,6 +38,8 @@ export default function HomePage() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [isAdminSubModalOpen, setIsAdminSubModalOpen] = useState(false);
+  const [isAdminEscrowModalOpen, setIsAdminEscrowModalOpen] = useState(false);
+  const [isUserOrdersModalOpen, setIsUserOrdersModalOpen] = useState(false);
   const [isUnifiedB2bModalOpen, setIsUnifiedB2bModalOpen] = useState(false);
   const [adminBypassFriday, setAdminBypassFriday] = useState(false);
 
@@ -219,6 +223,8 @@ export default function HomePage() {
         onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
         onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
         onOpenAdminSubModal={() => setIsAdminSubModalOpen(true)}
+        onOpenAdminEscrowModal={() => setIsAdminEscrowModalOpen(true)}
+        onOpenUserOrdersModal={() => setIsUserOrdersModalOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -515,6 +521,19 @@ export default function HomePage() {
         isOpen={isAdminSubModalOpen}
         onClose={() => setIsAdminSubModalOpen(false)}
         onRefresh={fetchAllData}
+      />
+
+      <AdminEscrowManagerModal
+        isOpen={isAdminEscrowModalOpen}
+        onClose={() => setIsAdminEscrowModalOpen(false)}
+        onRefresh={fetchAllData}
+      />
+
+      <UserOrdersModal
+        isOpen={isUserOrdersModalOpen}
+        onClose={() => setIsUserOrdersModalOpen(false)}
+        currentUser={currentUser}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
       />
 
       <UnifiedOfferModal
