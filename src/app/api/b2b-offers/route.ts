@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/db/index';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const DEFAULT_MOCK_OFFERS = [
   {
     id: 1001,
