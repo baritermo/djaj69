@@ -72,6 +72,11 @@ export default function UnifiedOfferModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!currentUser) {
+      alert('🔒 لممارسة النشاط ونشر الإعلانات في المنصة يرجى إنشاء حساب أو تسجيل الدخول أولاً.');
+      return;
+    }
+
     if (!offerCategory) {
       alert('يرجى اختيار الفئة.');
       return;

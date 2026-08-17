@@ -74,6 +74,12 @@ export default function PlatformEscrowModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!currentUser) {
+      alert('🔒 لطلب الشراء عبر وسيط المنصة الآمن وتأمين المعاملة يرجى إنشاء حساب أو تسجيل الدخول أولاً.');
+      return;
+    }
+
     if (!buyerName.trim() || !buyerPhone.trim()) {
       alert('يرجى ملء اسمك ورقم هاتفك للتواصل معك من طرف وسيط المنصة');
       return;

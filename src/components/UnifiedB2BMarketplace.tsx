@@ -28,12 +28,16 @@ interface UnifiedB2BMarketplaceProps {
   currentUser?: any;
   onOpenSubscribeModal?: () => void;
   onOpenOfferModal?: () => void;
+  onOpenRegisterModal?: () => void;
+  onOpenLoginModal?: () => void;
 }
 
 export default function UnifiedB2BMarketplace({
   currentUser,
   onOpenSubscribeModal,
   onOpenOfferModal,
+  onOpenRegisterModal,
+  onOpenLoginModal,
 }: UnifiedB2BMarketplaceProps) {
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -52,6 +56,30 @@ export default function UnifiedB2BMarketplace({
 
   // Escrow deal modal state
   const [escrowOfferTarget, setEscrowOfferTarget] = useState<any | null>(null);
+
+  const handlePublishClick = () => {
+    if (!currentUser) {
+      if (onOpenRegisterModal) {
+        onOpenRegisterModal();
+      } else {
+        alert('🔒 لممارسة النشاط ونشر الإعلانات في المنصة يرجى إنشاء حساب أو تسجيل الدخول أولاً.');
+      }
+      return;
+    }
+    if (onOpenOfferModal) onOpenOfferModal();
+  };
+
+  const handleEscrowClick = (offerTarget: any) => {
+    if (!currentUser) {
+      if (onOpenRegisterModal) {
+        onOpenRegisterModal();
+      } else {
+        alert('🔒 لطلب الشراء عبر وسيط المنصة الآمن وتأمين المعاملة يرجى إنشاء حساب أو تسجيل الدخول أولاً.');
+      }
+      return;
+    }
+    setEscrowOfferTarget(offerTarget);
+  };
 
   const fetchB2BOffers = useCallback(async () => {
     setLoading(true);
@@ -134,11 +162,7 @@ export default function UnifiedB2BMarketplace({
         </h2>
 
         <button
-          onClick={() => {
-            if (onOpenOfferModal) {
-              onOpenOfferModal();
-            }
-          }}
+          onClick={handlePublishClick}
           className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-1.5 rounded-xl shadow transition-all hover:scale-[1.02] text-xs shrink-0 cursor-pointer"
         >
           + أنشر إعلانك مجاناً الآن
@@ -237,8 +261,8 @@ export default function UnifiedB2BMarketplace({
             كن أول من يضيف إعلاناً في هذا القسم ليصل آلاف الفلاحين والمربين عبر القطر الوطني!
           </p>
           <button
-            onClick={() => onOpenOfferModal && onOpenOfferModal()}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow"
+            onClick={handlePublishClick}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
           >
             + أنشر أول إعلان مجاناً
           </button>
@@ -533,10 +557,8 @@ export default function UnifiedB2BMarketplace({
 
                 {/* 2. Buy via Platform Escrow/Broker Button */}
                 <button
-                  onClick={() => {
-                    setEscrowOfferTarget(selectedOffer);
-                  }}
-                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-sm border border-amber-300"
+                  onClick={() => handleEscrowClick(selectedOffer)}
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-sm border border-amber-300 cursor-pointer"
                 >
                   <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
                   <span>طلب شراء عبر وسيط المنصة الآمن 🛡️</span>
@@ -700,8 +722,8 @@ export default function UnifiedB2BMarketplace({
 
       {/* Mobile Floating Action Button (FAB) for Publishing Offers */}
       <button
-        onClick={() => onOpenOfferModal && onOpenOfferModal()}
-        className="md:hidden fixed bottom-6 left-6 z-40 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 border-2 border-slate-900 animate-bounce active:scale-95 transition-all text-xs"
+        onClick={handlePublishClick}
+        className="md:hidden fixed bottom-6 left-6 z-40 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 border-2 border-slate-900 animate-bounce active:scale-95 transition-all text-xs cursor-pointer"
         title="أنشر إعلان جديد"
       >
         <Plus className="w-5 h-5 stroke-[3]" />

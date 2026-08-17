@@ -246,7 +246,15 @@ export default function HomePage() {
             {activeTab === 'b2b_marketplace' && (
               <UnifiedB2BMarketplace
                 currentUser={currentUser}
-                onOpenOfferModal={() => setIsUnifiedB2bModalOpen(true)}
+                onOpenOfferModal={() => {
+                  if (!currentUser) {
+                    setIsRegisterModalOpen(true);
+                    return;
+                  }
+                  setIsUnifiedB2bModalOpen(true);
+                }}
+                onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+                onOpenLoginModal={() => setIsLoginModalOpen(true)}
               />
             )}
 

@@ -260,6 +260,12 @@ export default function Sidebar({
             {/* Direct Orders Button */}
             <button
               onClick={() => {
+                if (!currentUser) {
+                  if (onOpenLoginModal) onOpenLoginModal();
+                  else if (onOpenRegisterModal) onOpenRegisterModal();
+                  onClose();
+                  return;
+                }
                 if (onOpenUserOrdersModal) onOpenUserOrdersModal();
                 onClose();
               }}
