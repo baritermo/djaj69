@@ -131,16 +131,10 @@ export default function UnifiedB2BMarketplace({
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-950 to-teal-950 p-6 text-white shadow-2xl border border-emerald-900/40">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-3.5 py-1 rounded-full text-xs shadow-md mb-2">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-3.5 py-1 rounded-full text-xs shadow-md">
               <Sparkles className="w-4 h-4" />
               سوق B2B الشامل — البورصة الجزائرية 🇩🇿
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              ماركت بلايس الفلاحة والمواشي والعتاد 🛒
-            </h1>
-            <p className="text-emerald-200 text-xs md:text-sm mt-1 font-medium">
-              تصفح وانشر عروض الدواجن، المواشي، الجرارات، العتاد، والأعلاف مجاناً 100% لجميع التجار والمربين في الـ 58 ولاية.
-            </p>
           </div>
 
           <button
@@ -225,14 +219,14 @@ export default function UnifiedB2BMarketplace({
         </div>
       </div>
 
-      {/* 🛍️ PRODUCT GRID (Facebook Marketplace Layout) */}
+      {/* 🛍️ PRODUCT GRID (Facebook Marketplace Mobile Layout) */}
       {loading ? (
         <div className="py-20 text-center space-y-3">
           <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-slate-500 text-sm font-semibold">جاري تحميل سوق B2B...</p>
         </div>
       ) : offers.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-4">
+        <div className="bg-white rounded-3xl p-8 md:p-12 text-center border border-slate-200 space-y-4">
           <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
             <Store className="w-8 h-8" />
           </div>
@@ -248,7 +242,7 @@ export default function UnifiedB2BMarketplace({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
           {offers.map((offer) => {
             const hasMultipleImages = offer.imagesList && offer.imagesList.length > 1;
             const primaryImage = offer.imagesList && offer.imagesList.length > 0 ? offer.imagesList[0] : null;
@@ -560,6 +554,16 @@ export default function UnifiedB2BMarketplace({
           currentUser={currentUser}
         />
       )}
+
+      {/* Mobile Floating Action Button (FAB) for Publishing Offers */}
+      <button
+        onClick={() => onOpenOfferModal && onOpenOfferModal()}
+        className="md:hidden fixed bottom-6 left-6 z-40 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 border-2 border-slate-900 animate-bounce active:scale-95 transition-all text-xs"
+        title="أنشر إعلان جديد"
+      >
+        <Plus className="w-5 h-5 stroke-[3]" />
+        <span>+ أنشر إعلانك</span>
+      </button>
     </div>
   );
 }
